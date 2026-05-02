@@ -3,6 +3,9 @@
 **Platform:** promptairlines.com
 **Tarih:** 2026-05-02
 **Sonuc:** 5/5 challenge cozuldu (Skor: 50)
+**Sertifika:** Wiz AI Security Certificate — Yakuphan Yucel (02 May 2026)
+
+![Certificate](certificate.png)
 
 ## Challenge 1: Bot Identifier (10 puan)
 **Teknik:** System prompt extraction
