@@ -95,7 +95,7 @@ Savunmasız RAG sistemi — 5 saldırı senaryosu ile güvenliği test et.
 ```
 OWASP LLM Top 10 (2025)     [##########] 10/10 categories
 MITRE ATLAS                  [########--]  15 tactics, 66 techniques
-Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 4/5, ODIN 3/3
+Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  21 guards, firewall, ML detector
 Tool Proficiency             [########--]  Garak, PyRIT, NeMo Guardrails
