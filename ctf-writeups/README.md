@@ -1,8 +1,8 @@
-# CTF Writeups / CTF Cozumleri
+# CTF Writeups / CTF Çözümleri
 
 Solutions and techniques from AI/LLM security CTF challenges.
 
-AI/LLM guvenlik CTF yarismalarinda kullanilan cozumler ve teknikler.
+AI/LLM güvenlik CTF yarışmalarında kullanılan çözümler ve teknikler.
 
 ---
 
@@ -17,7 +17,7 @@ AI/LLM guvenlik CTF yarismalarinda kullanilan cozumler ve teknikler.
 
 ---
 
-## Techniques Used / Kullanilan Teknikler
+## Techniques Used / Kullanılan Teknikler
 
 | Technique | Category | Used In |
 |-----------|----------|---------|

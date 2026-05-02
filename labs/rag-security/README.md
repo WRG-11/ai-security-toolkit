@@ -2,7 +2,7 @@
 
 **Vulnerable RAG system with attack scenarios and defense mechanisms.**
 
-Savunmasiz RAG sistemi — 5 saldiri senaryosu ve savunma mekanizmalari.
+Savunmasız RAG sistemi — 5 saldırı senaryosu ve savunma mekanizmaları.
 
 ---
 
@@ -10,7 +10,7 @@ Savunmasiz RAG sistemi — 5 saldiri senaryosu ve savunma mekanizmalari.
 
 A deliberately vulnerable Retrieval-Augmented Generation (RAG) system that demonstrates how attackers can extract confidential information, poison knowledge bases, and manipulate LLM responses through the retrieval pipeline.
 
-RAG pipeline'ina yonelik saldirilari gosteren ve savunma yontemlerini ogreten bir lab ortami.
+RAG pipeline'ına yönelik saldırıları gösteren ve savunma yöntemlerini öğreten bir lab ortamı.
 
 ## Architecture / Mimari
 
@@ -65,7 +65,7 @@ Embed "ignore previous instructions" in retrieved documents.
 ### 5. Membership Inference
 Determine whether specific data exists in the knowledge base.
 
-## Quick Start / Hizli Baslangic
+## Quick Start / Hızlı Başlangıç
 
 ```bash
 # Setup (creates ChromaDB + loads documents)
@@ -81,7 +81,7 @@ python vulnerable_rag.py --attack
 python vulnerable_rag.py --defend
 ```
 
-## Results / Sonuclar
+## Results / Sonuçlar
 
 | Mode | Leakage Rate |
 |------|-------------|
