@@ -12,8 +12,8 @@ AI/LLM güvenlik CTF yarışmalarında kullanılan çözümler ve teknikler.
 |----------|-------|--------|
 | [Gandalf (Lakera)](gandalf/) | **8/8** | All levels solved |
 | [Agent ODIN (0din.ai)](agent-odin/) | **3/3** | All missions solved |
-| [Prompt Airlines (Wiz)](prompt-airlines/) | **4/5** | Ch5: backend issue |
-| **Total** | **15/16** | **94% solve rate** |
+| [Prompt Airlines (Wiz)](prompt-airlines/) | **5/5** | All challenges solved |
+| **Total** | **16/16** | **100% solve rate** |
 
 ---
 
