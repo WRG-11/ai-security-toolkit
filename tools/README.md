@@ -2,11 +2,11 @@
 
 Three custom-built, zero-dependency security tools for LLM red teaming and defense.
 
-Sifirdan yazilmis, sifir bagimliliktir (sadece Python stdlib) — LLM red team ve savunma araclari.
+Sıfırdan yazılmış, sıfır bağımlılıktır (sadece Python stdlib) — LLM red team ve savunma araçları.
 
 ---
 
-## Tool Overview / Arac Ozeti
+## Tool Overview / Araç Özeti
 
 | Feature | Injection Detector ML | LLM Scanner | LLM Firewall |
 |---------|----------------------|-------------|--------------|
