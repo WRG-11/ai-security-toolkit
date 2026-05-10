@@ -1,0 +1,14 @@
+target-version = "py310"
+line-length = 100
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]
+
+[lint.per-file-ignores]
+# Zero-touch policy: existing tool code is not modified for lint.
+# These ignores cover structural patterns (sys.path before import,
+# Optional[] style, f-string cosmetics, import order, mutable defaults).
+"tools/llm_firewall.py" = ["E402", "F401", "F541", "I001", "UP015", "UP045"]
+"tools/llm_scanner.py" = ["E402", "F401", "F541", "F841", "I001", "UP015", "UP045", "B006"]
+"tools/prompt_injection_detector_ml.py" = ["E402", "F401", "F541", "I001", "UP015", "UP045"]
