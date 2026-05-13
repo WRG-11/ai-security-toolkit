@@ -1,4 +1,4 @@
-# AI/LLM Guvenlik Araci Karsilastirma Raporu
+# AI/LLM Güvenlik Aracı Karşılaştırma Raporu
 # Garak vs PyRIT vs NeMo Guardrails
 
 **Tarih:** 2026-05-02
@@ -6,75 +6,75 @@
 
 ---
 
-## 1. Genel Bakis
+## 1. Genel Bakış
 
-| Ozellik | Garak (NVIDIA) | PyRIT (Microsoft) | NeMo Guardrails (NVIDIA) |
+| Özellik | Garak (NVIDIA) | PyRIT (Microsoft) | NeMo Guardrails (NVIDIA) |
 |---------|----------------|--------------------|-----------------------------|
-| **Amac** | Otomatik zafiyet tarama | Red team otomasyon | Programlanabilir koruma |
-| **Yaklasim** | Offensive (saldiri) | Offensive (saldiri) | Defensive (savunma) |
+| **Amaç** | Otomatik zafiyet tarama | Red team otomasyon | Programlanabilir koruma |
+| **Yaklaşım** | Offensive (saldırı) | Offensive (saldırı) | Defensive (savunma) |
 | **Versiyon** | v0.14.1 | v0.13.0 | v0.21.0 |
 | **Lisans** | Apache 2.0 | MIT | Apache 2.0 |
 | **Dil** | Python | Python | Python + Colang DSL |
-| **LLM Destegi** | Ollama, OpenAI, HF | OpenAI-compat | Ollama, OpenAI, HF |
+| **LLM Desteği** | Ollama, OpenAI, HF | OpenAI-compat | Ollama, OpenAI, HF |
 | **Kurulum** | `pip install garak` | `pip install pyrit` | `pip install nemoguardrails` |
 
-## 2. Kapsam Karsilastirmasi
+## 2. Kapsam Karşılaştırması
 
-### Garak -- Genis Otomatik Tarama
+### Garak -- Geniş Otomatik Tarama
 - **37 kategori, 181+ probe** (aktif)
-- Her probe yuzlerce permutasyon uretir (256 varsayilan)
+- Her probe yüzlerce permütasyon üretir (256 varsayılan)
 - OWASP LLM Top 10'un ~8/10'unu kapsar
 - Tek komutla tam model tarama
-- Sonuc: JSONL rapor + HTML ozet
+- Sonuç: JSONL rapor + HTML özet
 
-**Gucleri:**
-- En genis kapsam -- encoding, dan, promptinject, leakreplay, packagehallucination...
+**Güçleri:**
+- En geniş kapsam -- encoding, dan, promptinject, leakreplay, packagehallucination...
 - Otomatik ve tekrarlanabilir
-- Tier bazli model karsilastirmasi
+- Tier bazlı model karşılaştırması
 
-**Zayifliklari:**
-- Cok yavas -- full scan saatler/gunler surebilir
-- Probe basi 256 permutasyon genellikle gereksiz fazla
-- Basari tespiti (detector) bazen yaniltici
-- Ollama ile timeout sorunlari (yavaş modeller)
+**Zayıflıkları:**
+- Çok yavaş -- full scan saatler/günler sürebilir
+- Probe başı 256 permütasyon genellikle gereksiz fazla
+- Başarı tespiti (detector) bazen yanıltıcı
+- Ollama ile timeout sorunları (yavaş modeller)
 
 ### PyRIT -- Stratejik Red Team
-- **5 saldiri stratejisi:** Single-turn, Crescendo, TAP, PAIR, XPIA
-- Multi-turn escalation destegi
-- Saldiri hafizasi (SQLite)
-- Programatik saldiri zincirleri
+- **5 saldırı stratejisi:** Single-turn, Crescendo, TAP, PAIR, XPIA
+- Multi-turn escalation desteği
+- Saldırı hafızası (SQLite)
+- Programatik saldırı zincirleri
 
-**Gucleri:**
-- Multi-turn saldirilar (Crescendo, TAP) -- Garak'ta yok
-- Saldiri sonuclarini hafizada tutar ve analiz eder
-- Daha "akilli" saldiri -- hedefli, adapte olan
-- Microsoft'un kendi red team deneyiminden turetilmis
+**Güçleri:**
+- Multi-turn saldırılar (Crescendo, TAP) -- Garak'ta yok
+- Saldırı sonuçlarını hafızada tutar ve analiz eder
+- Daha "akıllı" saldırı -- hedefli, adapte olan
+- Microsoft'un kendi red team deneyiminden türetilmiş
 
-**Zayifliklari:**
-- Kucuk modeller JSON format sorunu (rationale_behind_jailbreak key eksik)
-- Ollama entegrasyonu OpenAI-compat uzerinden, bazen uyumsuz
-- Daha az probe cesidi -- stratejik derinlik var ama genislik yok
-- Dokumantasyon karmasik
+**Zayıflıkları:**
+- Küçük modeller JSON format sorunu (rationale_behind_jailbreak key eksik)
+- Ollama entegrasyonu OpenAI-compat üzerinden, bazen uyumsuz
+- Daha az probe çeşidi -- stratejik derinlik var ama genişlik yok
+- Dokümantasyon karmaşık
 
 ### NeMo Guardrails -- Programlanabilir Savunma
-- **Colang DSL** ile dialog akis tanimlama
+- **Colang DSL** ile dialog akış tanımlama
 - Input/output rail'leri
-- Self-check mekanizmasi (LLM-based)
+- Self-check mekanizması (LLM-based)
 - Jailbreak detection rail
 
-**Gucleri:**
-- Savunma tarafi -- diger ikisi saldiri odakli
-- Colang DSL ile okunabilir kural tanimlama
-- Modular rail sistemi -- istedigin korumayı ekle/cikar
-- Prod-ready -- gercek uygulamalara entegre edilebilir
+**Güçleri:**
+- Savunma tarafı -- diğer ikisi saldırı odaklı
+- Colang DSL ile okunabilir kural tanımlama
+- Modüler rail sistemi -- istediğin korumayı ekle/çıkar
+- Prod-ready -- gerçek uygulamalara entegre edilebilir
 
-**Zayifliklari:**
-- Her prompt icin 3 LLM cagrisi (input check + response + output check) -- yavas
-- Ollama ile performans sorunu (kucuk modeller)
-- Self-check sadece LLM kadar iyi -- kucuk modeller zayif
-- Colang v1 vs v2 geciş sureci
+**Zayıflıkları:**
+- Her prompt için 3 LLM çağrısı (input check + response + output check) -- yavaş
+- Ollama ile performans sorunu (küçük modeller)
+- Self-check sadece LLM kadar iyi -- küçük modeller zayıf
+- Colang v1 vs v2 geçiş süreci
 
-## 3. OWASP LLM Top 10 Kapsami
+## 3. OWASP LLM Top 10 Kapsamı
 
 | OWASP | Garak | PyRIT | NeMo | VulnLLM (Kendi) |
 |-------|-------|-------|------|-----------------|
@@ -89,76 +89,76 @@
 | LLM09 Misinformation | 7 probe | -- | Fact-check rail | 12 teknik |
 | LLM10 Unbounded | -- | -- | Rate limit | 12 teknik |
 
-**En Genis:** Garak (8/10 OWASP)
+**En Geniş:** Garak (8/10 OWASP)
 **En Derin:** PyRIT (LLM01 multi-turn)
-**En Pratik:** NeMo (savunma odakli)
-**En Kapsamli:** VulnLLM (10/10 OWASP, 194 teknik)
+**En Pratik:** NeMo (savunma odaklı)
+**En Kapsamlı:** VulnLLM (10/10 OWASP, 194 teknik)
 
-## 4. Performans Karsilastirmasi
+## 4. Performans Karşılaştırması
 
-Test ortami: Ollama, dolphin-mistral (sansursuz), llama3.2:3b
+Test ortamı: Ollama, dolphin-mistral (sansürsüz), llama3.2:3b
 
 | Metrik | Garak | PyRIT | NeMo |
 |--------|-------|-------|------|
-| Kurulum suresi | ~5 dk | ~10 dk | ~5 dk |
-| Ilk tarama suresi | ~2-3 saat (smart) | ~5 dk (single-turn) | ~2 dk (8 test) |
-| Probe basi sure | ~25-100s | ~10-30s | ~5-15s |
-| Bellek kullanimi | Orta | Yuksek (SQLite) | Dusuk |
-| Timeout riski | Yuksek | Orta | Dusuk |
+| Kurulum süresi | ~5 dk | ~10 dk | ~5 dk |
+| İlk tarama süresi | ~2-3 saat (smart) | ~5 dk (single-turn) | ~2 dk (8 test) |
+| Probe başı süre | ~25-100s | ~10-30s | ~5-15s |
+| Bellek kullanımı | Orta | Yüksek (SQLite) | Düşük |
+| Timeout riski | Yüksek | Orta | Düşük |
 
-## 5. Entegrasyon ve Kullanilabilirlik
+## 5. Entegrasyon ve Kullanılabilirlik
 
-| Ozellik | Garak | PyRIT | NeMo |
+| Özellik | Garak | PyRIT | NeMo |
 |---------|-------|-------|------|
-| CLI arayuz | Guclu | Zayif | Orta |
-| Python API | Orta | Guclu | Guclu |
-| Rapor formati | JSONL + HTML | SQLite DB | Terminal |
+| CLI arayüz | Güçlü | Zayıf | Orta |
+| Python API | Orta | Güçlü | Güçlü |
+| Rapor formatı | JSONL + HTML | SQLite DB | Terminal |
 | CI/CD entegrasyonu | Kolay | Orta | Kolay |
 | Custom probe/rule | Evet | Evet | Evet (Colang) |
-| Ollama destegi | Native | OpenAI-compat | Native |
+| Ollama desteği | Native | OpenAI-compat | Native |
 
 ## 6. Hangi Durumda Hangisini Kullan?
 
 ### Garak Kullan:
-- Model deployment oncesi kapsamli zafiyet taramasi
-- Regresyon testi (yeni model versiyonu ciktiginda)
+- Model deployment öncesi kapsamlı zafiyet taraması
+- Regresyon testi (yeni model versiyonu çıktığında)
 - Compliance check (OWASP LLM Top 10 kapsam raporu)
-- Otomatik, tekrarlanabilir tarama gerektiginde
+- Otomatik, tekrarlanabilir tarama gerektiğinde
 
 ### PyRIT Kullan:
 - Hedefli red team operasyonu
-- Multi-turn saldiri senaryolari (Crescendo, TAP)
+- Multi-turn saldırı senaryoları (Crescendo, TAP)
 - Belirli bir zafiyeti derinlemesine test etme
-- Saldiri stratejisi gelistirme ve deneme
+- Saldırı stratejisi geliştirme ve deneme
 
 ### NeMo Guardrails Kullan:
-- LLM uygulamasina koruma ekleme
+- LLM uygulamasına koruma ekleme
 - Input/output filtreleme pipeline kurma
 - Jailbreak/injection koruması
-- Prod ortaminda savunma katmani
+- Prod ortamında savunma katmanı
 
-### VulnLLM (Kendi Araclarimiz) Kullan:
-- Egitim ve ogrenme amacli
+### VulnLLM (Kendi Araçlarımız) Kullan:
+- Eğitim ve öğrenme amaçlı
 - OWASP Top 10 tam kapsam testi
-- Kendi saldiri/savunma tekniklerini gelistirme
+- Kendi saldırı/savunma tekniklerini geliştirme
 - Custom guard yazma ve test etme
 
-## 7. Oneriler
+## 7. Öneriler
 
-1. **Katmanli yaklasim:** Garak (genis tarama) + PyRIT (derin test) + NeMo (savunma)
-2. **Pipeline:** Gelistirme -> NeMo koruma -> Garak tarama -> PyRIT red team -> NeMo ince ayar
+1. **Katmanlı yaklaşım:** Garak (geniş tarama) + PyRIT (derin test) + NeMo (savunma)
+2. **Pipeline:** Geliştirme -> NeMo koruma -> Garak tarama -> PyRIT red team -> NeMo ince ayar
 3. **VulnLLM'i referans olarak kullan:** 194 teknik ve 21 guard kendi baseline'in
-4. **Kendi araclarini entegre et:** LLM Scanner (Garak alternatifi), Firewall (NeMo alternatifi), Detector ML (hizli pre-check)
+4. **Kendi araçlarını entegre et:** LLM Scanner (Garak alternatifi), Firewall (NeMo alternatifi), Detector ML (hızlı pre-check)
 
-## 8. Sonuc
+## 8. Sonuç
 
-Uc arac birbirini tamamliyor -- biri digeri yerine gecmiyor:
+Üç araç birbirini tamamlıyor -- biri diğeri yerine geçmiyor:
 
 ```
-[Saldiri Genisligi]  Garak ████████████░░ (8/10 OWASP, 181 probe)
-[Saldiri Derinligi]  PyRIT ██████████████ (multi-turn, adapte)
+[Saldırı Genişliği]  Garak ████████████░░ (8/10 OWASP, 181 probe)
+[Saldırı Derinliği]  PyRIT ██████████████ (multi-turn, adapte)
 [Savunma]            NeMo  ██████████████ (prod-ready rails)
-[Egitim/Kapsam]      VulnLLM ████████████████ (10/10, 194+21)
+[Eğitim/Kapsam]      VulnLLM ████████████████ (10/10, 194+21)
 ```
 
-En etkili yaklasim: ucu birden kullanmak + kendi araclarini ustune eklemek.
+En etkili yaklaşım: üçü birden kullanmak + kendi araçlarını üstüne eklemek.
