@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-LLM Firewall v1.0 -- AI Guvenlik Duvar
+LLM Firewall v1.0 -- AI Güvenlik Duvarı
 AI/LLM Security Toolkit - Faz 3
 
-Kullanici ile LLM arasina oturan proxy/middleware.
-Input'lari filtreler, output'lari sanitize eder.
-10 guard modulu ile cok katmanli koruma.
+Kullanıcı ile LLM arasına oturan proxy/middleware.
+Input'ları filtreler, output'ları sanitize eder.
+10 guard modülü ile çok katmanlı koruma.
 
-Kullanim:
+Kullanım:
     python llm_firewall.py --proxy --port 8080 --model llama3.2:3b
     python llm_firewall.py --check "test input"
     python llm_firewall.py --check-output "sensitive output"
@@ -235,7 +235,7 @@ class LLMFirewall:
     def check_input(self, text: str) -> tuple[bool, list[GuardResult]]:
         """
         Input'u kontrol et.
-        Returns: (bloklandi_mi, guard_sonuclari)
+        Returns: (bloklandı_mı, guard_sonuçları)
         """
         results: list[GuardResult] = []
         blocked = False
@@ -244,7 +244,7 @@ class LLMFirewall:
             try:
                 result = guard.check(text)
             except Exception as e:
-                result = GuardResult(blocked=False, reason=f"Guard hatasi: {e}", guard_name=getattr(guard, 'name', '?'))
+                result = GuardResult(blocked=False, reason=f"Guard hatası: {e}", guard_name=getattr(guard, 'name', '?'))
 
             results.append(result)
             self._audit.log("input_check", getattr(guard, 'name', '?'), result, input_text=text)
@@ -263,7 +263,7 @@ class LLMFirewall:
     def check_output(self, text: str) -> tuple[str, bool, list[GuardResult]]:
         """
         Output'u kontrol et ve sanitize et.
-        Returns: (sanitize_edilmis_text, sorun_var_mi, guard_sonuclari)
+        Returns: (sanitize_edilmiş_text, sorun_var_mı, guard_sonuçları)
         """
         results: list[GuardResult] = []
         sanitized = text
@@ -273,7 +273,7 @@ class LLMFirewall:
             try:
                 result = guard.check(sanitized)
             except Exception as e:
-                result = GuardResult(blocked=False, reason=f"Guard hatasi: {e}", guard_name=getattr(guard, 'name', '?'))
+                result = GuardResult(blocked=False, reason=f"Guard hatası: {e}", guard_name=getattr(guard, 'name', '?'))
 
             results.append(result)
             self._audit.log("output_check", getattr(guard, 'name', '?'), result, output_text=sanitized)
@@ -312,7 +312,7 @@ class LLMFirewall:
                 "output_results": [],
             }
 
-        # 2. Ollama'ya gonder
+        # 2. Ollama'ya gönder
         try:
             response = self._call_ollama(user_message)
         except Exception as e:
@@ -341,7 +341,7 @@ class LLMFirewall:
         }
 
     def _call_ollama(self, user_message: str) -> str:
-        """Ollama'ya istek gonder."""
+        """Ollama'ya istek gönder."""
         body = json.dumps({
             "model": self.config.ollama_model,
             "messages": [
@@ -431,7 +431,7 @@ class FirewallProxyHandler(BaseHTTPRequestHandler):
             return
 
         if self.path == "/firewall/check":
-            # Direkt kontrol (Ollama'ya gondermeden)
+            # Direkt kontrol (Ollama'ya göndermeden)
             text = data.get("text", "")
             direction = data.get("direction", "input")
             if direction == "input":
@@ -450,13 +450,13 @@ class FirewallProxyHandler(BaseHTTPRequestHandler):
             return
 
         if self.path in ("/v1/chat/completions", "/api/chat"):
-            # Chat proxy -- input filtrele, Ollama'ya gonder, output filtrele
+            # Chat proxy -- input filtrele, Ollama'ya gönder, output filtrele
             messages = data.get("messages", [])
             if not messages:
                 self._respond(400, {"error": "'messages' alani gerekli."})
                 return
 
-            # Son kullanici mesajini al
+            # Son kullanıcı mesajını al
             user_msg = ""
             for msg in reversed(messages):
                 if msg.get("role") == "user":
@@ -538,7 +538,7 @@ COLORS = {
 
 
 def print_check_result(direction: str, text: str, blocked: bool, results: list[GuardResult]):
-    """Tek kontrol sonucunu yazdir."""
+    """Tek kontrol sonucunu yazdır."""
     b = COLORS["BOLD"]
     r = COLORS["RESET"]
     d = COLORS["DIM"]
@@ -633,22 +633,22 @@ def main():
             "  POST /api/chat             -- Ollama native\n"
             "  POST /firewall/check       -- Direkt kontrol\n"
             "  GET  /firewall/stats       -- Istatistikler\n"
-            "  GET  /firewall/health      -- Saglik kontrolu\n"
+            "  GET  /firewall/health      -- Sağlık kontrolü\n"
         ),
     )
-    parser.add_argument("--check", metavar="TEXT", help="Input kontrolu yap")
-    parser.add_argument("--check-output", metavar="TEXT", help="Output kontrolu yap")
+    parser.add_argument("--check", metavar="TEXT", help="Input kontrolü yap")
+    parser.add_argument("--check-output", metavar="TEXT", help="Output kontrolü yap")
     parser.add_argument("--interactive", "-i", action="store_true", help="Interaktif mod")
     parser.add_argument("--proxy", action="store_true", help="HTTP proxy mod")
-    parser.add_argument("--port", type=int, default=8080, help="Proxy portu (varsayilan: 8080)")
-    parser.add_argument("--model", default="llama3.2:3b", help="Ollama modeli (varsayilan: llama3.2:3b)")
+    parser.add_argument("--port", type=int, default=8080, help="Proxy portu (varsayılan: 8080)")
+    parser.add_argument("--model", default="llama3.2:3b", help="Ollama modeli (varsayılan: llama3.2:3b)")
     parser.add_argument("--ollama-url", default="http://localhost:11434", help="Ollama URL")
     parser.add_argument("--config", help="Konfigurasyon dosyasi (JSON)")
     parser.add_argument("--generate-config", action="store_true", help="Varsayilan konfigurasyon dosyasi olustur")
     parser.add_argument("--log", help="Event log dosyasi")
-    parser.add_argument("--json", "-j", action="store_true", help="JSON cikti")
-    parser.add_argument("--stats", action="store_true", help="Log dosyasindan istatistik goster")
-    parser.add_argument("--action", default="block", choices=["block", "log", "warn"], help="Tespit aksiyon (varsayilan: block)")
+    parser.add_argument("--json", "-j", action="store_true", help="JSON çıktı")
+    parser.add_argument("--stats", action="store_true", help="Log dosyasından istatistik göster")
+    parser.add_argument("--action", default="block", choices=["block", "log", "warn"], help="Tespit aksiyonu (varsayılan: block)")
 
     args = parser.parse_args()
 
@@ -767,7 +767,7 @@ def main():
         print(f"Input guard:  {len(firewall._input_guards)} aktif")
         print(f"Output guard: {len(firewall._output_guards)} aktif")
         print(f"\nKomutlar: {info}/stats{r} | {info}/guards{r} | {info}/exit{r}")
-        print(f"Cikmak icin 'exit' veya Ctrl+C\n")
+        print(f"Çıkmak için 'exit' veya Ctrl+C\n")
 
         while True:
             try:
@@ -837,13 +837,13 @@ def main():
         print(f"  POST /api/chat             -- Ollama native")
         print(f"  POST /firewall/check       -- Direkt kontrol")
         print(f"  GET  /firewall/stats       -- Istatistikler")
-        print(f"  GET  /firewall/health      -- Saglik kontrolu")
+        print(f"  GET  /firewall/health      -- Sağlık kontrolü")
         print(f"\n{info}Ornek:{r}")
         example_body = '{"messages": [{"role": "user", "content": "merhaba"}]}'
         print(f"  curl -X POST http://localhost:{config.proxy_port}/v1/chat/completions \\")
         print(f"    -H 'Content-Type: application/json' \\")
         print(f"    -d '{example_body}'")
-        print(f"\nDurdurmak icin Ctrl+C\n")
+        print(f"\nDurdurmak için Ctrl+C\n")
 
         server = HTTPServer(("0.0.0.0", config.proxy_port), FirewallProxyHandler)
         try:
