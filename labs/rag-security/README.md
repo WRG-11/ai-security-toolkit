@@ -33,7 +33,7 @@ User Query
 Response (potentially leaking confidential data)
 ```
 
-## Documents / Dokumanlar
+## Documents / Dokümanlar
 
 | Document | Classification | Content |
 |----------|---------------|---------|
@@ -48,7 +48,7 @@ Response (potentially leaking confidential data)
 | poisoned_faq.md | POISONED | Injected malicious content |
 | poisoned_policy.md | POISONED | Injected override instructions |
 
-## Attack Scenarios / Saldiri Senaryolari
+## Attack Scenarios / Saldırı Senaryoları
 
 ### 1. Direct Disclosure
 Ask the RAG system about confidential topics — it retrieves and reveals them.
