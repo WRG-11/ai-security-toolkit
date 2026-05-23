@@ -10,7 +10,9 @@
 
 If you discover a security vulnerability in this project, please report it responsibly.
 
-**Email**: yakuphan.yucel11@gmail.com
+**Use GitHub Security Advisories** (private vulnerability disclosure):
+
+- https://github.com/WRG-11/ai-security-toolkit/security/advisories
 
 Please include:
 - Description of the vulnerability
