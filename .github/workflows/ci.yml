@@ -33,3 +33,36 @@ jobs:
           python-version: "3.12"
       - run: pip install ruff
       - run: ruff check tools/ tests/
+
+  self-scan:
+    # Cross-portfolio dogfood: scan this repo with our sister wrg-devguard
+    # package (R89-03 dogfooding map Opp X-1). Self-attestation: "this
+    # WRG-11 AI security toolkit is audited with the sister WRG-11 security
+    # tool we ship to others."
+    #
+    # continue-on-error: true is intentional for this repo because the
+    # offensive security tooling (tools/llm_scanner attack probes,
+    # labs/vulnllm/ intentionally-vulnerable code, CTF writeups with
+    # documented bypass payloads) WILL contain strings that look like
+    # secrets / prompt-injection markers / unsafe patterns to a generic
+    # security scanner. The job's purpose is signal generation + baseline
+    # tracking, not red-light gate. Tighten when an allowlist file lands
+    # (R89-04+ candidate).
+    name: self-scan (wrg-devguard on itself; signal-only)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.12"
+      - name: Install wrg-devguard from PyPI
+        run: pip install wrg-devguard
+      - name: Scan own source
+        run: wrg-devguard check --path . --fail-on error --json-out self-scan.json
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-scan-report
+          path: self-scan.json
