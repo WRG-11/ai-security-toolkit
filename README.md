@@ -121,6 +121,19 @@ Bu araçlar **yalnızca eğitim ve yetkili güvenlik testi** içindir. İzinsiz 
 
 ---
 
+## Sister WRG-11 packages
+
+Part of the WRG-11 portfolio:
+
+- [`instinct-mcp`](https://pypi.org/project/instinct-mcp/) -- MCP server for capturing recurring patterns into structured memory
+- [`wrg-devguard`](https://pypi.org/project/wrg-devguard/) -- Developer-first AI safety: prompt-policy lint + secret scanning + log scanning with PII detection
+- [`wrg-mcp-server`](https://pypi.org/project/wrg-mcp-server/) -- MCP bridge for the WinstonRedGuard monorepo
+- [`wrg-rule-lab`](https://pypi.org/project/wrg-rule-lab/) -- Local-first deterministic rule evaluation engine (zero-dep, stdlib-only)
+
+Built by [WRG-11](https://github.com/WRG-11).
+
+---
+
 ## License
 
 MIT License - see [LICENSE](LICENSE)
