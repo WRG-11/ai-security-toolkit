@@ -2,26 +2,26 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![Zero deps](https://img.shields.io/badge/dependencies-stdlib%20only-34D058.svg)](https://github.com/WRG-11/ai-security-toolkit)
+[![Core stdlib](https://img.shields.io/badge/core%20tools-stdlib%20only-34D058.svg)](https://github.com/WRG-11/ai-security-toolkit)
 [![OWASP LLM Top 10](https://img.shields.io/badge/OWASP%20LLM%20Top%2010-10%2F10-blueviolet.svg)](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
 [![CTF score](https://img.shields.io/badge/CTF-16%2F16-yellow.svg)](#ctf-writeups)
 
 > ⚠️ **For educational and authorized security testing only. Do not use against systems without explicit permission.**
 
-**Offensive & defensive AI/LLM security tools, labs, CTF writeups, and research — all zero-dependency Python stdlib.**
+**Offensive & defensive AI/LLM security tools, labs, CTF writeups, and research — core tools zero-dependency Python stdlib (labs/RAG/CTF may pull external deps for ML experimentation).**
 
 ---
 
 ## Why this exists
 
-Working AI/LLM security tooling sits across a fragmented landscape: academic frameworks (PyRIT, Garak) target researchers; vendor SDKs (NeMo Guardrails, Lakera) target enterprises; CTF platforms (Gandalf, ODIN) test attack creativity but don't ship tools. There's room for a **practitioner-focused, zero-dependency Python toolkit** that bundles:
+Working AI/LLM security tooling sits across a fragmented landscape: academic frameworks (PyRIT, Garak) target researchers; vendor SDKs (NeMo Guardrails, Lakera) target enterprises; CTF platforms (Gandalf, ODIN) test attack creativity but don't ship tools. There's room for a **practitioner-focused Python toolkit with zero-dep core tools** that bundles:
 
 1. **Production-ready offensive + defensive tools** you can `pip install`-equivalent (just clone) and run
 2. **Hands-on labs** for learning OWASP LLM Top 10 attacks + defenses
 3. **CTF writeups** with novel techniques (not just walkthroughs)
 4. **Research** comparing the existing frameworks honestly
 
-This repo is that toolkit. Everything is stdlib-only Python and MIT-licensed.
+This repo is that toolkit. Core tools (Tools section below) are stdlib-only Python; labs / RAG / CTF / HF experiments may pull external deps (chromadb, requests, gradio) for ML/RAG demonstration. All MIT-licensed.
 
 ## Who is this for
 
