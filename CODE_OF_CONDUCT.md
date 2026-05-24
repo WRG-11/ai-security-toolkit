@@ -30,7 +30,9 @@ Examples of unacceptable behavior:
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the project maintainers at yakuphan.yucel11@gmail.com.
+reported via GitHub Security Advisories at
+https://github.com/WRG-11/ai-security-toolkit/security/advisories/new
+(private, tracked — sister SECURITY.md disclosure channel).
 
 All complaints will be reviewed and investigated promptly and fairly.
 
