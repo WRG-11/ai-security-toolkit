@@ -316,7 +316,19 @@ class CanarySystem(OutputGuard):
             self.token = "CANARY_" + hashlib.sha256(seed.encode()).hexdigest()[:10]
 
         # Token'in parcalari (partial leakage tespiti icin)
-        self.token_parts = [self.token[i:i+4] for i in range(0, len(self.token), 4)]
+        # R89-16b H AI-W7-03: previously kept every 4-char chunk including
+        # the trailing 1-3 char remainder (token length 17 → chunks of
+        # 4/4/4/4/1). A 1-char fragment matches in practically any plain
+        # English text — `found_parts >= 3` fired on benign output, the
+        # canary system blocked legitimate LLM responses (false positive).
+        # Defence got turned against itself: attacker triggers FP storm,
+        # operator disables CanarySystem, real prompt-leakage detection
+        # goes dark. Minimum 4-char-chunk guard restores signal.
+        self.token_parts = [
+            self.token[i : i + 4]
+            for i in range(0, len(self.token), 4)
+            if len(self.token[i : i + 4]) >= 4
+        ]
 
     def inject(self, prompt: str) -> str:
         """Prompt'a canary token ekle."""
