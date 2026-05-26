@@ -246,9 +246,29 @@ class LLMFirewall:
                 guard = cls()
             self._output_guards.append(guard)
 
-    def check_input(self, text: str) -> tuple[bool, list[GuardResult]]:
+    def check_input(
+        self,
+        text: str,
+        context: Optional[dict] = None,
+    ) -> tuple[bool, list[GuardResult]]:
         """
         Input'u kontrol et.
+
+        Args:
+            text:    User input to evaluate.
+            context: Optional per-request metadata forwarded to each
+                     InputGuard. Recognised keys (consumer-dependent):
+                       - session_id : str  (MultiTurnTracker per-session
+                                            state isolation; absence
+                                            collapses all traffic into a
+                                            single 'default' bucket)
+                       - user_id    : str  (rate-limit/audit attribution)
+                     Added 2026-05-27 R89-26b AI-L2-02 -- previously
+                     MultiTurnTracker (when wired via AI-L2-01) always
+                     ran against the 'default' session because no
+                     caller threaded context through; Pattern P11-1
+                     sub-class 'wired-but-no-data-flow'.
+
         Returns: (bloklandı_mı, guard_sonuçları)
         """
         results: list[GuardResult] = []
@@ -256,7 +276,10 @@ class LLMFirewall:
 
         for guard in self._input_guards:
             try:
-                result = guard.check(text)
+                # InputGuard contract (base.py): .check(text, context=None).
+                # Forward context so per-session guards see real session_id
+                # rather than collapsing into the 'default' bucket.
+                result = guard.check(text, context)
             except Exception as e:
                 result = GuardResult(blocked=False, reason=f"Guard hatası: {e}", guard_name=getattr(guard, 'name', '?'))
 
@@ -274,9 +297,21 @@ class LLMFirewall:
 
         return blocked, results
 
-    def check_output(self, text: str) -> tuple[str, bool, list[GuardResult]]:
+    def check_output(
+        self,
+        text: str,
+        context: Optional[dict] = None,
+    ) -> tuple[str, bool, list[GuardResult]]:
         """
         Output'u kontrol et ve sanitize et.
+
+        Args:
+            text:    LLM output to evaluate/sanitize.
+            context: Optional per-request metadata forwarded to each
+                     OutputGuard (same keys as check_input). Added
+                     2026-05-27 R89-26b AI-L2-02 for symmetry / future
+                     use; current built-in OutputGuards ignore context.
+
         Returns: (sanitize_edilmiş_text, sorun_var_mı, guard_sonuçları)
         """
         results: list[GuardResult] = []
@@ -285,7 +320,7 @@ class LLMFirewall:
 
         for guard in self._output_guards:
             try:
-                result = guard.check(sanitized)
+                result = guard.check(sanitized, context)
             except Exception as e:
                 result = GuardResult(blocked=False, reason=f"Guard hatası: {e}", guard_name=getattr(guard, 'name', '?'))
 
@@ -306,15 +341,30 @@ class LLMFirewall:
 
         return sanitized, has_issues, results
 
-    def process_request(self, user_message: str) -> dict:
+    def process_request(
+        self,
+        user_message: str,
+        context: Optional[dict] = None,
+    ) -> dict:
         """
         Tam pipeline: input check → Ollama → output check.
+
+        Args:
+            user_message: Raw user input.
+            context: Optional per-request metadata. Threaded into both
+                input and output guard pipelines so per-session
+                stateful guards (MultiTurnTracker, rate limiter) see
+                the actual session/user identity. Without it they
+                collapse all traffic into a single 'default' bucket
+                (Pattern P11-1 'wired-but-no-data-flow' sub-class;
+                R89-26b AI-L2-02 closure).
+
         Returns: {"response": str, "blocked": bool, "input_results": [...], "output_results": [...]}
         """
         self.stats["total_requests"] += 1
 
         # 1. Input check
-        input_blocked, input_results = self.check_input(user_message)
+        input_blocked, input_results = self.check_input(user_message, context)
         if input_blocked:
             self.stats["input_blocked"] += 1
             block_reason = next((r.reason for r in input_results if r.blocked), "Bilinmeyen")
@@ -339,7 +389,7 @@ class LLMFirewall:
             }
 
         # 3. Output check + sanitize
-        sanitized, has_issues, output_results = self.check_output(response)
+        sanitized, has_issues, output_results = self.check_output(response, context)
         if has_issues:
             self.stats["output_sanitized"] += 1
         else:
