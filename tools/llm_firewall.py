@@ -46,6 +46,11 @@ from defenses import (
     ContentPolicyEngine,
     HallucinationDetector,
     PromptFirewall,
+    # R89-26b AI-L2-01: previously exported but never wired into the
+    # input guard registry below -- Pattern P11-1 "registered-but-not-
+    # wired" 1st instance. Adding them here closes the consumer gap.
+    MultiTurnTracker,
+    SlidingWindowRateLimiter,
 )
 
 # ═══════════════════════════════════════════════════════════
@@ -59,6 +64,15 @@ INPUT_GUARD_REGISTRY: dict[str, type] = {
     "PerplexityFilter": PerplexityFilter,
     "PromptInjectionClassifier": PromptInjectionClassifier,
     "MLInjectionClassifier": MLInjectionClassifier,
+    # R89-26b AI-L2-01 wire-up (P11-1 closure). Opt-in via config --
+    # not added to DEFAULT_CONFIG.input_guards because:
+    #   * MultiTurnTracker needs session_id context to function as
+    #     designed (per-session; see AI-L2-02 / R89-26b Fix 4); without
+    #     context piping it degrades to a single shared "default" bucket.
+    #   * SlidingWindowRateLimiter defaults block at 20 req/60s which
+    #     would surprise existing pipelines. Operator must opt in.
+    "MultiTurnTracker": MultiTurnTracker,
+    "SlidingWindowRateLimiter": SlidingWindowRateLimiter,
 }
 
 OUTPUT_GUARD_REGISTRY: dict[str, type] = {
