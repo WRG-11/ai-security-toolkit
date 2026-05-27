@@ -29,7 +29,6 @@ import sys
 import unittest
 from pathlib import Path
 
-
 _TOOLS = Path(__file__).resolve().parents[1] / "tools"
 if str(_TOOLS) not in sys.path:
     sys.path.insert(0, str(_TOOLS))
@@ -101,6 +100,7 @@ class FirewallContextPiping(unittest.TestCase):
         """Public entry point must accept context (proxy/handler will
         extract session_id from headers/cookies)."""
         import inspect
+
         import llm_firewall
         sig = inspect.signature(llm_firewall.LLMFirewall.process_request)
         self.assertIn("context", sig.parameters,
