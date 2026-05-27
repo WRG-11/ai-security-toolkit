@@ -15,7 +15,8 @@ Ref: OpenAI Usage Policies, Anthropic Acceptable Use Policy
 
 import re
 from dataclasses import dataclass
-from .base import OutputGuard, GuardResult
+
+from .base import GuardResult, OutputGuard
 
 
 @dataclass
@@ -132,15 +133,43 @@ class ContentPolicyEngine(OutputGuard):
         policies: list[PolicyRule] | None = None,
         threshold: float = 0.6,
     ):
+        # R89-28b AI-CP-03: threshold validation. Pre-fix any float was
+        # accepted -- threshold=999.0 made every input pass-through,
+        # threshold=-1.0 blocked everything. Fail-fast at construction.
+        try:
+            t = float(threshold)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"ContentPolicyEngine threshold must be a real number "
+                f"in [0.0, 1.0], got {threshold!r}"
+            ) from exc
+        if not 0.0 <= t <= 1.0:
+            raise ValueError(
+                f"ContentPolicyEngine threshold must be in [0.0, 1.0], "
+                f"got {threshold!r}"
+            )
         self.policies = policies or DEFAULT_POLICIES
-        self.threshold = threshold
+        self.threshold = t
 
-        # Regex'leri önceden derle
+        # Regex'leri önceden derle.
+        # R89-28b AI-CP-04: pre-fix a single malformed regex in any
+        # policy aborted compile -> ContentPolicyEngine() construction
+        # raised re.error -> defense pipeline never started. Now we
+        # log + skip malformed patterns so one bad rule cannot disable
+        # the whole engine.
+        import logging  # localised: file's top-of-module imports left intact
+        _log = logging.getLogger(__name__)
         self._compiled: list[tuple[PolicyRule, list[re.Pattern]]] = []
         for policy in self.policies:
-            compiled_patterns = [
-                re.compile(p, re.IGNORECASE) for p in policy.patterns
-            ]
+            compiled_patterns: list[re.Pattern] = []
+            for p in policy.patterns:
+                try:
+                    compiled_patterns.append(re.compile(p, re.IGNORECASE))
+                except re.error as exc:
+                    _log.warning(
+                        "Invalid regex %r in policy %s: %s -- skipped",
+                        p, getattr(policy, "name", "<unnamed>"), exc,
+                    )
             self._compiled.append((policy, compiled_patterns))
 
     def _check_policy(self, text: str, policy: PolicyRule,
