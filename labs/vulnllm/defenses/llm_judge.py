@@ -8,7 +8,11 @@ Tasarım kararları:
 - Sync HTTP (async yok) — basitlik
 - 10s timeout — yavaş yanıt beklemekten iyisi fail-open
 - Hash-based cache — aynı sorguyu tekrar sorgulama
-- Ollama yoksa sessizce devre dışı (fail-open)
+- R89-28b AI-J-01 (2026-05-27): Ollama yoksa default = FAIL-CLOSED
+  (block, confidence=1.0). Geriye uyumluluk icin opt-in flag
+  `allow_judge_unavailable=True` ile eski fail-open davranisi
+  yeniden etkinlestirilebilir. "By design" comment'inin altinda
+  yatan tasarim hatasi: security control fail-open kabul edilemez.
 
 Ref: Inan et al. (2023) — Llama Guard, arXiv:2312.06674
 """
@@ -16,9 +20,17 @@ Ref: Inan et al. (2023) — Llama Guard, arXiv:2312.06674
 import hashlib
 import json
 import re
-import urllib.request
 import urllib.error
-from .base import InputGuard, OutputGuard, GuardResult
+import urllib.request
+
+from .base import GuardResult, InputGuard, OutputGuard
+
+# R89-28b AI-J-02 truncation bypass closure: sliding-window length
+# for front+back judge sampling. Attacker that front-loads 500 chars
+# of benign content then puts the payload at position 501+ would
+# slip past the original `text[:500]` truncation. We now sample
+# both ends; any-unsafe = unsafe aggregation downstream.
+_JUDGE_CHUNK_TOKENS = 500
 
 
 # Judge'ın kullanacağı değerlendirme prompt'u
@@ -60,11 +72,21 @@ class LLMAsJudge(InputGuard, OutputGuard):
         timeout: float = 10.0,
         threshold: float = 0.7,
         cache_size: int = 256,
+        allow_judge_unavailable: bool = False,
     ):
+        # R89-28b AI-J-01: allow_judge_unavailable defaults to False --
+        # fail-closed when Ollama is down or queries fail. Pre-fix this
+        # was unconditionally fail-open (verdict='safe'), which the
+        # original 'by design' comment treated as acceptable. It is not:
+        # an unavailable security control cannot announce 'all clear'.
+        # Set allow_judge_unavailable=True to preserve the legacy
+        # behaviour for non-prod / lab work (a "tripwire" pre-prod
+        # signal that the optional Ollama judge is offline).
         self.model = model
         self.ollama_url = ollama_url.rstrip("/")
         self.timeout = timeout
         self.threshold = threshold
+        self.allow_judge_unavailable = allow_judge_unavailable
         self._cache: dict[str, dict] = {}
         self._cache_size = cache_size
         self._available: bool | None = None  # lazy check
@@ -89,18 +111,34 @@ class LLMAsJudge(InputGuard, OutputGuard):
         h = hashlib.sha256(f"{mode}:{text}".encode()).hexdigest()[:16]
         return h
 
-    def _query_ollama(self, text: str, mode: str) -> dict:
-        """Ollama'ya sorgu gönder ve JSON yanıt al."""
+    def _build_chunks(self, text: str) -> list[str]:
+        """R89-28b AI-J-02: sliding window front + back sampling.
+
+        Pre-fix the judge only saw text[:500] -- an attacker that
+        front-loaded 500 chars of benign content placed the payload
+        beyond the truncation boundary and bypassed evaluation.
+        Now we sample both ends so a payload at either edge gets
+        seen. Texts shorter than the chunk size return as a single
+        chunk. Middle-sampling for very long inputs is a follow-up
+        candidate (brief Q1 reco scope-creep avoid).
+        """
+        if len(text) <= _JUDGE_CHUNK_TOKENS:
+            return [text]
+        return [text[:_JUDGE_CHUNK_TOKENS], text[-_JUDGE_CHUNK_TOKENS:]]
+
+    def _query_ollama_chunk(self, chunk: str, mode: str) -> dict:
+        """Single Ollama chunk query (the original _query_ollama
+        body, isolated for reuse by sliding-window aggregator)."""
         # Cache kontrol
-        key = self._cache_key(text, mode)
+        key = self._cache_key(chunk, mode)
         if key in self._cache:
             return self._cache[key]
 
         # Template seç
         if mode == "input":
-            user_msg = JUDGE_INPUT_TEMPLATE.format(text=text[:500])
+            user_msg = JUDGE_INPUT_TEMPLATE.format(text=chunk)
         else:
-            user_msg = JUDGE_OUTPUT_TEMPLATE.format(text=text[:500])
+            user_msg = JUDGE_OUTPUT_TEMPLATE.format(text=chunk)
 
         payload = {
             "model": self.model,
@@ -137,9 +175,54 @@ class LLMAsJudge(InputGuard, OutputGuard):
 
             return verdict
 
-        except (urllib.error.URLError, OSError, json.JSONDecodeError, KeyError):
-            # Fail-open: hata durumunda safe dön
-            return {"verdict": "safe", "confidence": 0.0, "reason": "judge unavailable"}
+        except (urllib.error.URLError, OSError, json.JSONDecodeError, KeyError) as exc:
+            # R89-28b AI-J-01: default = FAIL-CLOSED. Pre-fix this
+            # branch returned 'safe' unconditionally, which let any
+            # Ollama outage / timeout / malformed response silently
+            # disable the judge. Opt-in fail-open via init param.
+            if self.allow_judge_unavailable:
+                return {
+                    "verdict": "safe",
+                    "confidence": 0.0,
+                    "reason": f"judge_unavailable_allowed: {type(exc).__name__}",
+                }
+            return {
+                "verdict": "unsafe",
+                "confidence": 1.0,
+                "reason": f"judge_unavailable_fail_closed: {type(exc).__name__}",
+            }
+
+    def _query_ollama(self, text: str, mode: str) -> dict:
+        """R89-28b AI-J-02: sliding-window aggregator.
+
+        Splits long inputs into front+back chunks, queries the
+        judge per chunk, returns the AGGREGATED verdict
+        (any-unsafe => unsafe; max-confidence; concatenated
+        reasons). Backward compatible signature.
+        """
+        chunks = self._build_chunks(text)
+        if len(chunks) == 1:
+            return self._query_ollama_chunk(chunks[0], mode)
+
+        verdicts = [self._query_ollama_chunk(c, mode) for c in chunks]
+        # Aggregation: any unsafe -> unsafe; pick max-confidence
+        # row for the canonical verdict + reason.
+        any_unsafe = any(v.get("verdict") == "unsafe" for v in verdicts)
+        if any_unsafe:
+            unsafe_rows = [v for v in verdicts if v.get("verdict") == "unsafe"]
+            top = max(unsafe_rows, key=lambda v: v.get("confidence", 0.0))
+            return {
+                "verdict": "unsafe",
+                "confidence": top.get("confidence", 0.6),
+                "reason": "sliding-window any-unsafe: " + top.get("reason", ""),
+            }
+        # All safe -- return the highest-confidence safe row
+        top_safe = max(verdicts, key=lambda v: v.get("confidence", 0.0))
+        return {
+            "verdict": "safe",
+            "confidence": top_safe.get("confidence", 0.0),
+            "reason": "sliding-window all-safe",
+        }
 
     @staticmethod
     def _parse_verdict(content: str) -> dict:
@@ -165,13 +248,29 @@ class LLMAsJudge(InputGuard, OutputGuard):
 
     def _evaluate(self, text: str, mode: str) -> GuardResult:
         """Ortak değerlendirme mantığı."""
-        # Ollama yoksa sessizce geç
+        # R89-28b AI-J-01: Ollama unavailable -> fail-CLOSED by
+        # default (block, confidence=1.0). Pre-fix returned
+        # blocked=False which sequenced a silent fail-open.
         if not self._is_available():
+            if self.allow_judge_unavailable:
+                return GuardResult(
+                    blocked=False,
+                    score=0.0,
+                    guard_name=self.name,
+                    details={
+                        "status": "ollama_unavailable_allowed",
+                        "mode": mode,
+                    },
+                )
             return GuardResult(
-                blocked=False,
-                score=0.0,
+                blocked=True,
+                reason="LLM Judge unavailable (Ollama unreachable); fail-closed",
+                score=1.0,
                 guard_name=self.name,
-                details={"status": "ollama_unavailable", "mode": mode},
+                details={
+                    "status": "ollama_unavailable_fail_closed",
+                    "mode": mode,
+                },
             )
 
         verdict = self._query_ollama(text, mode)
