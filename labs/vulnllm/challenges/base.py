@@ -3,37 +3,47 @@ Challenge Base Class — Tüm challenge'ların temel sınıfı.
 DefenseOrchestrator entegrasyonu ile gelismis savunma destegi.
 """
 
-import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
-from config import Difficulty, C_RESET, C_BOLD, C_RED, C_GREEN, C_YELLOW, C_CYAN, C_DIM, C_MAGENTA, POINTS
-from backend.mock import MockBackend, LLMResponse
-from backend.ollama import OllamaBackend, OllamaResponse, ModelTier
+from backend.mock import LLMResponse, MockBackend
+from backend.ollama import ModelTier, OllamaBackend
+from config import (
+    C_BOLD,
+    C_CYAN,
+    C_DIM,
+    C_GREEN,
+    C_MAGENTA,
+    C_RED,
+    C_RESET,
+    C_YELLOW,
+    POINTS,
+    Difficulty,
+)
 from defenses import (
-    DefenseOrchestrator,
-    PromptInjectionClassifier,
-    PIIScanner,
     CanarySystem,
-    SlidingWindowRateLimiter,
-    SimilarityChecker,
-    OutputSanitizer,
-    # Faz 1
-    UnicodeNormalizer,
+    ContentPolicyEngine,
+    DefenseOrchestrator,
+    EmbeddingClassifier,
+    HallucinationDetector,
     InstructionHierarchyEnforcer,
-    MultiTurnTracker,
-    PerplexityFilter,
     LanguageDetector,
+    LLMAsJudge,
     # Faz 2
     MLInjectionClassifier,
-    EmbeddingClassifier,
-    LLMAsJudge,
-    ContentPolicyEngine,
+    MultiTurnTracker,
+    OutputSanitizer,
+    PerplexityFilter,
+    PIIScanner,
+    PromptFirewall,
+    PromptInjectionClassifier,
+    ResponseConsistencyAnalyzer,
+    SimilarityChecker,
+    SlidingWindowRateLimiter,
     # Faz 3
     ToolCallValidator,
-    HallucinationDetector,
-    ResponseConsistencyAnalyzer,
-    PromptFirewall,
+    # Faz 1
+    UnicodeNormalizer,
 )
 
 
@@ -70,6 +80,21 @@ class BaseChallenge(ABC):
     def __init__(self, difficulty: Difficulty = Difficulty.EASY,
                  use_ollama: bool = False, model_tier: ModelTier | None = None,
                  model_override: str | None = None):
+        # R89-28b AI-W7-01 + AI-W7-03-NEW (P12-2 cluster #1+#2):
+        # `secrets: dict = {}` and `atlas_mapping: list = []` are class-
+        # body annotations that, without these two lines, would be
+        # SHARED across every BaseChallenge instance (Python
+        # class-level-mutable-default cascade). Subclass overrides
+        # (ch01 .. ch10) define their own `secrets`/`atlas_mapping`
+        # at class level too -- so we must read the resolved class
+        # attribute (subclass override OR base default) and snapshot
+        # an instance-local copy. Naive `self.secrets = {}` would
+        # WIPE OUT the subclass's flag/mapping values.
+        # Shallow copy is sufficient: current subclass values are
+        # flat dict[str, str] / list[str] -- no nested mutables.
+        self.secrets = dict(self.__class__.secrets)
+        self.atlas_mapping = list(self.__class__.atlas_mapping)
+
         self.difficulty = difficulty
         self.use_ollama = use_ollama
         self.model_tier = model_tier
@@ -179,7 +204,7 @@ class BaseChallenge(ABC):
         # Challenge-spesifik ek guard'lar
         self.setup_extra_defenses()
 
-    def setup_extra_defenses(self):
+    def setup_extra_defenses(self):  # noqa: B027 -- intentional opt-in hook (subclass MAY override; pre-existing in main, flagged because R89-28b touched file)
         """Alt siniflar override ederek ek savunma ekleyebilir."""
         pass
 

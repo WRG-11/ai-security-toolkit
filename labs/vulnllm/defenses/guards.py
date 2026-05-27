@@ -8,18 +8,22 @@ Bu dosya: 6 core guard implementasyonu
 Backward compat: tum eski importlar calismaya devam eder.
 """
 
-import re
-import math
-import time
-import json
 import hashlib
-from collections import defaultdict
-from pathlib import Path
+import re
+import time
 
 # Backward compat — base class'lar ve orchestrator ayri dosyalarda
-from .base import GuardResult, InputGuard, OutputGuard, AuditLogger
-from .orchestrator import DefenseOrchestrator
-
+# R89-28b: public re-exports (defenses/__init__.py imports from .guards;
+# AuditLogger + DefenseOrchestrator live in sibling modules but historically
+# importable from here). Without these aliases the package public API
+# breaks. F401 suppressed: intentionally re-exported.
+from .base import (
+    AuditLogger,  # noqa: F401
+    GuardResult,
+    InputGuard,
+    OutputGuard,
+)
+from .orchestrator import DefenseOrchestrator  # noqa: F401
 
 # ──────────────────────────────────────────────────────────────
 # 1. Prompt Injection Classifier (TF-IDF + Heuristik Skor)
@@ -261,6 +265,13 @@ class PIIScanner(OutputGuard):
     }
 
     def __init__(self, extra_patterns: dict | None = None):
+        # R89-28b AI-W8-01 (P12-2 cluster #3): pre-fix `self.PATTERNS.update()`
+        # mutated the class-level PATTERNS dict, so any extra_patterns
+        # passed by one caller persisted into every other PIIScanner
+        # instance process-wide (cross-thread, cross-user). An attacker
+        # could poison the regex set to bypass detection on future
+        # scans. Take an instance copy first; update on the copy only.
+        self.PATTERNS = dict(self.__class__.PATTERNS)
         if extra_patterns:
             self.PATTERNS.update(extra_patterns)
 
@@ -285,7 +296,7 @@ class PIIScanner(OutputGuard):
 
     def sanitize(self, text: str, context: dict | None = None) -> str:
         result = text
-        for pii_type, (pattern, mask) in self.PATTERNS.items():
+        for _pii_type, (pattern, mask) in self.PATTERNS.items():  # noqa: B007 -- key kept for symmetry with check() signature; R89-28b lint sweep
             result = re.sub(pattern, mask, result)
         return result
 
@@ -327,7 +338,7 @@ class CanarySystem(OutputGuard):
         if self.token in text:
             return GuardResult(
                 blocked=True,
-                reason=f"CANARY ALARM: Sistem prompt sizdirma tespit edildi!",
+                reason="CANARY ALARM: Sistem prompt sizdirma tespit edildi!",
                 score=1.0,
                 guard_name=self.name,
                 details={"leak_type": "full", "canary": self.token[:8] + "..."},
@@ -584,6 +595,16 @@ class OutputSanitizer(OutputGuard):
 
 
 
-# AuditLogger ve DefenseOrchestrator artik ayri dosyalarda:
-# from .base import AuditLogger
-# from .orchestrator import DefenseOrchestrator
+# Public re-export list (R89-28b). AuditLogger + DefenseOrchestrator
+# already imported at top with noqa F401 to keep ruff happy and to
+# advertise that they are intentionally exposed from this module.
+__all__ = [
+    "AuditLogger",
+    "CanarySystem",
+    "DefenseOrchestrator",
+    "OutputSanitizer",
+    "PIIScanner",
+    "PromptInjectionClassifier",
+    "SimilarityChecker",
+    "SlidingWindowRateLimiter",
+]
