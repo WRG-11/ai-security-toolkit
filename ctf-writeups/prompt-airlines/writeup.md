@@ -3,7 +3,7 @@
 **Platform:** promptairlines.com
 **Tarih:** 2026-05-02
 **Sonuç:** 5/5 challenge çözüldü (Skor: 50)
-**Sertifika:** Wiz AI Security Certificate — Yakuphan Yucel (02 May 2026)
+**Sertifika:** Wiz AI Security Certificate — WRG-11 (02 May 2026)
 
 ![Certificate](certificate.png)
 
