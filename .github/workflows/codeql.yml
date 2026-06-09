@@ -1,0 +1,58 @@
+name: CodeQL
+
+# CodeQL static security analysis for the Python toolkit.
+#
+# A security toolkit should itself be security-scanned. This workflow runs
+# the GitHub CodeQL `security-and-quality` query suite over the Python
+# source on every push / PR to the default branch, plus a weekly scheduled
+# scan to catch newly-published CodeQL rules applied to unchanged code.
+#
+# Findings surface in the repo Security tab -> Code scanning alerts.
+#
+# NOTE: this repository intentionally ships *vulnerable-by-design* learning
+# material (offensive labs, CTF solvers, attack probes). CodeQL may flag
+# code paths in those directories that are deliberate. Triage such alerts
+# accordingly (dismiss with "used in tests" / "won't fix" where the insecure
+# pattern is the teaching point), and act on alerts in the reusable
+# defensive tooling.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 3 * * 1'  # Monday 03:00 UTC
+
+permissions:
+  contents: read
+  security-events: write   # required to upload SARIF results
+
+jobs:
+  analyze:
+    name: Analyze (Python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e  # v4.36.2
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@8aad20d150bbac5944a9f9d289da16a4b0d87c1e  # v4.36.2
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e  # v4.36.2
+        with:
+          category: "/language:${{ matrix.language }}"

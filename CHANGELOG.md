@@ -7,16 +7,56 @@ not a versioned Python package. Releases are tracked by GitHub commit SHA
 rather than semantic versions. This CHANGELOG batches notable additions
 and updates by date for readability.
 
+## [2026-06-03] -- CTF writeup hygiene
+
+### Changed
+
+- `ctf-writeups/prompt-airlines/`: scrubbed a personal real name from the
+  writeup, replacing it with the `WRG-11` handle, and removed the embedded
+  `certificate.png` (which carried the same real name in-image) plus its
+  writeup embed. Public-surface privacy cleanup; no tool/lab logic change.
+  (`b7537fd` #6, `b5ea550` #7)
+
+## [2026-05-27] -- vulnllm lab defense hardening
+
+### Changed
+
+- `labs/vulnllm/defenses/`: fail-closed and validation hardening across the
+  defense modules -- the defense orchestrator and LLM-judge now fail closed,
+  the content-policy guard adds input validation, the perplexity guard
+  sanitizes common-word inputs, and the firewall registry wiring + multi-turn
+  context handling were tightened. (`cb49c2f` #4, `8554bf6` #5)
+- `labs/vulnllm/challenges/ch08_rag_poisoning.py`: RAG knowledge-base
+  isolation hardening for the RAG-poisoning challenge. (`8554bf6` #5)
+- PII-scanner pattern isolation and audit-logger secret redaction added to the
+  lab defense set. (`8554bf6` #5)
+
+### Added
+
+- `tools/prompt_injection_detector.py`: standalone prompt-injection detector
+  tool. (`cb49c2f` #4)
+- Test suites covering the above defense-hardening fixes (orchestrator
+  fail-closed, content-policy validation, judge fail-closed, challenge-base,
+  PII-scanner isolation, audit-logger redaction, RAG isolation). (`cb49c2f` #4,
+  `8554bf6` #5)
+
+## [2026-05-24]
+
+### Changed
+
+- README + `CODE_OF_CONDUCT.md`: documentation accuracy pass -- PII redaction
+  and a corrected "zero-dependency" claim. (`606adae`)
+
 ## [2026-05-23]
 
 ### Added
 
 - `CONTRIBUTING.md` + this `CHANGELOG.md` -- community files
-  (R89-03f portfolio audit closure; sister `instinct` / `wrg-devguard`
+  (portfolio audit closure; sister `instinct` / `wrg-devguard`
   templates adapted).
 - README: NEW "Sister WRG-11 packages" section cross-linking the 4 sister
   PyPI packages (instinct-mcp + wrg-devguard + wrg-mcp-server +
-  wrg-rule-lab). (R89-03f MED M5.)
+  wrg-rule-lab).
 
 ### Changed
 
@@ -24,13 +64,11 @@ and updates by date for readability.
   personal email to GitHub Security Advisories
   (`https://github.com/WRG-11/ai-security-toolkit/security/advisories`).
   Closes Pattern 34 personal-PII surface in a public-repo security policy.
-  (R89-03f LOW M10.)
 
 ## [2026-05-22] -- WRG-11 brand consolidation
 
 - Repository hosted at `WRG-11/ai-security-toolkit` (this repo was created
-  directly under the WRG-11 organization; not part of the yakuphanycl ->
-  WRG-11 transfer wave that covered `instinct` / `wrg-rule-lab`).
+  directly under the WRG-11 organization).
 
 ## [2026-05-11] -- ASCII Turkish diacritic restoration (Batch 2)
 
