@@ -1,0 +1,18 @@
+name: "ai-security-toolkit CodeQL config"
+
+# This repository intentionally ships vulnerable-by-design learning material:
+#   - labs/         offensive labs + their defensive demos (deliberately weak)
+#   - ctf-writeups/ CTF solvers (printing a cracked challenge token is the
+#                   deliverable, not a credential leak)
+# CodeQL would flag the deliberate insecure patterns there as if they were
+# defects. That insecurity IS the teaching point, so we exclude those dirs and
+# keep CodeQL focused on the reusable tooling (tools/), tests, and library
+# code — where an alert is real and actionable.
+#
+# Lint-style "quality" findings (unused imports, ineffectual statements, ...)
+# are handled by ruff (see ruff.toml), so the workflow runs the
+# `security-extended` suite rather than `security-and-quality` — keeping the
+# Security tab for genuine security alerts only.
+paths-ignore:
+  - ctf-writeups
+  - labs
