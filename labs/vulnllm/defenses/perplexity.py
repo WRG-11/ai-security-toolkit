@@ -41,9 +41,9 @@ COMMON_WORDS: set[str] = {
     # PerplexityFilter. Injection-lexicon classification is the job
     # of PromptFirewall + ML/regex classifiers, not of the perplexity
     # baseline. The remaining words below are genuinely
-    # common stop-words. Broader sweep of borderline tokens
-    # (reveal/override/forget) is a R89-X+ follow-up audit candidate;
-    # scope-creep avoided here per brief Q2.
+    # common stop-words. A broader sweep of borderline tokens
+    # (reveal/override/forget) is deferred; this baseline is scoped to
+    # genuine stop-words, not injection-lexicon classification.
     "tell", "show", "reveal", "override", "forget", "now",
     "please", "help", "what", "how", "can", "should", "would",
 }

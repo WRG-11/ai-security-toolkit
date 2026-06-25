@@ -52,11 +52,8 @@ and updates by date for readability.
 ### Added
 
 - `CONTRIBUTING.md` + this `CHANGELOG.md` -- community files
-  (portfolio audit closure; sister `instinct` / `wrg-devguard`
-  templates adapted).
-- README: NEW "Sister WRG-11 packages" section cross-linking the 4 sister
-  PyPI packages (instinct-mcp + wrg-devguard + wrg-mcp-server +
-  wrg-rule-lab).
+  (portfolio audit closure; sibling-project templates adapted).
+- README: NEW section cross-linking sibling WRG-11 projects.
 
 ### Changed
 
