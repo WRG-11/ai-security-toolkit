@@ -1,7 +1,7 @@
 """AI-L2-01 regression — llm_firewall INPUT_GUARD_REGISTRY wires
 MultiTurnTracker + SlidingWindowRateLimiter.
 
-Pre-fix (R89-26b 2026-05-27):
+Pre-fix:
     Both classes were:
       - Exported from labs/vulnllm/defenses/__init__.py
       - Defined as InputGuard subclasses (multi_turn.py + guards.py)
@@ -17,7 +17,7 @@ Post-fix:
     Both classes added to INPUT_GUARD_REGISTRY (opt-in via config; not
     added to DEFAULT_CONFIG.input_guards to preserve BC and because
     MultiTurnTracker requires session_id context to function correctly,
-    handled in AI-L2-02 / R89-26b Fix 4).
+    handled in AI-L2-02 — requires session_id context).
 """
 from __future__ import annotations
 

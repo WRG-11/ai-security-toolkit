@@ -1,7 +1,7 @@
 """AI-L2-40-002 regression — PerplexityFilter COMMON_WORDS sanitized
 of injection-trigger tokens (defense config poisoning closure).
 
-Pre-fix (R89-26b 2026-05-27):
+Pre-fix:
     labs/vulnllm/defenses/perplexity.py COMMON_WORDS set contained:
         ignore, previous, instructions, system, prompt, password, secret
     classified as "common/known" English words. PerplexityFilter scores

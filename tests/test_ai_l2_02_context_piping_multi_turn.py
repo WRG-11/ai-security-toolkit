@@ -1,7 +1,7 @@
 """AI-L2-02 regression — llm_firewall threads `context` through the
 input/output guard pipeline so per-session guards see real session_id.
 
-Pre-fix (R89-26b 2026-05-27):
+Pre-fix:
     tools/llm_firewall.py:245 invoked guards as ``guard.check(text)``
     without the optional `context` argument. MultiTurnTracker
     (multi_turn.py:67) read ``(context or {}).get('session_id',

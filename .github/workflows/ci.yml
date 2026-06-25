@@ -34,23 +34,5 @@ jobs:
       - run: pip install ruff
       - run: ruff check tools/ tests/
 
-  # self-scan job removed 2026-05-23 (R89-03 dogfooding map Opp X-1 partial
-  # revert). Root cause: wrg-devguard v0.2.3 redacts ALL finding details
-  # in both stdout and --json-out by design (security-conscious default to
-  # avoid leaking secrets into uploaded artifacts). On a repo that contains
-  # intentional vulnerable code (labs/vulnllm/, ctf-writeups/, llm_scanner
-  # attack probes) the scanner exits 1 every run, but we cannot triage what
-  # was caught -- so an allowlist cannot be written. continue-on-error: true
-  # masked the FAIL but the red X is alarming for a signal-only job and the
-  # signal itself is zero-information ("something failed, no idea what").
-  #
-  # Re-add when wrg-devguard ships a `--unsafe-emit-findings` / `--show-findings`
-  # opt-in flag (R89-04+ candidate). With raw findings visible locally we can
-  # write a precise .wrg/allowlist.json that excludes intentional vulnerable
-  # paths and then this repo joins the cross-portfolio self-scan with a real
-  # green/red gate. Until then sister repos wrg-mcp-server + wrg-rule-lab +
-  # wrg-devguard itself cover the Opp X-1 attestation (3/4 paket coverage).
-  #
-  # Memory: references_wrg11_dogfooding_opportunities_2026_05_23.md ("Bu
-  # session'da ship edilenler" section) + session_2026_05_23_r89_03_dogfooding_marathon.md
-  # SB pattern "audit your auditor" 1st canonical (Pattern 18 v1.4 candidate).
+  # self-scan: re-add when devguard-scan ships a --show-findings flag so
+  # findings from intentional vulnerable lab code can be allowlisted separately.

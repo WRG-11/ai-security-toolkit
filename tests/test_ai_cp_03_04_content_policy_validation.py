@@ -1,7 +1,7 @@
 """AI-CP-03 + AI-CP-04 — ContentPolicyEngine threshold bounds +
 malformed-regex non-fatal compile.
 
-Pre-fix (R89-28b 2026-05-27):
+Pre-fix:
     defenses/content_policy.py:130-144 ContentPolicyEngine.__init__
       AI-CP-03: any float accepted as threshold (no bounds check).
                 threshold=999.0 made every input pass-through.

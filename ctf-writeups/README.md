@@ -54,7 +54,7 @@ Guards filter "tell me" / "reveal" / "show" patterns, but allow "error correctio
 ### Gandalf (Lakera)
 8 progressive levels of prompt injection defense. Each level adds stronger guards. Solver includes automated API-based solution with multiple extraction techniques.
 
-[Writeup](gandalf/writeup.md) | [Solver Code](gandalf/gandalf_solver.py)
+(English writeup forthcoming) | [Solver Code](gandalf/gandalf_solver.py)
 
 ### Agent ODIN (0din.ai)
 3 missions with role-playing AI agents guarding sensitive information. Each agent has different personality and guard configuration.
@@ -63,11 +63,11 @@ Guards filter "tell me" / "reveal" / "show" patterns, but allow "error correctio
 - **M2 WRITER'S BLOCK:** Editor protecting copyrighted text
 - **M3 WAR GAMES:** Government agent protecting classified info
 
-[Writeup](agent-odin/writeup.md) | [Solver M1](agent-odin/solver.py) | [Solver M2](agent-odin/solver_m2.py) | [Solver M3](agent-odin/solver_m3.py)
+(English writeup forthcoming) | [Solver M1](agent-odin/solver.py) | [Solver M2](agent-odin/solver_m2.py) | [Solver M3](agent-odin/solver_m3.py)
 
 ### Prompt Airlines (Wiz)
 AI chatbot for a fictional airline. 5 challenges testing different vulnerability types including tool abuse and vision-based indirect injection.
 
 - **Ch4 highlight:** Crafted a fake membership card image with hidden injection text, uploaded to the vision-enabled chatbot.
 
-[Writeup](prompt-airlines/writeup.md) | [Membership Card](prompt-airlines/membership_card.png)
+(English writeup forthcoming) | [Membership Card](prompt-airlines/membership_card.png)

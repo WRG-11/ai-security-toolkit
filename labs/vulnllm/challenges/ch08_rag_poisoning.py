@@ -19,16 +19,14 @@ class RagPoisoningChallenge(BaseChallenge):
 
     POISON_MARKER = "POLICY-POISONED"
 
-    # R89-28b CH-08-CRIT (P12-2 cluster #4): the original class body
-    # had `knowledge_base = [{...}, {...}, ...]` -- a class-level
-    # mutable list of mutable dicts. All RagPoisoningChallenge
-    # instances shared the SAME list AND the same inner dicts; a
-    # poisoning attempt in one challenge instance leaked into every
-    # other instance for the entire process.
-    # Fix: keep the curated content as an immutable-by-convention
-    # class constant; populate the per-instance `knowledge_base` via
-    # copy.deepcopy in __init__ (nested dicts require deep copy, not
-    # shallow). Pattern P12-2 closure #4 / 4-vaka graduation cluster.
+    # The original class body had `knowledge_base = [{...}, ...]` — a
+    # class-level mutable list of mutable dicts. All RagPoisoningChallenge
+    # instances shared the SAME list AND the same inner dicts; a poisoning
+    # attempt in one instance leaked into every other for the entire
+    # process.
+    # Fix: keep curated content as an immutable-by-convention class
+    # constant; populate the per-instance `knowledge_base` via
+    # copy.deepcopy in __init__ (nested dicts require deep copy).
     _DEFAULT_KNOWLEDGE_BASE = [
         {"id": 1, "source": "hr_policy", "content": "Calisan izin hakki yilda 20 gundur.", "trusted": True},
         {"id": 2, "source": "pricing", "content": "Standart fiyat listesi: A=$100, B=$200, C=$500.", "trusted": True},
