@@ -88,6 +88,8 @@ python vulnerable_rag.py --defend
 | **Vulnerable (no defense)** | 42% |
 | **Defended (filtering + detection)** | 0% |
 
+> Rates measured on the 5 included attack scenarios using `python vulnerable_rag.py --attack` (vulnerable) and `--attack --defend` (defended). Real-world leakage depends on model, document corpus, and attacker creativity.
+
 ## Requirements / Gereksinimler
 
 - Python 3.10+

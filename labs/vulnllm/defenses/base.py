@@ -12,7 +12,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime
 
-# R89-28b AI-W8-04: secret redaction for audit-log previews.
+# Secret-pattern redaction for audit-log previews.
 # Canonical secret prefixes commonly leaked through LLM prompts:
 #   sk-ant-...    Anthropic
 #   sk-proj-...   OpenAI project key (2024+)
@@ -20,13 +20,9 @@ from datetime import datetime
 #   gh[pousr]_... GitHub PAT 5-class
 #   AIza...       Google API key
 #   Bearer <tok>  HTTP Authorization header
-# The pattern is intentionally a local copy (not imported from
-# wrg_devguard/pii.py) to keep labs/vulnllm a zero-cross-dependency
-# learning corpus -- Pattern P10-1 "single-source-of-truth" would
-# argue for import, but the labs/ package must run without WRG repo
-# deps. Cross-tree drift mitigated by leaving a NOTE here pointing
-# at the canonical regex sources in wrg-devguard and pii.py
-# (R89-24b DG-L2-40 + DG-L2-41 + DG-L2-42).
+# Intentionally a local copy to keep labs/vulnllm a zero-dependency
+# learning corpus. Canonical upstream: devguard-scan
+# (https://github.com/WRG-11/devguard-scan).
 _AUDIT_SECRET_PATTERN = re.compile(
     r"\b("
     r"sk-ant-[A-Za-z0-9_\-]{20,}"
@@ -91,12 +87,10 @@ class AuditLogger:
 
     def log(self, event_type: str, guard_name: str, result: GuardResult,
             input_text: str = "", output_text: str = ""):
-        # R89-28b AI-W8-04: redact API keys / tokens from previews
-        # before they hit memory (self.events) or disk (log_file).
-        # Pre-fix the raw first 100 chars of every input/output were
-        # serialized to JSON -- a user prompt containing 'my key is
-        # sk-ant-...' would persist verbatim. tail of log.json was a
-        # credential leak channel.
+        # Redact API keys / tokens from previews before they hit
+        # memory (self.events) or disk (log_file) — a user prompt
+        # containing 'my key is sk-ant-...' would otherwise persist
+        # verbatim in log.json.
         input_preview = _redact_secrets(input_text[:100]) if input_text else ""
         output_preview = _redact_secrets(output_text[:100]) if output_text else ""
         event = {

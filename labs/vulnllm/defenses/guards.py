@@ -13,10 +13,9 @@ import re
 import time
 
 # Backward compat — base class'lar ve orchestrator ayri dosyalarda
-# R89-28b: public re-exports (defenses/__init__.py imports from .guards;
-# AuditLogger + DefenseOrchestrator live in sibling modules but historically
-# importable from here). Without these aliases the package public API
-# breaks. F401 suppressed: intentionally re-exported.
+# Public re-exports: defenses/__init__.py imports from .guards;
+# AuditLogger + DefenseOrchestrator live in sibling modules but
+# are historically importable from here. F401 suppressed: intentional.
 from .base import (
     AuditLogger,  # noqa: F401
     GuardResult,
@@ -265,12 +264,12 @@ class PIIScanner(OutputGuard):
     }
 
     def __init__(self, extra_patterns: dict | None = None):
-        # R89-28b AI-W8-01 (P12-2 cluster #3): pre-fix `self.PATTERNS.update()`
-        # mutated the class-level PATTERNS dict, so any extra_patterns
-        # passed by one caller persisted into every other PIIScanner
-        # instance process-wide (cross-thread, cross-user). An attacker
-        # could poison the regex set to bypass detection on future
-        # scans. Take an instance copy first; update on the copy only.
+        # Pre-fix `self.PATTERNS.update()` mutated the class-level
+        # PATTERNS dict, so any extra_patterns passed by one caller
+        # persisted into every other PIIScanner instance process-wide
+        # (cross-thread, cross-user). An attacker could poison the
+        # regex set to bypass detection on future scans. Take an
+        # instance copy first; update on the copy only.
         self.PATTERNS = dict(self.__class__.PATTERNS)
         if extra_patterns:
             self.PATTERNS.update(extra_patterns)
@@ -296,7 +295,7 @@ class PIIScanner(OutputGuard):
 
     def sanitize(self, text: str, context: dict | None = None) -> str:
         result = text
-        for _pii_type, (pattern, mask) in self.PATTERNS.items():  # noqa: B007 -- key kept for symmetry with check() signature; R89-28b lint sweep
+        for _pii_type, (pattern, mask) in self.PATTERNS.items():  # noqa: B007 -- key kept for symmetry with check() signature
             result = re.sub(pattern, mask, result)
         return result
 
@@ -595,9 +594,9 @@ class OutputSanitizer(OutputGuard):
 
 
 
-# Public re-export list (R89-28b). AuditLogger + DefenseOrchestrator
-# already imported at top with noqa F401 to keep ruff happy and to
-# advertise that they are intentionally exposed from this module.
+# Public re-export list. AuditLogger + DefenseOrchestrator already
+# imported at top with noqa F401 to keep ruff happy and to advertise
+# that they are intentionally exposed from this module.
 __all__ = [
     "AuditLogger",
     "CanarySystem",

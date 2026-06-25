@@ -1,7 +1,7 @@
 """CH-08-CRIT (P12-2 cluster #4) — RagPoisoningChallenge.knowledge_base
 is per-instance deepcopy from _DEFAULT_KNOWLEDGE_BASE.
 
-Pre-fix (R89-28b 2026-05-27):
+Pre-fix:
     labs/vulnllm/challenges/ch08_rag_poisoning.py:19-24 declared
         knowledge_base = [
             {"id": 1, ..., "trusted": True},
@@ -14,8 +14,8 @@ Pre-fix (R89-28b 2026-05-27):
     altered every concurrent participant's knowledge_base, defeating
     the per-user isolation premise of the lab.
 
-Pattern P12-2 'class-level mutable default cascade' -- 4th vaka in
-the R89-28b graduation cluster. THIS commit CLOSES the 4-vaka cluster.
+Pattern P12-2 'class-level mutable default cascade' — 4th and final
+instance in the graduation cluster; see also test_ai_w7, test_ai_w8_01.
 
 Post-fix:
     _DEFAULT_KNOWLEDGE_BASE   class constant (curated reference)

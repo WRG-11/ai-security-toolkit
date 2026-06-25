@@ -133,8 +133,8 @@ class ContentPolicyEngine(OutputGuard):
         policies: list[PolicyRule] | None = None,
         threshold: float = 0.6,
     ):
-        # R89-28b AI-CP-03: threshold validation. Pre-fix any float was
-        # accepted -- threshold=999.0 made every input pass-through,
+        # Threshold validation: any float was accepted pre-fix —
+        # threshold=999.0 made every input pass-through,
         # threshold=-1.0 blocked everything. Fail-fast at construction.
         try:
             t = float(threshold)
@@ -152,11 +152,10 @@ class ContentPolicyEngine(OutputGuard):
         self.threshold = t
 
         # Regex'leri önceden derle.
-        # R89-28b AI-CP-04: pre-fix a single malformed regex in any
-        # policy aborted compile -> ContentPolicyEngine() construction
-        # raised re.error -> defense pipeline never started. Now we
-        # log + skip malformed patterns so one bad rule cannot disable
-        # the whole engine.
+        # A single malformed regex previously aborted compile ->
+        # ContentPolicyEngine() raised re.error -> pipeline never
+        # started. Now we log + skip malformed patterns so one bad
+        # rule cannot disable the whole engine.
         import logging  # localised: file's top-of-module imports left intact
         _log = logging.getLogger(__name__)
         self._compiled: list[tuple[PolicyRule, list[re.Pattern]]] = []

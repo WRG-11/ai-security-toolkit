@@ -1,6 +1,6 @@
 """AI-W8-01 (P12-2 cluster #3) — PIIScanner.PATTERNS is per-instance.
 
-Pre-fix (R89-28b 2026-05-27):
+Pre-fix:
     labs/vulnllm/defenses/guards.py:264-265 invoked
         self.PATTERNS.update(extra_patterns)
     directly on the class-level PATTERNS dict. Any caller passing
@@ -15,8 +15,8 @@ Post-fix:
     if extra_patterns:
         self.PATTERNS.update(extra_patterns)        # update on copy
 
-Pattern P12-2 'class-level mutable default cascade' -- 3rd vaka in
-the R89-28b 4-vaka graduation cluster.
+Pattern P12-2 'class-level mutable default cascade' — 3rd instance in
+the four-case graduation cluster (see also test_ai_w7, test_ch_08).
 """
 from __future__ import annotations
 

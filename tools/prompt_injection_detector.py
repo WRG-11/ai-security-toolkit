@@ -20,12 +20,9 @@ Interface contract (consumed by prompt_injection_detector_ml.py):
         "text_preview": str,
     }
 
-History note (R89-26b, AI-L2-40-001 closure):
-    This module was referenced by prompt_injection_detector_ml.py since
-    the initial release commit but never actually shipped (orphan import).
-    Created 2026-05-27 to unblock:
-      - ML hybrid detector runtime import (ModuleNotFoundError closure)
-      - F R89-17f ai-security-toolkit coverage gate (test runs unblocked)
+This module was referenced by prompt_injection_detector_ml.py since
+the initial release commit but never actually shipped; created to
+unblock the ML hybrid detector runtime import.
 
 Usage:
     >>> from prompt_injection_detector import PromptInjectionDetector
@@ -189,8 +186,8 @@ class PromptInjectionDetector:
             text_preview : str (first 80 chars, newlines collapsed)
         """
         if not isinstance(text, str):
-            # Fail-loud per CLAUDE.md "verbose opt-in, silent default" — but
-            # consumer expects dict. Coerce + flag.
+            # Non-string input: coerce and flag rather than raise, so
+            # consumer always gets a dict.
             text = "" if text is None else str(text)
 
         detections: list[dict] = []

@@ -46,9 +46,8 @@ from defenses import (
     ContentPolicyEngine,
     HallucinationDetector,
     PromptFirewall,
-    # R89-26b AI-L2-01: previously exported but never wired into the
-    # input guard registry below -- Pattern P11-1 "registered-but-not-
-    # wired" 1st instance. Adding them here closes the consumer gap.
+    # Previously exported but never wired into the input guard registry;
+    # adding them here closes the consumer gap.
     MultiTurnTracker,
     SlidingWindowRateLimiter,
 )
@@ -64,11 +63,10 @@ INPUT_GUARD_REGISTRY: dict[str, type] = {
     "PerplexityFilter": PerplexityFilter,
     "PromptInjectionClassifier": PromptInjectionClassifier,
     "MLInjectionClassifier": MLInjectionClassifier,
-    # R89-26b AI-L2-01 wire-up (P11-1 closure). Opt-in via config --
-    # not added to DEFAULT_CONFIG.input_guards because:
-    #   * MultiTurnTracker needs session_id context to function as
-    #     designed (per-session; see AI-L2-02 / R89-26b Fix 4); without
-    #     context piping it degrades to a single shared "default" bucket.
+    # Opt-in via config — not added to DEFAULT_CONFIG.input_guards because:
+    #   * MultiTurnTracker needs session_id context to function correctly
+    #     (per-session); without context piping it degrades to a single
+    #     shared "default" bucket.
     #   * SlidingWindowRateLimiter defaults block at 20 req/60s which
     #     would surprise existing pipelines. Operator must opt in.
     "MultiTurnTracker": MultiTurnTracker,
@@ -263,11 +261,9 @@ class LLMFirewall:
                                             collapses all traffic into a
                                             single 'default' bucket)
                        - user_id    : str  (rate-limit/audit attribution)
-                     Added 2026-05-27 R89-26b AI-L2-02 -- previously
-                     MultiTurnTracker (when wired via AI-L2-01) always
-                     ran against the 'default' session because no
-                     caller threaded context through; Pattern P11-1
-                     sub-class 'wired-but-no-data-flow'.
+                     Previously, MultiTurnTracker always ran against
+                     the 'default' session because no caller threaded
+                     context through.
 
         Returns: (bloklandı_mı, guard_sonuçları)
         """
@@ -308,9 +304,8 @@ class LLMFirewall:
         Args:
             text:    LLM output to evaluate/sanitize.
             context: Optional per-request metadata forwarded to each
-                     OutputGuard (same keys as check_input). Added
-                     2026-05-27 R89-26b AI-L2-02 for symmetry / future
-                     use; current built-in OutputGuards ignore context.
+                     OutputGuard (same keys as check_input); current
+                     built-in OutputGuards ignore context.
 
         Returns: (sanitize_edilmiş_text, sorun_var_mı, guard_sonuçları)
         """
@@ -355,9 +350,7 @@ class LLMFirewall:
                 input and output guard pipelines so per-session
                 stateful guards (MultiTurnTracker, rate limiter) see
                 the actual session/user identity. Without it they
-                collapse all traffic into a single 'default' bucket
-                (Pattern P11-1 'wired-but-no-data-flow' sub-class;
-                R89-26b AI-L2-02 closure).
+                collapse all traffic into a single 'default' bucket.
 
         Returns: {"response": str, "blocked": bool, "input_results": [...], "output_results": [...]}
         """

@@ -1,13 +1,12 @@
 """AI-L2-40-001 regression — prompt_injection_detector module exists and
 prompt_injection_detector_ml.py imports cleanly (ModuleNotFoundError closure).
 
-Pre-fix (R89-26b 2026-05-27):
+Pre-fix:
     tools/prompt_injection_detector_ml.py:39 imported
     ``from prompt_injection_detector import PromptInjectionDetector, Severity``
     but that module had NEVER shipped (orphan import since initial release
     ``aaa4812``). Every direct invocation raised ``ModuleNotFoundError``,
-    blocking the ML hybrid detector AND blocking F R89-17f's coverage gate
-    (test runs aborted at collection time).
+    blocking the ML hybrid detector AND aborting test runs at collection time.
 
 Post-fix:
     tools/prompt_injection_detector.py shipped (v0.1 regex baseline) with

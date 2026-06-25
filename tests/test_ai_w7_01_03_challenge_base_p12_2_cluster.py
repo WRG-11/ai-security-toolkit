@@ -1,7 +1,7 @@
 """AI-W7-01 + AI-W7-03-NEW (P12-2 cluster #1+#2) — BaseChallenge.secrets +
 atlas_mapping are now per-instance copies.
 
-Pre-fix (R89-28b 2026-05-27):
+Pre-fix:
     labs/vulnllm/challenges/base.py:67-68 declared
         secrets: dict = {}
         atlas_mapping: list = []
@@ -13,8 +13,7 @@ Pre-fix (R89-28b 2026-05-27):
 
 Pattern P12-2 'class-level mutable default cascade' -- 4-vaka graduation
 cluster (this file = #1+#2; defenses/guards.py:264 = #3 PIIScanner.PATTERNS;
-challenges/ch08_rag_poisoning.py:19 = #4 knowledge_base; all closed in
-R89-28b).
+challenges/ch08_rag_poisoning.py:19 = #4 knowledge_base).
 
 Post-fix:
     BaseChallenge.__init__ now performs

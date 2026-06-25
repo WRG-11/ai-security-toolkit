@@ -80,18 +80,17 @@ class BaseChallenge(ABC):
     def __init__(self, difficulty: Difficulty = Difficulty.EASY,
                  use_ollama: bool = False, model_tier: ModelTier | None = None,
                  model_override: str | None = None):
-        # R89-28b AI-W7-01 + AI-W7-03-NEW (P12-2 cluster #1+#2):
-        # `secrets: dict = {}` and `atlas_mapping: list = []` are class-
-        # body annotations that, without these two lines, would be
+        # `secrets: dict = {}` and `atlas_mapping: list = []` are
+        # class-body annotations that, without these two lines, would be
         # SHARED across every BaseChallenge instance (Python
         # class-level-mutable-default cascade). Subclass overrides
-        # (ch01 .. ch10) define their own `secrets`/`atlas_mapping`
-        # at class level too -- so we must read the resolved class
-        # attribute (subclass override OR base default) and snapshot
-        # an instance-local copy. Naive `self.secrets = {}` would
-        # WIPE OUT the subclass's flag/mapping values.
+        # (ch01..ch10) define their own `secrets`/`atlas_mapping` at
+        # class level — so we read the resolved class attribute (subclass
+        # override OR base default) and snapshot an instance-local copy.
+        # Naive `self.secrets = {}` would WIPE OUT the subclass's
+        # flag/mapping values.
         # Shallow copy is sufficient: current subclass values are
-        # flat dict[str, str] / list[str] -- no nested mutables.
+        # flat dict[str, str] / list[str] — no nested mutables.
         self.secrets = dict(self.__class__.secrets)
         self.atlas_mapping = list(self.__class__.atlas_mapping)
 
@@ -204,7 +203,7 @@ class BaseChallenge(ABC):
         # Challenge-spesifik ek guard'lar
         self.setup_extra_defenses()
 
-    def setup_extra_defenses(self):  # noqa: B027 -- intentional opt-in hook (subclass MAY override; pre-existing in main, flagged because R89-28b touched file)
+    def setup_extra_defenses(self):  # noqa: B027 -- intentional opt-in hook (subclass MAY override)
         """Alt siniflar override ederek ek savunma ekleyebilir."""
         pass
 
