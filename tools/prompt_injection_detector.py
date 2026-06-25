@@ -189,8 +189,8 @@ class PromptInjectionDetector:
             text_preview : str (first 80 chars, newlines collapsed)
         """
         if not isinstance(text, str):
-            # Fail-loud per CLAUDE.md "verbose opt-in, silent default" — but
-            # consumer expects dict. Coerce + flag.
+            # Non-string input: coerce and flag rather than raise, so
+            # consumer always gets a dict.
             text = "" if text is None else str(text)
 
         detections: list[dict] = []

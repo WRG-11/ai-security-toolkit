@@ -78,7 +78,7 @@ Vulnerable RAG (Retrieval-Augmented Generation) system demonstrating 5 attack sc
 - ChromaDB + sentence-transformers + Ollama
 - Attacks: direct extraction, indirect injection, context overflow, prompt override, membership inference
 - Defense mode: retrieval filtering + poisoned document detection
-- Result: 42% leakage (vulnerable) → 0% leakage (defended)
+- Result: 42% leakage (vulnerable) → 0% leakage (defended, on included attack scenarios)
 
 [Go to lab →](labs/rag-security/)
 
@@ -160,14 +160,14 @@ Tool Proficiency             [########--]  Garak, PyRIT, NeMo Guardrails
 
 ---
 
-## Sister WRG-11 packages
+## Related WRG-11 projects
 
-Part of the WRG-11 portfolio:
+Other security projects from the same author:
 
-- [`instinct-mcp`](https://pypi.org/project/instinct-mcp/) — Self-learning memory for AI coding agents (MCP server)
-- [`wrg-devguard`](https://pypi.org/project/wrg-devguard/) — Developer-first AI safety: prompt-policy lint + secret scanning + log scanning with PII detection
-- [`wrg-mcp-server`](https://pypi.org/project/wrg-mcp-server/) — MCP bridge for the WinstonRedGuard monorepo (60+ security/threat-intel tools)
-- [`wrg-rule-lab`](https://pypi.org/project/wrg-rule-lab/) — Local-first deterministic rule evaluation engine (zero-dep, stdlib-only)
+- [`mcp-objauthz-lab`](https://github.com/WRG-11/mcp-objauthz-lab) — Object-level authorization security lab for MCP (Model Context Protocol) servers; CTF challenges + writeups
+- [`osint-trust-envelope`](https://github.com/WRG-11/osint-trust-envelope) — OSINT trust scoring layer for passive attack-surface analysis
+- [`wrg-sigma-rules`](https://github.com/WRG-11/wrg-sigma-rules) — Sigma detection rules for AI/LLM threat scenarios
+- [`devguard-scan`](https://github.com/WRG-11/devguard-scan) — Developer-first AI safety scanner: prompt-policy lint + secret scanning + PII detection
 
 Built by [WRG-11](https://github.com/WRG-11).
 
