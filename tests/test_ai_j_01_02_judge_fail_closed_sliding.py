@@ -1,7 +1,7 @@
 """AI-J-01 + AI-J-02 — LLM-as-Judge default fail-CLOSED + sliding-
 window front+back chunking.
 
-Pre-fix (R89-28b 2026-05-27):
+Pre-fix:
     AI-J-01: defenses/llm_judge.py
       - _is_available() False -> GuardResult(blocked=False) [fail-open]
       - _query_ollama exception -> {"verdict": "safe"} [fail-open]

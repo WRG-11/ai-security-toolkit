@@ -1,7 +1,7 @@
 """AI-W8-04 — AuditLogger redacts API key / token shapes from input
 and output previews before persisting.
 
-Pre-fix (R89-28b 2026-05-27):
+Pre-fix:
     defenses/base.py:62-69 AuditLogger.log() serialized
         input_text[:100]   and   output_text[:100]
     verbatim into event dicts that landed in:

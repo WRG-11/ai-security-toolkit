@@ -9,10 +9,9 @@ import logging
 
 from .base import AuditLogger, GuardResult, InputGuard, OutputGuard
 
-# R89-28b AI-CP-01 + AI-CP-02: pipeline-level error logger (separate
-# from AuditLogger.log which is the structured event sink). Used to
-# warn about guard / sanitize / audit failures without crashing the
-# pipeline.
+# Pipeline-level error logger, separate from AuditLogger.log (the
+# structured event sink). Warns about guard / sanitize / audit
+# failures without crashing the pipeline.
 _log = logging.getLogger(__name__)
 
 
@@ -33,9 +32,9 @@ class DefenseOrchestrator:
         return self
 
     def _safe_audit_log(self, event_type: str, guard_name: str, result: GuardResult, **kwargs) -> None:
-        """R89-28b AI-CP-02: audit log failure must NOT crash the pipeline.
+        """Audit log failure must NOT crash the pipeline.
 
-        Disk full / permission denied / serializer error -- log a
+        Disk full / permission denied / serializer error — log a
         warning and continue. Audit gaps are non-fatal; security
         pipeline interruption is fatal.
         """
@@ -50,13 +49,12 @@ class DefenseOrchestrator:
     def check_input(self, text: str, context: dict | None = None) -> GuardResult:
         """Tum input guard'larini calistir. Ilk bloklayan kazanir.
 
-        R89-28b AI-CP-01: each guard.check() is wrapped in try/except.
-        A guard exception is treated as FAIL-CLOSED at the guard level
-        (input is blocked, reason=guard-internal-error) -- the
-        pipeline does NOT crash and the downstream llm_firewall does
-        NOT see an unhandled exception (which would then have been
-        absorbed as blocked=False per AI-L2-03, producing a double
-        fail-open chain).
+        Each guard.check() is wrapped in try/except. A guard exception
+        is treated as FAIL-CLOSED at the guard level (input is blocked,
+        reason=guard-internal-error) — the pipeline does NOT crash and
+        the downstream llm_firewall does NOT see an unhandled exception
+        (which would then have been absorbed as blocked=False, producing
+        a double fail-open chain).
         """
         combined_score = 0.0
         all_details = {}
@@ -69,8 +67,8 @@ class DefenseOrchestrator:
                     "Input guard %s.check() raised %s: %s -- fail-closed",
                     guard.name, type(exc).__name__, exc,
                 )
-                # R89-28b AI-CP-01: guard internal error -> fail-closed
-                # (block) with a synthetic GuardResult.
+                # Guard internal error -> fail-closed (block) with a
+                # synthetic GuardResult.
                 err_result = GuardResult(
                     blocked=True,
                     reason=f"{guard.name} internal error ({type(exc).__name__}); fail-closed",
@@ -110,10 +108,9 @@ class DefenseOrchestrator:
     def check_output(self, text: str, context: dict | None = None) -> tuple[str, GuardResult]:
         """Tum output guard'larini calistir. Bloklanan icerik sanitize edilir.
 
-        R89-28b AI-CP-01: same fail-closed discipline as check_input,
-        but on output side the 'fail-closed' state is treated as
-        'block (do not show) + flag for sanitization fallback'. If a
-        guard.check() AND its sanitize() both fail, the response is
+        Same fail-closed discipline as check_input, but on the output
+        side 'fail-closed' means 'block + sanitize fallback'. If both
+        guard.check() and guard.sanitize() fail, the response is
         replaced with a redaction marker so attacker payload never
         reaches the user verbatim.
         """

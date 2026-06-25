@@ -8,11 +8,10 @@ Tasarım kararları:
 - Sync HTTP (async yok) — basitlik
 - 10s timeout — yavaş yanıt beklemekten iyisi fail-open
 - Hash-based cache — aynı sorguyu tekrar sorgulama
-- R89-28b AI-J-01 (2026-05-27): Ollama yoksa default = FAIL-CLOSED
-  (block, confidence=1.0). Geriye uyumluluk icin opt-in flag
-  `allow_judge_unavailable=True` ile eski fail-open davranisi
-  yeniden etkinlestirilebilir. "By design" comment'inin altinda
-  yatan tasarim hatasi: security control fail-open kabul edilemez.
+- Ollama yoksa default = FAIL-CLOSED (block, confidence=1.0).
+  Geriye uyumluluk icin opt-in flag `allow_judge_unavailable=True`
+  ile eski fail-open davranisi yeniden etkinlestirilebilir.
+  Security control fail-open kabul edilemez.
 
 Ref: Inan et al. (2023) — Llama Guard, arXiv:2312.06674
 """
@@ -25,11 +24,10 @@ import urllib.request
 
 from .base import GuardResult, InputGuard, OutputGuard
 
-# R89-28b AI-J-02 truncation bypass closure: sliding-window length
-# for front+back judge sampling. Attacker that front-loads 500 chars
-# of benign content then puts the payload at position 501+ would
-# slip past the original `text[:500]` truncation. We now sample
-# both ends; any-unsafe = unsafe aggregation downstream.
+# Sliding-window length for front+back judge sampling. An attacker
+# that front-loads 500 chars of benign content then puts the payload
+# at position 501+ would slip past a simple `text[:500]` truncation.
+# We sample both ends; any-unsafe = unsafe aggregation downstream.
 _JUDGE_CHUNK_TOKENS = 500
 
 
@@ -74,14 +72,11 @@ class LLMAsJudge(InputGuard, OutputGuard):
         cache_size: int = 256,
         allow_judge_unavailable: bool = False,
     ):
-        # R89-28b AI-J-01: allow_judge_unavailable defaults to False --
-        # fail-closed when Ollama is down or queries fail. Pre-fix this
-        # was unconditionally fail-open (verdict='safe'), which the
-        # original 'by design' comment treated as acceptable. It is not:
-        # an unavailable security control cannot announce 'all clear'.
-        # Set allow_judge_unavailable=True to preserve the legacy
-        # behaviour for non-prod / lab work (a "tripwire" pre-prod
-        # signal that the optional Ollama judge is offline).
+        # allow_judge_unavailable defaults to False — fail-closed when
+        # Ollama is down or queries fail. Pre-fix this was unconditionally
+        # fail-open (verdict='safe'): an unavailable security control
+        # cannot announce 'all clear'. Set allow_judge_unavailable=True
+        # to preserve the legacy behaviour for non-prod / lab work.
         self.model = model
         self.ollama_url = ollama_url.rstrip("/")
         self.timeout = timeout
@@ -112,15 +107,11 @@ class LLMAsJudge(InputGuard, OutputGuard):
         return h
 
     def _build_chunks(self, text: str) -> list[str]:
-        """R89-28b AI-J-02: sliding window front + back sampling.
+        """Sliding window front + back sampling.
 
-        Pre-fix the judge only saw text[:500] -- an attacker that
-        front-loaded 500 chars of benign content placed the payload
-        beyond the truncation boundary and bypassed evaluation.
-        Now we sample both ends so a payload at either edge gets
-        seen. Texts shorter than the chunk size return as a single
-        chunk. Middle-sampling for very long inputs is a follow-up
-        candidate (brief Q1 reco scope-creep avoid).
+        The judge samples both ends of the input so a payload placed
+        beyond a simple front-truncation boundary is still evaluated.
+        Short texts return as a single chunk.
         """
         if len(text) <= _JUDGE_CHUNK_TOKENS:
             return [text]
@@ -176,10 +167,10 @@ class LLMAsJudge(InputGuard, OutputGuard):
             return verdict
 
         except (urllib.error.URLError, OSError, json.JSONDecodeError, KeyError) as exc:
-            # R89-28b AI-J-01: default = FAIL-CLOSED. Pre-fix this
-            # branch returned 'safe' unconditionally, which let any
-            # Ollama outage / timeout / malformed response silently
-            # disable the judge. Opt-in fail-open via init param.
+            # Default = FAIL-CLOSED. Pre-fix this branch returned
+            # 'safe' unconditionally; Ollama outage / timeout /
+            # malformed response silently disabled the judge.
+            # Opt-in fail-open via allow_judge_unavailable param.
             if self.allow_judge_unavailable:
                 return {
                     "verdict": "safe",
@@ -193,7 +184,7 @@ class LLMAsJudge(InputGuard, OutputGuard):
             }
 
     def _query_ollama(self, text: str, mode: str) -> dict:
-        """R89-28b AI-J-02: sliding-window aggregator.
+        """Sliding-window aggregator.
 
         Splits long inputs into front+back chunks, queries the
         judge per chunk, returns the AGGREGATED verdict
@@ -248,9 +239,9 @@ class LLMAsJudge(InputGuard, OutputGuard):
 
     def _evaluate(self, text: str, mode: str) -> GuardResult:
         """Ortak değerlendirme mantığı."""
-        # R89-28b AI-J-01: Ollama unavailable -> fail-CLOSED by
-        # default (block, confidence=1.0). Pre-fix returned
-        # blocked=False which sequenced a silent fail-open.
+        # Ollama unavailable -> fail-CLOSED by default (block,
+        # confidence=1.0). Pre-fix returned blocked=False which
+        # sequenced a silent fail-open.
         if not self._is_available():
             if self.allow_judge_unavailable:
                 return GuardResult(

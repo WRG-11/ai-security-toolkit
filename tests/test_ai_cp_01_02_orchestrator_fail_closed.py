@@ -2,7 +2,7 @@
 failures NO LONGER crash the pipeline; guards fail-closed, audit
 is non-fatal.
 
-Pre-fix (R89-28b 2026-05-27):
+Pre-fix:
     labs/vulnllm/defenses/orchestrator.py:33,62,70 invoked:
         result = guard.check(text)        # raise -> orchestrator crashes
         self.logger.log(...)              # raise -> orchestrator crashes
