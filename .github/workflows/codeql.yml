@@ -1,0 +1,57 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    - cron: "27 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      # actions:read fixes the default-setup token drift: on 2026-06-15 the
+      # managed runner's GITHUB_TOKEN lacked it, so the CodeQL action's
+      # telemetry / workflow-run API call failed ("Resource not accessible by
+      # integration") and the job went red even though autobuild succeeded.
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: python
+            build-mode: none
+          - language: actions
+            build-mode: none
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e  # v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # ctf-writeups/ (CTF solver scripts) and labs/vulnllm/ (a deliberately
+          # vulnerable LLM lab) are intentional teaching artifacts. CodeQL's
+          # clear-text-logging heuristic flags their CTF puzzle-passwords and
+          # lab telemetry as "sensitive data" — context false-positives.
+          # Excluded so real findings in tools/ and labs/rag-security/ stay
+          # visible.
+          config: |
+            paths-ignore:
+              - ctf-writeups
+              - labs/vulnllm
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e  # v3
+        with:
+          category: "/language:${{ matrix.language }}"
