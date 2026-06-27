@@ -21,8 +21,13 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Smoke test (stdlib only)
-        run: python -m unittest discover -s tests/ -p "test_*.py" -v
+      # Test runtime stays stdlib-only; coverage is a CI measurement tool
+      # (same posture as the ruff lint job below).
+      - name: Test + coverage
+        run: |
+          pip install coverage
+          coverage run -m unittest discover -s tests/ -p "test_*.py"
+          coverage report
 
   lint:
     runs-on: ubuntu-latest
