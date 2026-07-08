@@ -10,7 +10,7 @@ Pre-fix:
     A user prompt containing 'my anthropic key is sk-ant-XXXXX...'
     persisted in clear text. tail -f log.json = credential leak.
 
-Pattern 34 v1.1 PII OPSEC -- canonical fix: redact before persist.
+Canonical fix: redact secrets before persist (PII/OPSEC hardening).
 
 Post-fix:
     _AUDIT_SECRET_PATTERN catches sk-ant-, sk-proj-, sk-, gh[pousr]_,
