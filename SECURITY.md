@@ -24,7 +24,7 @@ Please include:
 
 We follow a 90-day responsible disclosure timeline:
 
-1. **Day 0**: Vulnerability reported via email
+1. **Day 0**: Vulnerability reported via GitHub Security Advisories
 2. **Day 1-7**: Acknowledgment sent to reporter
 3. **Day 1-90**: Fix developed and tested
 4. **Day 90**: Public disclosure (coordinated with reporter)

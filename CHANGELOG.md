@@ -7,6 +7,39 @@ not a versioned Python package. Releases are tracked by GitHub commit SHA
 rather than semantic versions. This CHANGELOG batches notable additions
 and updates by date for readability.
 
+## [2026-07-08] -- CI hardening + publish-prep cleanup
+
+### Changed
+
+- Removed `research/tool-comparison.md` and `research/garak-analysis.md`
+  from publish scope (OPSEC redaction pass); the README "Research" section
+  linking to them was updated to match. (`16fd893` #9)
+- Sister-projects section: replaced 4 dead-PyPI package links with the
+  live public GitHub repos (`mcp-objauthz-lab`, `osint-trust-envelope`,
+  `wrg-sigma-rules`, `devguard-scan`). (`16fd893` #9)
+- RAG Security Lab leakage-rate claim scoped to "on included attack
+  scenarios" (README.md + `labs/rag-security/README.md`). (`16fd893` #9)
+- `tests/`: genericized an internal pattern-catalog version tag flagged by
+  the OPSEC content-audit scanner. (`9cf2f09` #14)
+
+### Added
+
+- CI: coverage measurement wired into the `test` job (`.coveragerc` +
+  `coverage run` + `coverage report`). (`d2b9db5` #11)
+- CodeQL: advanced setup with explicit `actions: read` permission (default
+  setup started failing 2026-06-15 -- managed runner's `GITHUB_TOKEN`
+  lacked the scope for the workflow-run telemetry call even though
+  autobuild succeeded) + `paths-ignore` for `ctf-writeups/` and
+  `labs/vulnllm/` (CTF puzzle-passwords and vuln-lab telemetry are
+  synthetic teaching data that trip the clear-text-logging heuristic as
+  false positives; `tools/` and `labs/rag-security/` stay scanned).
+  (`03b392c` #10)
+
+### Maintenance
+
+- `actions/checkout` 4.3.1 -> 7.0.0, `actions/setup-python` 6.2.0 -> 6.3.0.
+  (`b754080` #13, `10d961c` #12)
+
 ## [2026-06-03] -- CTF writeup hygiene
 
 ### Changed

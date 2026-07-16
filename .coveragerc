@@ -6,6 +6,13 @@ omit =
 
 [report]
 show_missing = True
+# Measured 2026-07-17: 16% (flagship tools are exercised by targeted
+# regression tests per bugfix, not systematic coverage -- see tests/
+# naming, e.g. test_ai_cp_01_02_*). No floor previously meant CI's
+# `coverage report` step ran but could never fail; this catches future
+# regression below the current baseline without pretending the gap
+# itself is closed. Ratchet up as real coverage grows.
+fail_under = 15
 exclude_lines =
     pragma: no cover
     if __name__ == .__main__.:

@@ -1,0 +1,6 @@
+# RAG Security Lab dependencies.
+#
+# Not needed by tools/ or labs/vulnllm/ (both stdlib-only) -- only this lab
+# needs a vector DB + embedding model. See README.md "Requirements" section.
+chromadb
+sentence-transformers

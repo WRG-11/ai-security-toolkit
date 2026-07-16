@@ -25,8 +25,9 @@ git clone https://github.com/WRG-11/ai-security-toolkit.git
 cd ai-security-toolkit
 python -m venv .venv
 . .venv/bin/activate          # Windows: .venv\Scripts\Activate.ps1
-# Most tools are stdlib-only; specific labs need extras:
-pip install -r labs/vulnllm/requirements.txt   # for vulnllm lab
+# tools/ and labs/vulnllm/ are stdlib-only (nothing to install).
+# labs/rag-security/ needs extras:
+pip install -r labs/rag-security/requirements.txt
 ```
 
 ## Bar for Accepting a PR
