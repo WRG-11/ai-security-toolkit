@@ -41,3 +41,9 @@ garak_runs/
 
 # Model cache
 .cache/
+
+# Test / coverage artifacts
+.coverage
+.pytest_cache/
+htmlcov/
+.ruff_cache/

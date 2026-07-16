@@ -50,8 +50,8 @@ This repo is that toolkit. Core tools (Tools section below) are stdlib-only Pyth
 ```bash
 # Quick start
 python tools/prompt_injection_detector_ml.py --interactive
-python tools/llm_scanner.py --target http://localhost:11434 --quick
-python tools/llm_firewall.py --serve --port 8080
+python tools/llm_scanner.py llama3.2:3b --quick   # --ollama-url to point elsewhere
+python tools/llm_firewall.py --proxy --port 8080
 ```
 
 [More details →](tools/README.md)
@@ -125,15 +125,6 @@ Vulnerable RAG (Retrieval-Augmented Generation) system demonstrating 5 attack sc
 - **No SARIF / SIEM integration yet** — scan output is JSON / text; SARIF schema for code-scanning upload would be a future addition
 
 If you need enterprise-scale fleet probing, reach for PyRIT. If you need an extensive academic-style scanner, reach for Garak. If you need conversational guardrails as a service, reach for NeMo. Reach for ai-security-toolkit when you want a small, hackable, MIT-licensed kit you can read end-to-end in an afternoon.
-
----
-
-## Research
-
-| Report | Topic |
-|--------|-------|
-| [Tool Comparison](research/tool-comparison.md) | Garak vs PyRIT vs NeMo Guardrails — features, performance, OWASP coverage |
-| [Garak Analysis](research/garak-analysis.md) | Vulnerability scan results on uncensored model (dolphin-mistral) |
 
 ---
 
