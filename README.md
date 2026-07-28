@@ -37,7 +37,7 @@ This repo is that toolkit. Core tools (Tools section below) are stdlib-only Pyth
 
 | Tool | Description | Lines |
 |------|-------------|-------|
-| [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), 194 attack patterns, 100% F1 | 1000 |
+| [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), 194 attack patterns, **F1 0.91 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | 1000 |
 | [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, 194 probes, severity mapping | 743 |
 | [LLM Firewall](tools/llm_firewall.py) | 10-guard security middleware, HTTP proxy mode, plugin architecture | 863 |
 
@@ -57,6 +57,54 @@ python tools/llm_firewall.py --proxy --port 8080
 [More details →](tools/README.md)
 
 ---
+
+## How the detector is measured
+
+The headline number is a **5-fold holdout**: each fold trains a fresh model on
+four fifths of the data and scores the fifth it has never seen. Run it yourself:
+
+```bash
+python -c "
+import sys; sys.path.insert(0,'.'); sys.path.insert(0,'labs/vulnllm')
+from tools.prompt_injection_detector_ml import HybridDetector
+print(HybridDetector().benchmark_holdout(folds=5))
+"
+```
+
+| Measurement | F1 | Recall | Precision |
+|---|---|---|---|
+| 5-fold holdout (what the table above reports) | 0.91 | 0.84 | 0.98 |
+| In-sample, i.e. scored on its own training data | 1.00 | 1.00 | 1.00 |
+
+This README used to quote the second row as "100% F1". The number was real but
+it measured memorisation: `train()` and `benchmark()` drew from the same two
+sources, so the model was being examined on its own study notes. `benchmark()`
+still exists and still returns 1.00 — it now labels itself `in_sample` and says
+which method to call instead.
+
+Measuring it properly also surfaced a calibration bug worth naming. At the old
+default threshold of 0.50, holdout F1 was **0.107** — recall 0.057, meaning 183
+of 194 attacks got through. The cause is in the layer weights: on a payload the
+model has not seen, the regex layer usually contributes 0.0 (its patterns are
+mostly English, much of the corpus is Turkish), so even a strong TF-IDF signal
+of 0.80 tops out at 0.39 weighted and never clears 0.50. In-sample scoring
+cannot reveal this, because there every threshold scores 1.00.
+
+The default is now **0.30**, chosen from a sweep across four seeds:
+
+| Threshold | F1 | Recall | Precision | False positives (of 80 benign) |
+|---|---|---|---|---|
+| 0.50 (old) | 0.107 | 0.057 | 1.000 | 0.0 |
+| 0.32 | 0.817 | 0.702 | 0.977 | 3.2 |
+| **0.30** | **0.900** | **0.834** | **0.979** | **3.5** |
+| 0.28 | 0.931 | 0.898 | 0.967 | 6.0 |
+| 0.25 | 0.959 | 0.965 | 0.953 | 9.2 |
+| 0.20 | 0.956 | 1.000 | 0.916 | 17.8 |
+
+F1 peaks nearer 0.25, but in an input filter a false positive is a blocked
+legitimate request, so 0.30 keeps precision at 0.98 while taking recall from
+0.057 to 0.834. Pass `threshold=0.25` for a more aggressive posture — the
+trade is in the table rather than left to guesswork.
 
 ## Labs
 
