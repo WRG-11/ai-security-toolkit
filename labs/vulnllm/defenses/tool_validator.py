@@ -1,15 +1,14 @@
 """
 Module #17 — Tool Call Validator
 
-LLM çıktısındaki tool/function call ve komut çalıştırma
-girişimlerini tespit eder. Excessive Agency (LLM06) savunması.
+Detects tool/function call and command-execution attempts in
+LLM output. A defense against Excessive Agency (LLM06).
 
-LLM'ler bazen saldırganın etkisiyle:
-1. Yetkisiz shell komutu çalıştırma
-2. Dosya sistemi manipülasyonu
-3. Ağ bağlantısı açma
-4. Kod yürütme
-girişiminde bulunabilir.
+Under an attacker's influence, LLMs may sometimes attempt:
+1. Unauthorized shell command execution
+2. Filesystem manipulation
+3. Opening a network connection
+4. Code execution
 
 Ref: OWASP LLM06 — Excessive Agency
 Ref: MITRE ATLAS AML.T0040 — ML Model Access
@@ -19,7 +18,7 @@ import re
 
 from .base import GuardResult, OutputGuard
 
-# Tehlikeli komut kalıpları — kategorize
+# Dangerous command patterns — categorized
 DANGEROUS_PATTERNS: dict[str, list[tuple[str, float, str]]] = {
     "shell_execution": [
         (r"(?:os\.system|subprocess\.(?:run|call|Popen|check_output))\s*\(", 0.9, "Python shell execution"),
@@ -63,7 +62,7 @@ DANGEROUS_PATTERNS: dict[str, list[tuple[str, float, str]]] = {
     ],
 }
 
-# İzin verilen tool/function çağrıları (whitelist)
+# Allowed tool/function calls (whitelist)
 ALLOWED_PATTERNS: list[str] = [
     r"print\s*\(",
     r"len\s*\(",
@@ -84,23 +83,23 @@ ALLOWED_PATTERNS: list[str] = [
 
 class ToolCallValidator(OutputGuard):
     """
-    LLM çıktısındaki tool/function call güvenlik kontrolü.
+    Security check for tool/function calls in LLM output.
 
-    Çalışma prensibi:
-    1. LLM yanıtında kod/komut pattern'leri aranır
-    2. Whitelist'teki güvenli fonksiyonlar atlanır
-    3. Tehlikeli pattern'ler kategorize edilip skorlanır
-    4. Threshold üzerindeki skor → blokla + sanitize
+    Operating principle:
+    1. Search the LLM response for code/command patterns
+    2. Skip safe functions found in the whitelist
+    3. Categorize and score dangerous patterns
+    4. Score above threshold → block + sanitize
 
-    LLM06 (Excessive Agency) savunması — model'in yapmaması
-    gereken eylemleri çıktıya koymasını engeller.
+    LLM06 (Excessive Agency) defense — prevents the model from
+    putting actions it shouldn't take into its output.
     """
     name = "ToolCallValidator"
 
     def __init__(self, threshold: float = 0.6):
         self.threshold = threshold
 
-        # Pattern'leri önceden derle
+        # Precompile the patterns
         self._compiled: dict[str, list[tuple[re.Pattern, float, str]]] = {}
         for category, patterns in DANGEROUS_PATTERNS.items():
             self._compiled[category] = [
@@ -111,11 +110,11 @@ class ToolCallValidator(OutputGuard):
         self._allowed = [re.compile(p) for p in ALLOWED_PATTERNS]
 
     def _is_allowed(self, match_text: str) -> bool:
-        """Eşleşme izin verilen bir fonksiyon mu?"""
+        """Is the match an allowed function?"""
         return any(p.search(match_text) for p in self._allowed)
 
     def _extract_code_blocks(self, text: str) -> list[str]:
-        """Metinden kod bloklarını çıkar."""
+        """Extract code blocks from the text."""
         blocks = []
         # Markdown code blocks
         for m in re.finditer(r"```[\w]*\n?(.*?)```", text, re.DOTALL):
@@ -123,7 +122,7 @@ class ToolCallValidator(OutputGuard):
         # Inline code
         for m in re.finditer(r"`([^`]+)`", text):
             blocks.append(m.group(1))
-        # Kod bloğu yoksa tüm metni kontrol et
+        # If there's no code block, check the entire text
         if not blocks:
             blocks.append(text)
         return blocks
@@ -153,7 +152,7 @@ class ToolCallValidator(OutputGuard):
         return GuardResult(
             blocked=blocked,
             reason=(
-                f"Tehlikeli tool/komut tespit edildi: "
+                f"Dangerous tool/command detected: "
                 f"{', '.join(f['description'] for f in findings[:3])}"
             ) if blocked else "",
             score=max_severity,
@@ -167,17 +166,17 @@ class ToolCallValidator(OutputGuard):
         )
 
     def sanitize(self, text: str, context: dict | None = None) -> str:
-        """Tehlikeli kod bloklarını redakte et."""
+        """Redact dangerous code blocks."""
         result = self.check(text, context)
         if not result.blocked:
             return text
 
         categories = result.details.get("categories", [])
         cat_str = ", ".join(categories)
-        # Kod bloklarını kaldır
+        # Strip the code blocks
         sanitized = re.sub(
             r"```[\w]*\n?.*?```",
-            f"[KOD BLOKLANDI — {cat_str}]",
+            f"[CODE BLOCKED — {cat_str}]",
             text,
             flags=re.DOTALL,
         )

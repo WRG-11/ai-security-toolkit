@@ -1,4 +1,4 @@
-"""AI-L2-01 regression — llm_firewall INPUT_GUARD_REGISTRY wires
+"""Regression — llm_firewall INPUT_GUARD_REGISTRY wires
 MultiTurnTracker + SlidingWindowRateLimiter.
 
 Pre-fix:
@@ -11,13 +11,13 @@ Pre-fix:
     "[UYARI] Bilinmeyen input guard" branch (line 208) — the guards
     were registered for export but blind to the firewall consumer.
 
-Pattern P11-1 "registered-but-not-wired" — 1st instance in this batch.
+"registered-but-not-wired" pattern.
 
 Post-fix:
     Both classes added to INPUT_GUARD_REGISTRY (opt-in via config; not
     added to DEFAULT_CONFIG.input_guards to preserve BC and because
     MultiTurnTracker requires session_id context to function correctly,
-    handled in AI-L2-02 — requires session_id context).
+    handled in the context-piping fix — requires session_id context).
 """
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ if str(_TOOLS) not in sys.path:
 
 
 class FirewallRegistryWireup(unittest.TestCase):
-    """AI-L2-01 closure guard."""
+    """Firewall registry wire-up closure guard."""
 
     def setUp(self) -> None:
         import llm_firewall  # noqa: E402
@@ -42,7 +42,7 @@ class FirewallRegistryWireup(unittest.TestCase):
         self.assertIn(
             "MultiTurnTracker",
             self.module.INPUT_GUARD_REGISTRY,
-            "P11-1: MultiTurnTracker exported but not wired to consumer "
+            "MultiTurnTracker exported but not wired to consumer "
             "registry — config opt-in falls through 'Bilinmeyen input "
             "guard' fallback.",
         )
@@ -52,7 +52,7 @@ class FirewallRegistryWireup(unittest.TestCase):
         self.assertIn(
             "SlidingWindowRateLimiter",
             self.module.INPUT_GUARD_REGISTRY,
-            "P11-1: SlidingWindowRateLimiter exported but not wired to "
+            "SlidingWindowRateLimiter exported but not wired to "
             "consumer registry.",
         )
 

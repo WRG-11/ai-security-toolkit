@@ -1,25 +1,25 @@
-"""labs/vulnllm ağacını bul, yoksa NEDENİNİ söyle.
+"""Find the labs/vulnllm tree, and when it is absent say WHY.
 
-``tools/`` üç aracın hepsinde lab ağacından import ediyor: saldırı korpusu
-(``attacks.*``) ve guard implementasyonları (``defenses.*``). ``labs/`` ise
-bilerek paketlenmiyor (gerekçe ``pyproject.toml`` içinde). İkisi birlikte şu
-anlama gelir: bu araçlar **repo checkout'u** ister; bir wheel'in içinden tek
-başlarına çalışamazlar.
+All three tools under ``tools/`` import from the lab tree: the attack corpus
+(``attacks.*``) and the guard implementations (``defenses.*``). ``labs/`` is
+deliberately not packaged (the reasoning lives in ``pyproject.toml``). Together
+that means these tools need a **repository checkout**; they cannot run from
+inside a wheel on their own.
 
-Bu doğru olabilir -- yanlış olan, bunun nasıl söylendiğiydi. 2026-07-29'da
-ölçüldü, temiz bir venv'e ``pip install .`` sonrası:
+That may well be correct -- what was wrong was how it got communicated. Measured
+2026-07-29, after ``pip install .`` into a clean venv:
 
     llm-scanner  --help  -> ModuleNotFoundError: No module named 'attacks'
     llm-firewall --help  -> ModuleNotFoundError: No module named 'defenses'
 
-``--help`` bile çalışmıyordu ve kullanıcıya düşen tek ipucu, kendi kodunda
-geçmeyen bir modül adıydı. Bu dosya o hatayı, ne olduğunu ve ne yapılacağını
-söyleyen bir mesajla değiştiriyor.
+Even ``--help`` failed, and the only clue the user got was the name of a module
+that appears nowhere in their own code. This file replaces that error with a
+message that says what happened and what to do.
 
-CI'ın bunu görememesinin nedeni ayrıca kayda değer: iş akışı yalnızca
-``pip install -e .`` koşuyordu. Editable kurulumda klon diskte kalır, dolayısıyla
-``_PROJECT_ROOT / "labs"`` her zaman çözülür -- yani CI'ın denediği kurulum
-yolu, kırılması mümkün olmayan yoldu.
+Why CI could not see it is worth recording too: the workflow only ran
+``pip install -e .``. An editable install leaves the clone on disk, so
+``_PROJECT_ROOT / "labs"`` always resolves -- the one install path CI exercised
+was the path that could not break.
 """
 from __future__ import annotations
 
@@ -32,14 +32,11 @@ _VULNLLM_DIR = _PROJECT_ROOT / "labs" / "vulnllm"
 
 
 class LabTreeMissing(ImportError):
-    """Lab ağacı bulunamadı -- araç bir checkout olmadan koşamaz."""
+    """The lab tree was not found -- the tool cannot run without a checkout."""
 
 
-# Mesaj İNGİLİZCE: bu metin son kullanıcıya gidiyor ve depo (README, CHANGELOG,
-# commit'ler) baştan sona İngilizce -- `pip install` yapan biri Türkçe hata
-# almamalı. Docstring ve yorumlar Türkçe kalıyor; onlar geliştirici notu.
-# Mesajın diakritiksiz olması kasıtlı: dar kod sayfalı Windows konsollarında
-# bozulmasın diye (aynı gerekçe `_console.make_output_safe` için de geçerli).
+# The message is deliberately free of diacritics so it survives Windows consoles
+# on a narrow code page (the same reasoning behind `_console.make_output_safe`).
 _MESSAGE = """\
 {tool}: labs/vulnllm/ not found -- expected at: {path}
 
@@ -58,17 +55,17 @@ If you already have a clone, replace the non-editable install with
 
 
 def ensure_lab_on_path(tool: str) -> Path:
-    """``labs/vulnllm``'i ``sys.path``'e ekle; yoksa açıklayıcı hata fırlat.
+    """Add ``labs/vulnllm`` to ``sys.path``, or raise an explanatory error.
 
     Args:
-        tool: Hata mesajında görünecek araç adı.
+        tool: Tool name to show in the error message.
 
     Returns:
-        Lab ağacının yolu.
+        Path to the lab tree.
 
     Raises:
-        LabTreeMissing: Ağaç yoksa. Mesaj tek satırlık bir modül adı değil,
-            ne yapılacağını söyleyen bir talimattır.
+        LabTreeMissing: When the tree is absent. The message is an instruction
+            telling you what to do, not a one-line module name.
     """
     if not _VULNLLM_DIR.is_dir():
         raise LabTreeMissing(_MESSAGE.format(tool=tool, path=_VULNLLM_DIR))
@@ -80,28 +77,28 @@ def ensure_lab_on_path(tool: str) -> Path:
 
 
 def ensure_lab_or_exit(tool: str) -> Path:
-    """``ensure_lab_on_path``, ama bir CLI'ın kullanıcısına göre.
+    """``ensure_lab_on_path``, but shaped for the user of a CLI.
 
-    ``ensure_lab_on_path`` modül seviyesinden çağrılıyor, yani ``main()``
-    çalışmadan önce. Oradan fırlayan bir istisna yakalanamaz ve Python onu
-    tam traceback'le basar: 2026-07-29'da ölçüldü, açıklayıcı mesaj on
-    satırlık bir yığın izinin *altında* çıkıyordu. Kullanıcının gördüğü ilk
-    şey ``Traceback (most recent call last)`` ise, mesajı düzeltmek yarım
-    iş kalır -- çünkü çıplak traceback "araç çöktü" demektir, oysa durum
-    "araç bu kurulum biçiminde çalışamaz, şöyle kur" durumudur.
+    ``ensure_lab_on_path`` is called at module level, i.e. before ``main()``
+    runs. An exception raised there cannot be caught, and Python prints it with
+    a full traceback: measured 2026-07-29, the explanatory message came out
+    *below* ten lines of stack trace. If the first thing the user sees is
+    ``Traceback (most recent call last)``, fixing the message is only half the
+    job -- a bare traceback says "the tool crashed", when the situation is "the
+    tool cannot run under this install layout, install it like so".
 
-    Bu sarmalayıcı mesajı stderr'e basar ve ``SystemExit(2)`` ile durur.
-    2 bilinçli: 1 "araç koştu ve bulgu buldu" için ayrılmış, bu ise
-    yapılandırma hatası.
+    This wrapper prints the message to stderr and stops with ``SystemExit(2)``.
+    The 2 is deliberate: 1 is reserved for "the tool ran and found something",
+    while this is a configuration error.
 
     Args:
-        tool: Hata mesajında görünecek araç adı.
+        tool: Tool name to show in the error message.
 
     Returns:
-        Lab ağacının yolu.
+        Path to the lab tree.
 
     Raises:
-        SystemExit: Ağaç yoksa, kod 2.
+        SystemExit: Code 2 when the tree is absent.
     """
     try:
         return ensure_lab_on_path(tool)
@@ -111,7 +108,7 @@ def ensure_lab_or_exit(tool: str) -> Path:
 
 
 def lab_is_available() -> bool:
-    """Ağaç var mı? Fırlatmadan sorabilmek için -- test ve fallback yolları."""
+    """Is the tree there? Asking without raising -- for tests and fallback paths."""
     return _VULNLLM_DIR.is_dir()
 
 

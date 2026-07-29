@@ -2,14 +2,14 @@
 Module #15 — Unicode Normalizer
 
 Pipeline'da ILK guard olmali — diger guard'lar normalize edilmis metni gorur.
-Zero-width karakter strip, NFKC normalizasyon, homoglyph tespiti.
+Zero-width character stripping, NFKC normalisation, homoglyph detection.
 """
 
 import unicodedata
 
 from .base import GuardResult, InputGuard
 
-# Latin ↔ Kiril homoglyph tablosu (en yaygin 30)
+# Latin <-> Cyrillic homoglyph table (the 30 most common)
 CONFUSABLES: dict[str, str] = {
     "\u0430": "a",  # Cyrillic а → Latin a
     "\u0435": "e",  # Cyrillic е → Latin e
@@ -65,9 +65,9 @@ class UnicodeNormalizer(InputGuard):
     """
     Pipeline'in ilk guard'i — input'u normalize eder.
     1. NFKC normalizasyon
-    2. Zero-width / gorunmez karakter strip
+    2. Strip zero-width / invisible characters
     3. Homoglyph (Kiril/Latin konfuzyon) tespiti
-    4. RTL override karakter tespiti
+    4. Detect RTL override characters
     """
     name = "UnicodeNormalizer"
 
@@ -78,14 +78,14 @@ class UnicodeNormalizer(InputGuard):
         """Metni normalize et — diger guard'lar bu versiyonu gorur."""
         # 1. NFKC normalizasyon
         result = unicodedata.normalize("NFKC", text)
-        # 2. Gorunmez karakter strip
+        # 2. Strip invisible characters
         result = "".join(c for c in result if c not in INVISIBLE_CHARS)
         # 3. Homoglyph normalizasyon
         result = "".join(CONFUSABLES.get(c, c) for c in result)
         return result
 
     def _detect_invisible(self, text: str) -> list[str]:
-        """Gorunmez karakter tespit et."""
+        """Detect invisible characters."""
         found = []
         for c in text:
             if c in INVISIBLE_CHARS:
@@ -95,7 +95,7 @@ class UnicodeNormalizer(InputGuard):
         return found
 
     def _detect_homoglyphs(self, text: str) -> list[str]:
-        """Kiril/Latin homoglyph tespit et."""
+        """Detect Cyrillic/Latin homoglyphs."""
         found = []
         for c in text:
             if c in CONFUSABLES:
@@ -116,7 +116,7 @@ class UnicodeNormalizer(InputGuard):
         return scripts
 
     def _detect_rtl_override(self, text: str) -> bool:
-        """RTL override karakter tespiti."""
+        """Detect RTL override characters."""
         rtl_chars = {"\u202a", "\u202b", "\u202c", "\u202d", "\u202e",
                      "\u2066", "\u2067", "\u2068", "\u2069"}
         return any(c in rtl_chars for c in text)
@@ -125,21 +125,21 @@ class UnicodeNormalizer(InputGuard):
         issues = []
         score = 0.0
 
-        # Gorunmez karakter kontrolu
+        # Invisible-character check
         invisible = self._detect_invisible(text)
         if invisible:
-            issues.append(f"Gorunmez karakter: {', '.join(invisible[:3])}")
+            issues.append(f"Invisible characters: {', '.join(invisible[:3])}")
             score += 0.3 * len(invisible)
 
         # Homoglyph kontrolu
         homoglyphs = self._detect_homoglyphs(text)
         if homoglyphs:
-            issues.append(f"Homoglyph: {len(homoglyphs)} karakter")
+            issues.append(f"Homoglyphs: {len(homoglyphs)} character(s)")
             score += 0.4
 
         # RTL override
         if self._detect_rtl_override(text):
-            issues.append("RTL override karakter tespit edildi")
+            issues.append("RTL override character detected")
             score += 0.5
 
         # Karisik script (Latin metin icinde Kiril vb.)

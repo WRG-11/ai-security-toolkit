@@ -1,23 +1,23 @@
-"""Sevk edilen model artefaktinin kalibrasyon karariyla uyusmasi.
+"""The shipped model artefact agreeing with the calibration decision.
 
-2026-07-29'da olculdu: kod sabiti DEFAULT_THRESHOLD 0.30'a cekilmis, README'ye
-0.50'nin neden bozuk oldugunu anlatan bir bolum yazilmis -- ama paketle giden
-injection_model.json hala `threshold: 0.5` tasiyordu ve load_model onu geri
-yaziyordu. Varsayilan CLI yolu (model dosyasi var -> yukle) bu yuzden 0.50'de
-kosuyordu; dahasi kullanicinin acikca verdigi --threshold de eziliyordu.
+Measured 2026-07-29: the code constant DEFAULT_THRESHOLD had been lowered to
+0.30 and the README had gained a section on why 0.50 was broken -- but the
+injection_model.json that ships with the package still carried `threshold: 0.5`
+and load_model wrote it back. So the default CLI path (model file exists ->
+load) ran at 0.50, and a --threshold the user passed explicitly was overwritten.
 
     HybridDetector(threshold=0.25) -> load_model() -> threshold == 0.5
 
-Iyilestirilen katman KARAR yoluna bagli degildi.
+The layer that got improved was not wired to the DECISION path.
 
-Bu sapmanin sekiz gun yasamasinin sebebi olcum aletidir: gorulmus veride
-(in-sample) 0.50, 0.30 ve 0.25 esiklerinin ucu de 194/194 yakalar, yani fark
-SIFIR gorunur. Fark yalnizca gorulmemis veride ortaya cikar -- holdout'ta
+The reason this drift survived eight days is the measuring instrument: on seen
+(in-sample) data all three thresholds -- 0.50, 0.30, 0.25 -- catch 194/194, so
+the difference looks like ZERO. It only appears on unseen data -- on holdout,
 recall 0.840 -> 0.057.
 
-Bu yuzden buradaki testler iki ayri seyi olcer:
-  1. artefakt ile sabit uyusuyor mu (statik),
-  2. yukleme islemi esigi DEGISTIRIYOR mu (davranissal).
+So the tests here measure two separate things:
+  1. does the artefact agree with the constant (static),
+  2. does loading CHANGE the threshold (behavioural).
 Ikincisi olmadan, birisi load_model'e ezmeyi geri koyup artefakti da
 guncellerse test yine yesil kalirdi.
 """
@@ -82,7 +82,7 @@ class ThresholdActuallyMattersTest(unittest.TestCase):
     """Esigin bir SEY yaptigini gosteren kontrol.
 
     Yukaridaki testler esigin dogru DEGERDE oldugunu soyler, kullanildigini
-    degil. Ayni model, iki esik, ayni girdi -> farkli etiket beklenir; boyle
+    not. Same model, two thresholds, same input -> different labels expected;
     bir girdi yoksa esik olu bir parametredir ve bunu bilmek gerekir.
     """
 

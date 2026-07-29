@@ -2,7 +2,7 @@
 
 Three custom-built, zero-dependency security tools for LLM red teaming and defense.
 
-Sıfırdan yazılmış, sıfır bağımlılıktır (sadece Python stdlib) — LLM red team ve savunma araçları.
+Written from scratch with zero dependencies (Python stdlib only) -- LLM red team and defense tooling.
 
 > The commands below are checked against the tools' real `--help`. They were
 > not, until 2026-07-29: this file documented `--target`, `--model`,
@@ -29,7 +29,7 @@ Sıfırdan yazılmış, sıfır bağımlılıktır (sadece Python stdlib) — LL
 | **Dependencies** | None (stdlib only) | Ollama | None (stdlib only) |
 | **Modes** | CLI, interactive, HTTP server, file | CLI, JSON report | CLI, interactive, HTTP proxy |
 | **Output** | Risk score + threat breakdown | OWASP-mapped report | Block/allow + audit log |
-| **Lines** | <!-- METRIC:lines_ml -->1235<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->752<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->927<!-- /METRIC:lines_firewall --> |
+| **Lines** | <!-- METRIC:lines_ml -->1237<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->752<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->927<!-- /METRIC:lines_firewall --> |
 
 **All three need the repository checkout.** They import the attack corpus and
 guard implementations from `labs/vulnllm/`, which is deliberately not packaged.

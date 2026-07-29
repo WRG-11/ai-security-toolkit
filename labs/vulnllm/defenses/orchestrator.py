@@ -1,7 +1,7 @@
 """
 VulnLLM Defense — Orchestrator
 
-Savunma modullerini pipeline olarak zincirler.
+Chains the defense modules into a pipeline.
 Input guard'lar fail-fast, output guard'lar sanitize-all.
 """
 
@@ -47,7 +47,7 @@ class DefenseOrchestrator:
             )
 
     def check_input(self, text: str, context: dict | None = None) -> GuardResult:
-        """Tum input guard'larini çalıştır. Ilk bloklayan kazanir.
+        """Run every input guard. The first one to block wins.
 
         Each guard.check() is wrapped in try/except. A guard exception
         is treated as FAIL-CLOSED at the guard level (input is blocked,
@@ -106,7 +106,7 @@ class DefenseOrchestrator:
         )
 
     def check_output(self, text: str, context: dict | None = None) -> tuple[str, GuardResult]:
-        """Tum output guard'larini çalıştır. Bloklanan içerik sanitize edilir.
+        """Run every output guard. Blocked content is sanitised.
 
         Same fail-closed discipline as check_input, but on the output
         side 'fail-closed' means 'block + sanitize fallback'. If both

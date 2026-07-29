@@ -1,23 +1,23 @@
-"""Wheel'den kurulan paketin gercekten kosup kosmadigi.
+"""Whether the package installed from a wheel actually runs.
 
-Bu dosyanin varlik sebebi: CI yalnizca `pip install -e .` kosuyordu. Editable
-kurulumda klon diskte kalir, dolayisiyla `_PROJECT_ROOT / "labs"` her zaman
-cozulur -- yani CI'in denedigi kurulum yolu KIRILMASI MUMKUN OLMAYAN yoldu.
-Editable-olmayan kurulumda ise (2026-07-29 olcumu) uc konsol komutundan ikisi
-`--help`'te bile oluyordu:
+Why this file exists: CI only ran `pip install -e .`. An editable install leaves
+the clone on disk, so `_PROJECT_ROOT / "labs"` always resolves -- the one install
+path CI exercised was the path that COULD NOT BREAK. Under a non-editable install
+(measured 2026-07-29) two of the three console commands died even on `--help`:
 
     llm-scanner  --help  -> ModuleNotFoundError: No module named 'attacks'
     llm-firewall --help  -> ModuleNotFoundError: No module named 'defenses'
 
-Test edilen sey "hata yok" degil, SOZLESME:
+What is tested is not "no error" but the CONTRACT:
 
-    prompt-injection-detect <metin>   -> calisir (model paketle geliyor)
-    prompt-injection-detect --train   -> exit 2 + korpusun gerektigini soyler
-    llm-scanner / llm-firewall        -> ne yapilacagini soyleyen mesajla durur
+    prompt-injection-detect <text>    -> runs (the model ships with the package)
+    prompt-injection-detect --train   -> exit 2 + says the corpus is required
+    llm-scanner / llm-firewall        -> stop with a message saying what to do
 
-Yani "wheel her seyi yapar" demiyoruz; ne yapip ne yapamadigini sabitliyoruz.
+So we are not claiming "the wheel does everything"; we are pinning what it does
+and does not do.
 
-Yavas (bir venv kurar + bir wheel kurar), bu yuzden RUN_WHEEL_TESTS=1 olmadan
+Slow (it builds a venv and installs a wheel), so without RUN_WHEEL_TESTS=1
 atlanir. CI'da ayri bir is olarak kosar.
 """
 from __future__ import annotations
@@ -77,7 +77,7 @@ class WheelInstallContractTest(unittest.TestCase):
         )
 
     def test_detector_predicts_from_a_wheel(self):
-        """Model paket verisi olarak geldigi icin tahmin yolu calismali."""
+        """The model ships as package data, so the prediction path must work."""
         proc = self._run(
             "prompt-injection-detect",
             "--json",
@@ -87,7 +87,7 @@ class WheelInstallContractTest(unittest.TestCase):
         self.assertIn('"label"', proc.stdout)
 
     def test_detector_training_explains_itself_instead_of_crashing(self):
-        """Korpus yok; traceback degil, ne yapilacagini soyleyen mesaj + exit 2."""
+        """No corpus: not a traceback, but a message saying what to do + exit 2."""
         proc = self._run("prompt-injection-detect", "--train")
         self.assertEqual(proc.returncode, 2, f"stdout: {proc.stdout}")
         self.assertNotIn("Traceback", proc.stderr)
@@ -111,7 +111,7 @@ class WheelInstallContractTest(unittest.TestCase):
 
         `ensure_lab_on_path` modul seviyesinden cagriliyordu, yani `main()`
         calismadan once -- oradan firlayan istisna yakalanamaz ve Python onu
-        tam traceback'le basar. Kullanicinin gordugu ilk satir
+        prints it with a full traceback. The first line the user sees
         `Traceback (most recent call last)` ise mesaj ne kadar iyi olursa
         olsun okunan sey "arac coktu" olur; oysa durum "arac bu kurulum
         biciminde calisamaz, soyle kur" durumudur.
@@ -130,7 +130,7 @@ class WheelInstallContractTest(unittest.TestCase):
         """1 "arac kostu ve bulgu buldu" demek. Burada hicbir sey kosmadi.
 
         Herhangi bir sifir-disi cikisi bulgu sayan bir CI isi, hic
-        calismamis bir kurulum icin guvenlik sonucu raporlardi.
+        would report a security result for an install that never ran.
         """
         for name in ("llm-scanner", "llm-firewall"):
             with self.subTest(tool=name):
@@ -188,8 +188,9 @@ class UserFacingMessageLanguageTest(unittest.TestCase):
 
     def test_message_avoids_diacritics(self):
         """Diakritiksizlik kasitli: dar kod sayfali Windows konsollarinda
-        bozulmasin diye (ayni gerekce `_console.make_output_safe` icin de
-        gecerli). Ingilizceye cevirdikten sonra bu zaten dogal, ama kural
+        so it does not break (the same reasoning applies to
+        `_console.make_output_safe`). After translating to English this is
+        natural anyway, but the rule
         yazili kalsin ki biri geri Turkceye cevirmeye kalkarsa dogru
         bicimde yapsin."""
         message = self._message()

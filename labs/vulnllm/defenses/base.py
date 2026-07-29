@@ -2,7 +2,7 @@
 VulnLLM Defense — Base Classes
 
 GuardResult, InputGuard, OutputGuard, AuditLogger.
-Tum savunma modulleri bu siniflardan turetilir.
+Every defense module derives from these classes.
 """
 
 import json
@@ -57,7 +57,7 @@ class GuardResult:
 
 
 class InputGuard(ABC):
-    """Input (kullanıcı girdisi) kontrolu."""
+    """Input check (on user input)."""
     name: str = "BaseInputGuard"
 
     @abstractmethod
@@ -74,7 +74,7 @@ class OutputGuard(ABC):
         ...
 
     def sanitize(self, text: str, context: dict | None = None) -> str:
-        """Zararlı içeriği temizle. Override edilebilir."""
+        """Strip the harmful content. Can be overridden."""
         return text
 
 
@@ -124,7 +124,7 @@ class AuditLogger:
         stats = self.get_stats()
         from config import C_BOLD, C_CYAN, C_RESET
         print(f"\n{C_BOLD}  Audit Log Istatistikleri:{C_RESET}")
-        print(f"  Toplam Olay:    {stats['total_events']}")
+        print(f"  Total events:   {stats['total_events']}")
         print(f"  Bloklanan:      {stats['blocked_events']} ({stats['block_rate']})")
         if stats['by_guard']:
             print("  Guard Bazli:")

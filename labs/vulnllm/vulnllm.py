@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
 VulnLLM — Zafiyetli LLM Lab Ortami
-OWASP LLM Top 10 saldırı & savunma pratigi.
+OWASP LLM Top 10 attack & defense practice.
 
 Kullanım:
     python vulnllm.py                          # Ana menu
     python vulnllm.py --challenge 1            # Challenge 1 interaktif
-    python vulnllm.py --challenge 1 --auto     # Challenge 1 otomatik saldırı
+    python vulnllm.py --challenge 1 --auto     # Challenge 1, automated attack
     python vulnllm.py --all --auto             # Tum challenge'lar otomatik
     python vulnllm.py --challenge 1 -d medium  # Orta zorluk
     python vulnllm.py --scoreboard             # Skor tablosu
@@ -44,7 +44,7 @@ BANNER = f"""
   ╚████╔╝ ╚██████╔╝███████╗██║ ╚████║███████╗███████╗██║ ╚═╝ ██║
    ╚═══╝   ╚═════╝ ╚══════╝╚═╝  ╚═══╝╚══════╝╚══════╝╚═╝     ╚═╝
 {C_RESET}
-{C_BOLD}  OWASP LLM Top 10 — Saldiri & Savunma Lab Ortami{C_RESET}
+{C_BOLD}  OWASP LLM Top 10 -- Attack & Defense Lab{C_RESET}
 {C_DIM}  v0.2 | Mock + Ollama | 10 Challenge | 194 Saldiri | 3 Tier{C_RESET}
 """
 
@@ -60,12 +60,12 @@ def print_menu():
         print(f"        {C_DIM}{ch.description}{C_RESET}")
 
     print(f"\n  {C_BOLD}ZORLUK SEVIYELERI:{C_RESET}")
-    print(f"    {C_GREEN}easy{C_RESET}   — Savunma yok, temel teknikleri ogren")
+    print(f"    {C_GREEN}easy{C_RESET}   -- No defenses; learn the basic techniques")
     print(f"    {C_YELLOW}medium{C_RESET} — Basit filtreler, bypass tekniklerini ogren")
     print(f"    {C_RED}hard{C_RESET}   — Katmanli savunma, gercek dunya senaryosu")
 
     print(f"\n  {C_BOLD}MODEL TIER'LARI (--ollama --tier <T>):{C_RESET}")
-    print(f"    {C_GREEN}t1{C_RESET}  — Uncensored (dolphin-mistral) — guvenlik yok, saldiri ogren")
+    print(f"    {C_GREEN}t1{C_RESET}  -- Uncensored (dolphin-mistral) -- no safety; learn the attacks")
     print(f"    {C_YELLOW}t2{C_RESET}  — Zayif RLHF (qwen2.5:3b)     — bypass tekniklerini ogren")
     print(f"    {C_RED}t3{C_RESET}  — Guclu (llama3.2:3b)          — gelismis teknikler")
 
@@ -79,7 +79,7 @@ def print_menu():
     print("    python vulnllm.py -c 1 --ollama --tier t2 -a   T2 ile CH01 otomatik")
     print("    python vulnllm.py --all -o -t t1 -a            Tum challenge T1 otomatik")
     print(f"    {C_DIM}Diger:{C_RESET}")
-    print("    python vulnllm.py --scoreboard                 Skor tablosu")
+    print("    python vulnllm.py --scoreboard                 Scoreboard")
     print()
 
 
@@ -95,7 +95,7 @@ def run_interactive(challenge):
         try:
             user_input = input(f"  {C_GREEN}saldiri>{C_RESET} ")
         except (KeyboardInterrupt, EOFError):
-            print("\n  Cikis.")
+            print("\n  Exiting.")
             break
 
         if not user_input.strip():
@@ -112,22 +112,22 @@ def run_interactive(challenge):
                 sev_color = C_RED if tech["severity"] == "CRITICAL" else C_YELLOW if tech["severity"] == "HIGH" else C_CYAN
                 print(f"    {i}. {sev_color}[{tech['severity']}]{C_RESET} {tech['name']}")
                 print(f"       {C_DIM}Payload: {tech['payload'][:70]}{C_RESET}")
-                print(f"       {C_DIM}Aciklama: {tech['explanation']}{C_RESET}")
-            print(f"\n  {C_DIM}Kullanmak icin numarayi yazin (orn: '1') veya kendi payload'unuzu girin.{C_RESET}\n")
+                print(f"       {C_DIM}Explanation: {tech['explanation']}{C_RESET}")
+            print(f"\n  {C_DIM}Type a number to use one (e.g. '1'), or enter your own payload.{C_RESET}\n")
             continue
 
         elif cmd == "info":
-            print(f"\n  {C_BOLD}Savunma Bilgisi:{C_RESET} {challenge.get_defense_info()}")
-            print(f"  {C_BOLD}Hedef:{C_RESET} {challenge.objective}\n")
+            print(f"\n  {C_BOLD}Defense info:{C_RESET} {challenge.get_defense_info()}")
+            print(f"  {C_BOLD}Goal:{C_RESET} {challenge.objective}\n")
             continue
 
         elif cmd == "score":
-            print(f"\n  {C_BOLD}Skor:{C_RESET} {challenge.state.score} puan")
-            print(f"  {C_BOLD}Basarili Saldirilar:{C_RESET} {len(challenge.state.successful_attacks)}")
+            print(f"\n  {C_BOLD}Score:{C_RESET} {challenge.state.score} points")
+            print(f"  {C_BOLD}Successful attacks:{C_RESET} {len(challenge.state.successful_attacks)}")
             print(f"  {C_BOLD}Bloklanan:{C_RESET} {len(challenge.state.blocked_attacks)}\n")
             continue
 
-        # Numara ile hazir saldırı secimi
+        # Pick a ready-made attack by number
         if cmd.isdigit():
             idx = int(cmd) - 1
             techniques = challenge.get_attack_techniques()
@@ -145,17 +145,17 @@ def run_interactive(challenge):
         if response.blocked:
             print(f"\n  {C_RED}[BLOKLANDI]{C_RESET} {response.content}\n")
         elif success:
-            print(f"\n  {C_GREEN}[BASARILI!]{C_RESET} {response.content}\n")
+            print(f"\n  {C_GREEN}[SUCCESS!]{C_RESET} {response.content}\n")
             print(f"  {C_GREEN}+{challenge.state.score} puan kazanildi!{C_RESET}\n")
         else:
             print(f"\n  {C_YELLOW}[YANITDI]{C_RESET} {response.content}\n")
 
 
 def run_auto(challenge):
-    """Otomatik saldırı modu."""
+    """Automated attack mode."""
     challenge.print_banner()
 
-    print(f"\n  {C_MAGENTA}Otomatik Saldiri Modu{C_RESET} — Tum teknikler deneniyor...\n")
+    print(f"\n  {C_MAGENTA}Automated attack mode{C_RESET} -- trying every technique...\n")
 
     results = challenge.run_all_attacks()
 
@@ -167,7 +167,7 @@ def run_auto(challenge):
 
 
 def run_all_auto(difficulty: Difficulty, use_ollama: bool = False, model_tier=None, model_override=None):
-    """Tum challenge'lari otomatik çalıştır."""
+    """Run every challenge automatically."""
     print(BANNER)
     backend_label = f" | Ollama {model_tier.value.upper()}" if use_ollama else " | Mock"
     print(f"  {C_MAGENTA}{C_BOLD}TUM CHALLENGE'LAR — {difficulty.name} MOD{backend_label}{C_RESET}\n")
@@ -196,10 +196,10 @@ def run_all_auto(difficulty: Difficulty, use_ollama: bool = False, model_tier=No
     print(f"{C_BOLD}{C_MAGENTA}  GENEL SONUC TABLOSU{C_RESET}")
     print(f"{'=' * 65}")
     print(f"  Zorluk:             {difficulty.name}")
-    print(f"  Toplam Challenge:   {len(ALL_CHALLENGES)}")
-    print(f"  Toplam Saldiri:     {total_attacks}")
-    print(f"  {C_GREEN}Basarili:           {total_success}/{total_attacks}{C_RESET}")
-    print(f"  {C_BOLD}Toplam Skor:        {total_score}{C_RESET}")
+    print(f"  Total challenges:   {len(ALL_CHALLENGES)}")
+    print(f"  Total attacks:      {total_attacks}")
+    print(f"  {C_GREEN}Succeeded:          {total_success}/{total_attacks}{C_RESET}")
+    print(f"  {C_BOLD}Total score:        {total_score}{C_RESET}")
 
     print(f"\n  {C_BOLD}Challenge Bazli:{C_RESET}")
     for r in all_reports:
@@ -223,14 +223,14 @@ def run_all_auto(difficulty: Difficulty, use_ollama: bool = False, model_tier=No
             "total_attacks": total_attacks,
             "challenges": all_reports,
         }, f, ensure_ascii=False, indent=2)
-    print(f"\n  {C_DIM}Rapor kaydedildi: {report_path}{C_RESET}\n")
+    print(f"\n  {C_DIM}Report saved: {report_path}{C_RESET}\n")
 
 
 def show_scoreboard():
     """Kayitli raporlardan skor tablosu göster."""
     report_dir = Path(__file__).parent / "reports"
     if not report_dir.exists():
-        print(f"  {C_YELLOW}Henuz rapor yok. Once --auto ile saldiri calistirin.{C_RESET}")
+        print(f"  {C_YELLOW}No report yet. Run an attack with --auto first.{C_RESET}")
         return
 
     reports = sorted(report_dir.glob("report_*.json"), reverse=True)
@@ -240,7 +240,7 @@ def show_scoreboard():
 
     print(f"\n{C_BOLD}  SKOR TABLOSU{C_RESET}")
     print(f"  {'─' * 55}")
-    print(f"  {'Tarih':<20} {'Zorluk':<10} {'Skor':<8} {'Basari':<12}")
+    print(f"  {'Date':<20} {'Difficulty':<10} {'Score':<8} {'Success':<12}")
     print(f"  {'─' * 55}")
 
     for rpath in reports[:10]:
@@ -259,12 +259,12 @@ def show_scoreboard():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="VulnLLM — OWASP LLM Top 10 Saldiri & Savunma Lab",
+        description="VulnLLM -- OWASP LLM Top 10 attack & defense lab",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--challenge", "-c", type=int, help="Challenge numarasi (1-10)")
     parser.add_argument("--auto", "-a", action="store_true", help="Otomatik saldiri modu")
-    parser.add_argument("--all", action="store_true", help="Tum challenge'lari calistir")
+    parser.add_argument("--all", action="store_true", help="Run every challenge")
     parser.add_argument("--difficulty", "-d", choices=["easy", "medium", "hard", "expert"],
                         default="easy", help="Zorluk seviyesi (default: easy)")
     parser.add_argument("--ollama", "-o", action="store_true",
@@ -273,7 +273,7 @@ def main():
                         help="Model tier: t1=uncensored, t2=weak, t3=strong (default: t1)")
     parser.add_argument("--model", "-m", type=str, default=None,
                         help="Ollama model adi (tier'i override eder, orn: deepseek-r1:8b)")
-    parser.add_argument("--scoreboard", "-s", action="store_true", help="Skor tablosu")
+    parser.add_argument("--scoreboard", "-s", action="store_true", help="Scoreboard")
 
     args = parser.parse_args()
     difficulty = DIFFICULTY_MAP[args.difficulty]
@@ -293,7 +293,7 @@ def main():
         if not test_backend.model_exists():
             model_name = model_override or TIER_MODELS[model_tier]["model"]
             print(f"{C_RED}Model bulunamadi: {model_name}")
-            print(f"Yuklemek icin: ollama pull {model_name}{C_RESET}")
+            print(f"To install: ollama pull {model_name}{C_RESET}")
             sys.exit(1)
         if model_override:
             print(f"\n  {C_MAGENTA}Ollama Backend Aktif: {model_override} (custom){C_RESET}\n")

@@ -1,7 +1,7 @@
 """
 Challenge-Spesifik Custom Guard'lar.
 
-Her challenge icin ozel input/output filtreleri.
+Per-challenge input/output filters.
 Bunlar genel guard'larin uzerine eklenir.
 """
 
@@ -11,7 +11,7 @@ from .guards import GuardResult, InputGuard, OutputGuard
 
 
 class SecretWordFilter(InputGuard):
-    """Belirli kelimeleri input'ta bloklayan filtre."""
+    """Filter that blocks specific words in the input."""
     name = "SecretWordFilter"
 
     def __init__(self, blocked_words: list[str]):
@@ -31,10 +31,10 @@ class SecretWordFilter(InputGuard):
 
 
 class SecretPatternFilter(InputGuard):
-    """Regex pattern'leri input'ta bloklayan filtre."""
+    """Filter that blocks regex patterns in the input."""
     name = "SecretPatternFilter"
 
-    def __init__(self, patterns: list[str], reason: str = "Zararli pattern tespit edildi"):
+    def __init__(self, patterns: list[str], reason: str = "Malicious pattern detected"):
         self.patterns = patterns
         self.reason = reason
 
@@ -52,7 +52,7 @@ class SecretPatternFilter(InputGuard):
 
 
 class SecretLeakFilter(OutputGuard):
-    """Belirli gizli degerlerin output'ta sizdirmasini engelleyen filtre."""
+    """Filter that stops specific secret values from leaking into the output."""
     name = "SecretLeakFilter"
 
     def __init__(self, secrets: list[str], mask: str = "[REDACTED]"):
@@ -64,7 +64,7 @@ class SecretLeakFilter(OutputGuard):
         if leaked:
             return GuardResult(
                 blocked=True,
-                reason=f"Gizli bilgi sizintisi tespit edildi ({len(leaked)} deger)",
+                reason=f"Secret leakage detected ({len(leaked)} value(s))",
                 score=1.0,
                 guard_name=self.name,
                 details={"leaked_count": len(leaked)},
@@ -79,7 +79,7 @@ class SecretLeakFilter(OutputGuard):
 
 
 class DangerousActionFilter(InputGuard):
-    """Tehlikeli agent aksiyonlarini bloklayan filtre."""
+    """Filter that blocks dangerous agent actions."""
     name = "DangerousActionFilter"
 
     def __init__(self, dangerous_patterns: list[str] | None = None):
@@ -106,7 +106,7 @@ class DangerousActionFilter(InputGuard):
 
 
 class AnomalyFilter(OutputGuard):
-    """Output'ta anomali (beklenmeyen içerik) tespit eden filtre."""
+    """Filter that detects anomalies (unexpected content) in the output."""
     name = "AnomalyFilter"
 
     def __init__(self, anomaly_patterns: list[str] | None = None):
@@ -125,14 +125,14 @@ class AnomalyFilter(OutputGuard):
             if re.search(pattern, text, re.IGNORECASE):
                 return GuardResult(
                     blocked=True,
-                    reason="Anomali tespit edildi: yanit baseline'dan sapma gosteriyor",
+                    reason="Anomaly detected: the response deviates from the baseline",
                     score=0.9,
                     guard_name=self.name,
                 )
         return GuardResult(guard_name=self.name)
 
     def sanitize(self, text: str, context: dict | None = None) -> str:
-        return "[ANOMALI TESPIT EDILDI — Yanit bloke edildi. Normal isleyise donuluyor.]"
+        return "[ANOMALY DETECTED -- response blocked. Returning to normal operation.]"
 
 
 class PackageVerifier(OutputGuard):
@@ -162,4 +162,4 @@ class PackageVerifier(OutputGuard):
         return GuardResult(guard_name=self.name)
 
     def sanitize(self, text: str, context: dict | None = None) -> str:
-        return text + "\n\n[UYARI: Bir veya daha fazla paket PyPI'da dogrulanamadi. Kurulum oncesi kontrol edin.]"
+        return text + "\n\n[WARNING: one or more packages could not be verified on PyPI. Check before installing.]"

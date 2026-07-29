@@ -149,7 +149,7 @@ def send_prompt(prompt: str, history: list = None) -> dict:
 def main():
     print("=" * 60)
     print("Agent ODIN Solver — Mission 1: LABRATS")
-    print(f"Toplam {len(PROMPTS)} prompt denenecek")
+    print(f"Total {len(PROMPTS)} prompts to try")
     print("=" * 60)
 
     for i, prompt in enumerate(PROMPTS, 1):
@@ -162,10 +162,10 @@ def main():
 
         if success:
             print("\n" + "!" * 60)
-            print("!!!  BASARILI! FLAG BULUNDU!  !!!")
+            print("!!!  SUCCESS! FLAG FOUND!  !!!")
             print("!" * 60)
             print(f"Prompt: {prompt}")
-            print(f"Cevap: {content}")
+            print(f"Response: {content}")
             print("!" * 60)
 
             with open("FLAG.txt", "w", encoding="utf-8") as f:
@@ -186,8 +186,8 @@ def main():
         time.sleep(1.5)
 
     print("\n" + "=" * 60)
-    print("Tum promptlar denendi, basari yok.")
-    print("Sonuclari inceleyip yeni teknikler ekleyin.")
+    print("All prompts tried, no success.")
+    print("Review the results and add new techniques.")
     print("=" * 60)
 
 

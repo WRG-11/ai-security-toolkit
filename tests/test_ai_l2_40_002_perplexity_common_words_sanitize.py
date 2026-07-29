@@ -1,4 +1,4 @@
-"""AI-L2-40-002 regression — PerplexityFilter COMMON_WORDS sanitized
+"""Regression — PerplexityFilter COMMON_WORDS sanitized
 of injection-trigger tokens (defense config poisoning closure).
 
 Pre-fix:
@@ -12,7 +12,7 @@ Pre-fix:
     consisted almost entirely of these 'known' words → low unknown-
     word ratio → bypassed perplexity-based filtering.
 
-Pattern P10-2 sister: "defense config poisoning" — the defense
+"defense config poisoning" pattern — the defense
 control's own configuration data was poisoned with adversarial
 trigger words that the control was supposed to detect.
 
@@ -39,7 +39,7 @@ INJECTION_TRIGGER_WORDS = (
 
 
 class PerplexityCommonWordsSanitized(unittest.TestCase):
-    """AI-L2-40-002 closure guard."""
+    """COMMON_WORDS sanitization closure guard."""
 
     def test_injection_triggers_absent_from_common_words(self) -> None:
         from defenses.perplexity import COMMON_WORDS
@@ -47,7 +47,7 @@ class PerplexityCommonWordsSanitized(unittest.TestCase):
         leaked = [w for w in INJECTION_TRIGGER_WORDS if w in COMMON_WORDS]
         self.assertEqual(
             leaked, [],
-            f"P10-2: injection trigger words leaked into COMMON_WORDS "
+            f"injection trigger words leaked into COMMON_WORDS "
             f"defense config: {leaked}. These tokens must NOT be "
             f"classified as 'known/common' -- doing so poisons the "
             f"perplexity baseline and bypasses canonical injection "

@@ -1,23 +1,23 @@
-"""Konsol cikisini ASCII-disi metne dayanikli hale getir.
+"""Make console output resilient to non-ASCII text.
 
-2026-07-29 olcumu, Windows (cp1254) konsolunda:
+Measured 2026-07-29 on a Windows (cp1254) console:
 
     python tools/llm_scanner.py --list-probes
     ...
     UnicodeEncodeError: 'charmap' codec can't encode character '\\u2192'
 
-Komut ~30 probe bastiktan sonra oluyordu ve exit 1 donuyordu -- yani basarili
-bir bilgilendirme komutu, CI'da kirmizi bir adim. Sebep veri: bir probe adinda
-"->" yerine U+2192 var. Veriyi kirpmak yanlis cozum olurdu; kiran sey konsol
-kodlamasi.
+The command died after printing ~30 probes and returned exit 1 -- a successful
+informational command turning into a red CI step. The cause was data: one probe
+name contains U+2192 instead of "->". Trimming the data would have been the
+wrong fix; what broke was the console encoding.
 
-Ayni sinifin daha yumusak hali, ayni gun ayni depoda: prompt_injection_
-detector_ml.py'deki iki [UYARI] satiri Turkce aksanlarla yazilmisti ve ayni
-konsolda mojibake oluyordu (`Sald\\u00fdr\\u00fd k\\u00fdt\\u00fdphanesi`),
-dosyadaki diger tum kullanici-metinleri zaten ASCII'ye katlanmisken.
+A milder form of the same class, the same day in the same repo: the two [WARN]
+lines in prompt_injection_detector_ml.py were written with Turkish accents and
+mojibaked on that console (`Sald\\u00fdr\\u00fd k\\u00fdt\\u00fdphanesi`), while
+every other user-facing message in the file was already folded to ASCII.
 
-`reconfigure` kullanilir, `TextIOWrapper` sarmalanmaz: sarmalayici cop
-toplandiginda altindaki tamponu kapatir ve paylasilan stdout'u bozar.
+`reconfigure` is used rather than wrapping in a `TextIOWrapper`: the wrapper
+closes the buffer underneath it when collected, corrupting a shared stdout.
 """
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ def make_output_safe() -> None:
         try:
             reconfigure(encoding="utf-8", errors="replace")
         except (ValueError, OSError):
-            # Kapali/ozel akis. Cikti kozmetigi icin cagirani dusurmeyiz.
+            # Closed or exotic stream. We do not take the caller down over cosmetics.
             pass
 
 

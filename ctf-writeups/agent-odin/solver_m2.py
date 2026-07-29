@@ -167,7 +167,7 @@ def main():
 
         if success:
             print("\n" + "!" * 60)
-            print("!!!  BASARILI! MISSION 2 TAMAMLANDI!  !!!")
+            print("!!!  SUCCESS! MISSION 2 COMPLETE!  !!!")
             print("!" * 60)
             print(f"Prompt: {prompt}")
             print(f"Cevap: {content[:500]}")
@@ -195,7 +195,7 @@ def main():
 
     print("\n" + "=" * 60)
     print("Tum promptlar denendi.")
-    print("Sonuclar m2_results.json'a kaydedildi.")
+    print("Results saved to m2_results.json.")
     print("=" * 60)
 
 

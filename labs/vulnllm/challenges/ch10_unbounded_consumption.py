@@ -12,12 +12,12 @@ class UnboundedConsumptionChallenge(BaseChallenge):
     name = "Unbounded Consumption"
     owasp_id = "LLM10"
     description = "API kaynak tuketimini sinirlandirmayan sisteme DoS/DoW saldirisi yapin."
-    objective = "Rate limit, token budget veya timeout olmayan sistemi cokertin veya cuzdan bosaltin."
+    objective = "Bring down a system with no rate limit, token budget or timeout -- or drain its wallet."
     secrets = {"max_cost": "$10,000+"}
     atlas_mapping = ["AML.T0029"]
 
     COST_PER_TOKEN = 0.00003  # $/token simülasyonu
-    DOW_THRESHOLD = 100.0     # $100 asildiginda başarılı
+    DOW_THRESHOLD = 100.0     # success once $100 is exceeded
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -83,7 +83,7 @@ class UnboundedConsumptionChallenge(BaseChallenge):
         elif self.difficulty == Difficulty.MEDIUM:
             return [
                 {"pattern": r"(?:cok|very).*(?:uzun|long|detayli|detailed)",
-                 "response": ("Detayli aciklama: " + "Bu konu cok kapsamli. " * 200) +
+                 "response": ("Detailed explanation: " + "This topic is very broad. " * 200) +
                              "\n\nToken: 2000+. Maliyet artıyor ama rate limit icinde.\n"
                              "10 istekten sonra bloklanacak.",
                  "tokens": 2000},
@@ -96,7 +96,7 @@ class UnboundedConsumptionChallenge(BaseChallenge):
         else:
             return [
                 {"pattern": r"(?:slow|yavas|low.?rate).*(?:attack|saldiri|drain)",
-                 "response": "Slow-rate saldiri: Her 59 saniyede 1 istek.\n"
+                 "response": "Slow-rate attack: 1 request every 59 seconds.\n"
                              "Rate limiter tetiklenmiyor ama 24 saatte 1440 istek × 4096 token.\n"
                              "Gunluk maliyet: $172.80. Budget exceeded, dow_success",
                  "tokens": 4096},

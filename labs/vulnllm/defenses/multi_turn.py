@@ -1,8 +1,8 @@
 """
 Module #11 — Multi-Turn Conversation Tracker
 
-Crescendo ve kademeli saldırı tespiti icin cross-turn risk takibi.
-Her tur icin risk skoru hesaplar, kumulatif risk biriktir, eskalasyon tespit et.
+Cross-turn risk tracking for crescendo and step-by-step attacks.
+Scores the risk of each turn, accumulates it, and detects escalation.
 
 Ref: Microsoft Crescendo Attack, PyRIT orchestrator
 """

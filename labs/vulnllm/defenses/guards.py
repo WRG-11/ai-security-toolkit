@@ -1,18 +1,18 @@
 """
-VulnLLM — Savunma Modulleri (Core Guards)
+VulnLLM -- defense modules (core guards)
 
 Base class'lar: defenses/base.py
 Orchestrator: defenses/orchestrator.py
-Bu dosya: 6 core guard implementasyonu
+This file: six core guard implementations
 
-Backward compat: tum eski importlar calismaya devam eder.
+Backward compatible: every old import keeps working.
 """
 
 import hashlib
 import re
 import time
 
-# Backward compat — base class'lar ve orchestrator ayri dosyalarda
+# Backward compatible -- the base classes and the orchestrator live in separate files
 # Public re-exports: defenses/__init__.py imports from .guards;
 # AuditLogger + DefenseOrchestrator live in sibling modules but
 # are historically importable from here. F401 suppressed: intentional.
@@ -25,16 +25,16 @@ from .base import (
 from .orchestrator import DefenseOrchestrator  # noqa: F401
 
 # ──────────────────────────────────────────────────────────────
-# 1. Prompt Injection Classifier (TF-IDF + Heuristik Skor)
+# 1. Prompt injection classifier (TF-IDF + heuristic score)
 # ──────────────────────────────────────────────────────────────
 
 class PromptInjectionClassifier(InputGuard):
     """
-    Cok katmanli prompt injection tespiti:
-    1. Keyword skoru (agirlikli)
-    2. Pattern skoru (regex)
-    3. Yapisal analiz (uzunluk, ozel karakter orani)
-    4. Toplam skor → threshold karsilastirmasi
+    Multi-layer prompt injection detection:
+    1. Keyword score (weighted)
+    2. Pattern score (regex)
+    3. Structural analysis (length, special-character ratio)
+    4. Total score compared against the threshold
     """
     name = "PromptInjectionClassifier"
 
@@ -102,7 +102,7 @@ class PromptInjectionClassifier(InputGuard):
         self.threshold = threshold
 
     def _keyword_score(self, text: str) -> tuple[float, list[str]]:
-        """Keyword bazli skor hesapla."""
+        """Compute the keyword-based score."""
         lower = text.lower()
         max_score = 0.0
         matched_categories = []
@@ -118,7 +118,7 @@ class PromptInjectionClassifier(InputGuard):
         return max_score, matched_categories
 
     def _pattern_score(self, text: str) -> tuple[float, list[str]]:
-        """Regex pattern bazli skor."""
+        """Regex-pattern-based score."""
         max_score = 0.0
         matched_patterns = []
 
@@ -131,21 +131,21 @@ class PromptInjectionClassifier(InputGuard):
         return max_score, matched_patterns
 
     def _structural_score(self, text: str) -> float:
-        """Yapisal analiz skoru."""
+        """Structural analysis score."""
         score = 0.0
 
-        # Cok uzun input suspicious
+        # A very long input is suspicious
         if len(text) > 500:
             score += 0.1
         if len(text) > 2000:
             score += 0.2
 
-        # Ozel karakter orani
+        # Special-character ratio
         special_ratio = sum(1 for c in text if not c.isalnum() and c != ' ') / max(len(text), 1)
         if special_ratio > 0.15:
             score += 0.15
 
-        # Büyük harf orani (SHOUTING)
+        # Uppercase ratio (SHOUTING)
         if text != text.lower():
             upper_ratio = sum(1 for c in text if c.isupper()) / max(len(text), 1)
             if upper_ratio > 0.5:
@@ -164,7 +164,7 @@ class PromptInjectionClassifier(InputGuard):
         pat_score, pat_names = self._pattern_score(text)
         struct_score = self._structural_score(text)
 
-        # Agirlikli toplam
+        # Weighted total
         total = (kw_score * 0.4) + (pat_score * 0.4) + (struct_score * 0.2)
 
         # Birden fazla kategori varsa bonus (multi-vector attack)
@@ -177,7 +177,7 @@ class PromptInjectionClassifier(InputGuard):
 
         return GuardResult(
             blocked=blocked,
-            reason=f"Prompt injection skoru: {total:.2f} (esik: {self.threshold})" if blocked else "",
+            reason=f"Prompt injection score: {total:.2f} (threshold: {self.threshold})" if blocked else "",
             score=total,
             guard_name=self.name,
             details={
@@ -287,7 +287,7 @@ class PIIScanner(OutputGuard):
 
         return GuardResult(
             blocked=len(found) > 0,
-            reason=f"PII tespit edildi: {', '.join(f['type'] for f in found)}" if found else "",
+            reason=f"PII detected: {', '.join(f['type'] for f in found)}" if found else "",
             score=min(len(found) * 0.25, 1.0),
             guard_name=self.name,
             details={"findings": found},
@@ -307,7 +307,7 @@ class PIIScanner(OutputGuard):
 class CanarySystem(OutputGuard):
     """
     Sistem prompt'una canary token gomer.
-    Ciktida canary tespit edilirse → prompt leakage alarm.
+    A canary found in the output raises a prompt-leakage alarm.
 
     Kullanım:
         canary = CanarySystem()
@@ -325,7 +325,7 @@ class CanarySystem(OutputGuard):
             seed = str(time.time_ns())
             self.token = "CANARY_" + hashlib.sha256(seed.encode()).hexdigest()[:10]
 
-        # Token'in parcalari (partial leakage tespiti icin)
+        # Fragments of the token (to detect partial leakage)
         self.token_parts = [self.token[i:i+4] for i in range(0, len(self.token), 4)]
 
     def inject(self, prompt: str) -> str:
@@ -337,7 +337,7 @@ class CanarySystem(OutputGuard):
         if self.token in text:
             return GuardResult(
                 blocked=True,
-                reason="CANARY ALARM: Sistem prompt sizdirma tespit edildi!",
+                reason="CANARY ALARM: system prompt leakage detected!",
                 score=1.0,
                 guard_name=self.name,
                 details={"leak_type": "full", "canary": self.token[:8] + "..."},
@@ -348,7 +348,7 @@ class CanarySystem(OutputGuard):
         if found_parts >= 3:
             return GuardResult(
                 blocked=True,
-                reason=f"CANARY ALARM: Kismi prompt sizdirma ({found_parts} parca tespit edildi)",
+                reason=f"CANARY ALARM: partial prompt leakage ({found_parts} fragments found)",
                 score=0.8,
                 guard_name=self.name,
                 details={"leak_type": "partial", "parts_found": found_parts},
@@ -371,7 +371,7 @@ class CanarySystem(OutputGuard):
 class SlidingWindowRateLimiter(InputGuard):
     """
     Token bazli sliding window rate limiter.
-    Hem istek sayisi hem token tuketimi takip eder.
+    Tracks both the request count and token consumption.
     """
     name = "SlidingWindowRateLimiter"
 
@@ -408,7 +408,7 @@ class SlidingWindowRateLimiter(InputGuard):
             self.daily_reset = now
 
     def add_usage(self, tokens: int):
-        """LLM yaniti sonrasi token tuketimi kaydet."""
+        """Record token consumption after the LLM response."""
         now = time.time()
         self.token_usage.append((now, tokens))
         self.daily_cost += tokens * self.cost_per_token
@@ -422,13 +422,13 @@ class SlidingWindowRateLimiter(InputGuard):
         if estimated_tokens > self.max_input_length:
             return GuardResult(
                 blocked=True,
-                reason=f"Input cok uzun: ~{estimated_tokens} token (max {self.max_input_length})",
+                reason=f"Input too long: ~{estimated_tokens} tokens (max {self.max_input_length})",
                 score=0.7,
                 guard_name=self.name,
                 details={"check": "input_length", "tokens": estimated_tokens},
             )
 
-        # Istek sayisi kontrolu
+        # Request-count check
         if len(self.requests) >= self.max_requests:
             return GuardResult(
                 blocked=True,
@@ -476,8 +476,8 @@ class SlidingWindowRateLimiter(InputGuard):
 
 class SimilarityChecker(OutputGuard):
     """
-    LLM ciktisini sistem prompt'u ile karsilastirarak leakage tespit eder.
-    Basit n-gram overlap + Jaccard benzerlik skoru.
+    Detects leakage by comparing the LLM output against the system prompt.
+    Simple n-gram overlap plus a Jaccard similarity score.
     """
     name = "SimilarityChecker"
 
@@ -489,7 +489,7 @@ class SimilarityChecker(OutputGuard):
             self.set_reference(reference_text)
 
     def set_reference(self, text: str):
-        """Karsilastirma icin referans metni (sistem prompt) ayarla."""
+        """Set the reference text (the system prompt) used for comparison."""
         self.reference_ngrams = self._get_ngrams(text.lower())
 
     def _get_ngrams(self, text: str) -> set[str]:
@@ -512,7 +512,7 @@ class SimilarityChecker(OutputGuard):
         output_ngrams = self._get_ngrams(text.lower())
         similarity = self._jaccard(self.reference_ngrams, output_ngrams)
 
-        # Overlap ratio (ne kadar reference output'ta var)
+        # Overlap ratio (how much of the reference appears in the output)
         if self.reference_ngrams:
             overlap = len(self.reference_ngrams & output_ngrams) / len(self.reference_ngrams)
         else:
@@ -543,7 +543,7 @@ class SimilarityChecker(OutputGuard):
 class OutputSanitizer(OutputGuard):
     """
     LLM ciktisindaki potansiyel zararli içeriği temizler.
-    XSS, SQL Injection, Command Injection kaliplarini tespit eder.
+    Detects XSS, SQL injection and command injection patterns.
     """
     name = "OutputSanitizer"
 

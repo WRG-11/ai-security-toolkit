@@ -1,9 +1,9 @@
 """
-Mock LLM Backend — Deterministik zafiyetli yanıtlar.
+Mock LLM Backend — Deterministic vulnerable responses.
 
-Gerçek LLM kullanmadan OWASP LLM Top 10 zafiyetlerini simüle eder.
-Her challenge kendi yanıt mantığını tanımlar, bu backend sadece
-pattern matching ve yanıt seçimi yapar.
+Simulates OWASP LLM Top 10 vulnerabilities without using a real LLM.
+Each challenge defines its own response logic; this backend only
+does pattern matching and response selection.
 """
 
 import re
@@ -31,24 +31,24 @@ class MockBackend:
         system_prompt: str,
         user_message: str,
         response_rules: list[dict],
-        default_response: str = "Bu konuda size yardımcı olamıyorum.",
+        default_response: str = "I'm unable to help with that.",
     ) -> LLMResponse:
         """
-        Kural tabanlı yanıt üretimi.
+        Rule-based response generation.
 
-        response_rules formatı:
+        response_rules format:
         [
             {
                 "pattern": r"regex pattern",
-                "response": "yanıt metni",
-                "flags": re.IGNORECASE,  # opsiyonel
-                "tokens": 50,            # opsiyonel
-                "metadata": {},          # opsiyonel
+                "response": "response text",
+                "flags": re.IGNORECASE,  # optional
+                "tokens": 50,            # optional
+                "metadata": {},          # optional
             },
             ...
         ]
 
-        Kurallar sırayla kontrol edilir, ilk eşleşen kazanır.
+        Rules are checked in order; the first match wins.
         """
         self.call_count += 1
 
