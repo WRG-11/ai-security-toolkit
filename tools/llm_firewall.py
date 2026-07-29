@@ -198,7 +198,7 @@ class FirewallEvent:
 
 
 class LLMFirewall:
-    """LLM Guvenlik Duvari -- input/output filtreleme pipeline."""
+    """LLM firewall -- an input/output filtering pipeline."""
 
     VERSION = "1.0"
 
@@ -219,7 +219,7 @@ class LLMFirewall:
         self._build_pipeline()
 
     def _build_pipeline(self):
-        """Config'e gore guard pipeline olustur."""
+        """Build the guard pipeline from the config."""
         for name in self.config.input_guards:
             cls = INPUT_GUARD_REGISTRY.get(name)
             if cls is None:
@@ -716,7 +716,7 @@ def main():
 
     args = parser.parse_args()
 
-    # Config olustur
+    # Create a config
     if args.generate_config:
         out_path = str(_TOOLS_DIR / "llm_firewall_config.json")
         config = FirewallConfig()
@@ -724,7 +724,7 @@ def main():
         print(f"Configuration file created: {out_path}")
         return
 
-    # Config yukle
+    # Load the config
     if args.config:
         config = FirewallConfig.from_file(args.config)
     else:
@@ -738,13 +738,13 @@ def main():
     if args.log:
         config.log_file = args.log
 
-    # Firewall olustur
+    # Build the firewall
     firewall = LLMFirewall(config)
 
     # Stats modu
     if args.stats:
         if args.log and Path(args.log).exists():
-            # Log dosyasindan event'leri oku
+            # Read the events from the log file
             events = []
             with open(args.log, "r", encoding="utf-8") as f:
                 for line in f:

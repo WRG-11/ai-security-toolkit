@@ -41,8 +41,8 @@ def _hf_rules() -> list[dict]:
                 {
                     k.value: (v.value if isinstance(v, ast.Constant) else None)
                     # strict=True: bir dict literalinde anahtar ve deger
-                    # sayisi esit olmali; esit degilse sessizce kirpmak yerine
-                    # patlamasi dogru -- ayristirma varsayimi bozulmus demektir.
+                    # the counts must match; when they do not, failing loudly beats
+                    # trimming silently -- the parsing assumption has broken.
                     for k, v in zip(e.keys, e.values, strict=True)
                 }
                 for e in node.value.elts
@@ -102,7 +102,7 @@ class HardcodedCountTest(unittest.TestCase):
         self.assertNotIn(
             f"({rule_count} rules)",
             source,
-            f"'{rule_count} rules' elle yazilmis -- len(RULES) kullanin",
+            f"'{rule_count} rules' is hand-written -- use len(RULES)",
         )
         self.assertIn("{len(RULES)} rules", source)
 
@@ -136,9 +136,9 @@ class RuleSetDriftTest(unittest.TestCase):
         self.assertEqual(
             len(shared),
             self.KNOWN_SHARED_NAMES,
-            "iki kural seti arasindaki ortak isim sayisi degisti "
+            "the number of names shared by the two rule sets has changed "
             f"({len(shared)} != {self.KNOWN_SHARED_NAMES}). Birlesme oluyorsa "
-            "bu sabiti guncelleyin; ayrisma artiyorsa nedenini yazin",
+            "update this constant; if the divergence is growing, write down why",
         )
 
     def test_divergence_on_shared_inputs_is_not_growing(self):
@@ -175,7 +175,7 @@ class RuleSetDriftTest(unittest.TestCase):
         self.assertTrue(
             divergent,
             "ayrisma kalmamis gorunuyor -- iki set birlestiyse bu testi ve "
-            "KNOWN_SHARED_NAMES sabitini guncelleyin",
+            "update the KNOWN_SHARED_NAMES constant",
         )
 
 

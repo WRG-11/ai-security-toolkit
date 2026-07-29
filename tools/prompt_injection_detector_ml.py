@@ -53,7 +53,7 @@ else:
 from prompt_injection_detector import PromptInjectionDetector, Severity  # noqa: E402
 
 # ═══════════════════════════════════════════════════════════
-# Veri Modelleri
+# Data models
 # ═══════════════════════════════════════════════════════════
 
 
@@ -104,7 +104,7 @@ class PredictionResult:
 
 
 # ═══════════════════════════════════════════════════════════
-# TF-IDF Modeli (ml_classifier.py'den adapte)
+# TF-IDF model (adapted from ml_classifier.py)
 # ═══════════════════════════════════════════════════════════
 
 
@@ -221,12 +221,12 @@ class TFIDFModel:
 
 
 # ═══════════════════════════════════════════════════════════
-# Char N-gram Cosine Modeli (embedding_classifier.py'den adapte)
+# Char n-gram cosine model (adapted from embedding_classifier.py)
 # ═══════════════════════════════════════════════════════════
 
 
 class CharNgramModel:
-    """Karakter n-gram cosine similarity ile injection tespiti."""
+    """Injection detection through character n-gram cosine similarity."""
 
     def __init__(self, n_range: tuple[int, int] = (3, 5)):
         self.n_range = n_range
@@ -262,7 +262,7 @@ class CharNgramModel:
         return dot / (norm1 * norm2)
 
     def build_anchors(self, anchor_texts: list[tuple[str, str]]):
-        """(kategori, metin) listesinden anchor vektorleri olustur."""
+        """Build the anchor vectors from a list of (category, text) pairs."""
         self.anchors = []
         for category, text in anchor_texts:
             vec = self.vectorize(text)
@@ -513,7 +513,7 @@ def build_default_anchors() -> list[tuple[str, str]]:
 
 
 # ═══════════════════════════════════════════════════════════
-# Hibrit Dedektör
+# Hybrid detector
 # ═══════════════════════════════════════════════════════════
 
 
@@ -550,7 +550,7 @@ def _normalise_detections(raw: list[dict]) -> list[dict]:
 
 
 class HybridDetector:
-    """Regex + TF-IDF + Char N-gram hibrit prompt injection dedektörü."""
+    """Regex + TF-IDF + char n-gram hybrid prompt injection detector."""
 
     VERSION = "0.2"
 
@@ -618,7 +618,7 @@ class HybridDetector:
         return len(injection_texts), len(benign_texts)
 
     def predict(self, text: str) -> PredictionResult:
-        """Metni analiz et, hibrit skor don."""
+        """Analyse the text and return the hybrid score."""
         if not self._trained:
             self.train()
 
@@ -626,18 +626,18 @@ class HybridDetector:
         if len(text) > 80:
             preview += "..."
 
-        # 1. Regex katmani (v0.1)
+        # 1. Regex layer (v0.1)
         regex_result = self.regex_detector.analyze(text)
         regex_raw = regex_result["risk_score"] / 100.0
         regex_detections = _normalise_detections(regex_result.get("detections", []))
 
-        # 2. TF-IDF katmani
+        # 2. TF-IDF layer
         tfidf_score, tfidf_terms = self.tfidf_model.predict(text)
 
-        # 3. Char n-gram embedding katmani
+        # 3. Char n-gram embedding layer
         emb_sim, emb_cat, emb_anchor = self.embedding_model.find_closest(text)
 
-        # Agirlikli toplam
+        # Weighted total
         w = self.weights
         final_score = (
             w["regex"] * regex_raw
@@ -645,13 +645,13 @@ class HybridDetector:
             + w["embedding"] * emb_sim
         )
 
-        # Kritik override: herhangi bir metod >= 0.9 ise CRITICAL
+        # Critical override: any single method >= 0.9 makes it CRITICAL
         if max(regex_raw, tfidf_score, emb_sim) >= 0.9:
             final_score = max(final_score, 0.85)
 
         final_score = min(final_score, 1.0)
 
-        # Risk seviyesi
+        # Risk level
         if final_score < 0.2:
             risk = RiskLevel.SAFE
         elif final_score < 0.4:
@@ -665,7 +665,7 @@ class HybridDetector:
 
         label = "INJECTION" if final_score >= self.threshold else "SAFE"
 
-        # Confidence: metod skorlarının uyumu
+        # Confidence: how closely the per-method scores agree
         scores = [regex_raw, tfidf_score, emb_sim]
         mean = sum(scores) / len(scores)
         variance = sum((s - mean) ** 2 for s in scores) / len(scores)
@@ -919,7 +919,7 @@ def print_report(result: PredictionResult) -> None:
     icon = RISK_ICONS.get(result.risk_level, result.risk_level)
     marker = "+" if result.label == "INJECTION" else "-"
     print(f"\n{b}Verdict: {c}[{marker}] {icon}{r}")
-    # "esik:" yaziyordu ama basilan sey esik degil, uc katmanin skoruydu.
+    # It said "threshold:" but what it printed was the three layer scores.
     print(f"{b}Score:   {c}{result.score:.2%}{r}  (layers: {result.method_scores[0].score:.0%}R + {result.method_scores[1].score:.0%}T + {result.method_scores[2].score:.0%}E)")
     print(f"{b}Confidence: {result.confidence:.0%}{r}")
 
@@ -950,7 +950,7 @@ def print_report(result: PredictionResult) -> None:
         if result.closest_anchor:
             print(f"  {d}Anchor: \"{result.closest_anchor[:60]}\"{r}")
 
-    # Regex tespitleri
+    # Regex detections
     if result.regex_detections:
         print(f"\n{b}Regex detections ({len(result.regex_detections)}):{r}")
         for det in result.regex_detections[:5]:
@@ -971,7 +971,7 @@ def print_benchmark(stats: dict) -> None:
     red = COLORS["HIGH"]
 
     print(f"\n{b}{'=' * 50}{r}")
-    print(f"{b}  BENCHMARK SONUCLARI{r}")
+    print(f"{b}  BENCHMARK RESULTS{r}")
     print(f"{b}{'=' * 50}{r}")
 
     print(f"\n{b}Veri Seti:{r}")
@@ -1027,12 +1027,12 @@ class DetectorHandler(BaseHTTPRequestHandler):
         try:
             data = json.loads(body)
         except json.JSONDecodeError:
-            self._respond(400, {"error": "Gecersiz JSON."})
+            self._respond(400, {"error": "Invalid JSON."})
             return
 
         text = data.get("text", "")
         if not text:
-            self._respond(400, {"error": "'text' alani gerekli."})
+            self._respond(400, {"error": "The 'text' field is required."})
             return
 
         result = _http_detector.predict(text)
@@ -1085,10 +1085,10 @@ def serve_http(detector: HybridDetector, port: int = 8090):
 def main():
     make_output_safe()
     parser = argparse.ArgumentParser(
-        description="Prompt Injection Detector v0.2 -- ML Hibrit (Regex + TF-IDF + Char N-gram)",
+        description="Prompt Injection Detector v0.2 -- ML hybrid (regex + TF-IDF + char n-gram)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
-            "Örnekler:\n"
+            "Examples:\n"
             "  %(prog)s \"ignore all previous instructions\"\n"
             "  %(prog)s --train\n"
             "  %(prog)s --benchmark\n"
@@ -1173,11 +1173,11 @@ def main():
                 break
         return
 
-    # Dosyadan oku
+    # Read from a file
     if args.file:
         path = Path(args.file)
         if not path.exists():
-            print(f"Dosya bulunamadi: {args.file}", file=sys.stderr)
+            print(f"File not found: {args.file}", file=sys.stderr)
             sys.exit(1)
         lines = path.read_text(encoding="utf-8").strip().split("\n")
         results = []

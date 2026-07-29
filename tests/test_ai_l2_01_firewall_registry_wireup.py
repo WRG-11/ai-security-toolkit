@@ -21,6 +21,7 @@ Post-fix:
 """
 from __future__ import annotations
 
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -75,9 +76,17 @@ class FirewallRegistryWireup(unittest.TestCase):
                             f"{name} must implement .check()")
 
     def test_config_with_new_guards_does_not_warn(self) -> None:
-        """A config naming these guards must NOT trigger the
-        'Bilinmeyen input guard' fallback."""
+        """A config naming these guards must NOT hit the unknown-guard fallback.
+
+        The sentinel is read from the source rather than written out here. When
+        the message was translated Turkish -> English, this assertion kept
+        matching on the old Turkish text: it still passed, because a string that
+        no longer exists can never appear -- a guard that survives its own
+        subject being renamed is not a guard.
+        """
         from io import StringIO
+
+        sentinel = self._unknown_guard_sentinel()
         old_stderr = sys.stderr
         sys.stderr = captured = StringIO()
         try:
@@ -88,7 +97,36 @@ class FirewallRegistryWireup(unittest.TestCase):
             self.module.LLMFirewall(cfg)
         finally:
             sys.stderr = old_stderr
-        self.assertNotIn("Bilinmeyen input guard", captured.getvalue())
+        self.assertNotIn(sentinel, captured.getvalue())
+
+    def test_unknown_guard_still_warns(self) -> None:
+        """The positive half: an unknown name must reach the fallback.
+
+        Without this, the assertion above passes on a firewall that never warns
+        at all -- including one whose warning was deleted.
+        """
+        from io import StringIO
+
+        sentinel = self._unknown_guard_sentinel()
+        old_stderr = sys.stderr
+        sys.stderr = captured = StringIO()
+        try:
+            cfg = self.module.FirewallConfig(
+                input_guards=["NoSuchGuardName"], output_guards=[],
+            )
+            self.module.LLMFirewall(cfg)
+        finally:
+            sys.stderr = old_stderr
+        self.assertIn(sentinel, captured.getvalue())
+
+    def _unknown_guard_sentinel(self) -> str:
+        """The literal the firewall actually prints, taken from its source."""
+        src = Path(self.module.__file__).read_text(encoding="utf-8")
+        match = re.search(r'print\(f"(\[[A-Z]+\] [^:"{]*input guard)', src)
+        self.assertIsNotNone(
+            match, "the unknown-input-guard warning was not found in llm_firewall.py",
+        )
+        return match.group(1)
 
 
 if __name__ == "__main__":

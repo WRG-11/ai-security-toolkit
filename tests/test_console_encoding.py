@@ -48,7 +48,7 @@ class NarrowConsoleTest(unittest.TestCase):
     def test_list_probes_prints_every_probe_not_just_the_ascii_prefix(self):
         """A presence check is not enough: the old code also printed the first ~30 lines.
 
-        Olculen sey, ciktinin BASLIKTA vaat edilen sayiya ulasmasi -- yani
+        What is measured is that the output reaches the count promised in the
         kirilma noktasindan sonrasinin da geldigi.
         """
         proc = _run_with_encoding(["--list-probes"], "cp1254")
@@ -58,7 +58,7 @@ class NarrowConsoleTest(unittest.TestCase):
         self.assertEqual(
             len(lines),
             promised,
-            f"baslik {promised} probe vaat etti, {len(lines)} satir basildi",
+            f"the header promised {promised} probes, {len(lines)} lines were printed",
         )
 
     def test_utf8_console_is_unaffected(self):
