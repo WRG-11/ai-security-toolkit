@@ -105,6 +105,41 @@ class WheelInstallContractTest(unittest.TestCase):
                 self.assertIn("pip install -e .", combined)
                 self.assertNotIn("No module named", combined)
 
+    def test_scanner_and_firewall_do_not_print_a_traceback(self):
+        """Mesaji duzeltmek yetmedi: mesaj on satirlik bir yigin izinin
+        ALTINDA cikiyordu.
+
+        `ensure_lab_on_path` modul seviyesinden cagriliyordu, yani `main()`
+        calismadan once -- oradan firlayan istisna yakalanamaz ve Python onu
+        tam traceback'le basar. Kullanicinin gordugu ilk satir
+        `Traceback (most recent call last)` ise mesaj ne kadar iyi olursa
+        olsun okunan sey "arac coktu" olur; oysa durum "arac bu kurulum
+        biciminde calisamaz, soyle kur" durumudur.
+
+        Onceki test bunu goremezdi: sadece dogru metnin VAR oldugunu
+        ariyordu, cevresinde ne oldugunu degil.
+        """
+        for name in ("llm-scanner", "llm-firewall"):
+            with self.subTest(tool=name):
+                proc = self._run(name, "--help")
+                combined = proc.stdout + proc.stderr
+                self.assertNotIn("Traceback (most recent call last)", combined)
+                self.assertNotIn("LabTreeMissing", combined)
+
+    def test_scanner_and_firewall_exit_two_not_one(self):
+        """1 "arac kostu ve bulgu buldu" demek. Burada hicbir sey kosmadi.
+
+        Herhangi bir sifir-disi cikisi bulgu sayan bir CI isi, hic
+        calismamis bir kurulum icin guvenlik sonucu raporlardi.
+        """
+        for name in ("llm-scanner", "llm-firewall"):
+            with self.subTest(tool=name):
+                proc = self._run(name, "--help")
+                self.assertEqual(
+                    proc.returncode, 2,
+                    f"{name} exited {proc.returncode}; 2 = configuration error",
+                )
+
 
 @unittest.skipUnless(_ENABLED, _SKIP_REASON)
 class WheelContentsTest(unittest.TestCase):
@@ -120,6 +155,46 @@ class WheelContentsTest(unittest.TestCase):
         )
         pkg = Path(proc.stdout.strip())
         self.assertTrue((pkg / "models" / "injection_model.json").is_file())
+
+
+class UserFacingMessageLanguageTest(unittest.TestCase):
+    """Son kullaniciya giden metnin dili.
+
+    Venv gerektirmez, bu yuzden RUN_WHEEL_TESTS'ten bagimsiz kosar -- ve
+    kosmali: depo (README, rozet, CHANGELOG, commit'ler) bastan sona
+    Ingilizce, dolayisiyla `pip install` yapan biri Turkce hata almamali.
+    Yorumlar ve docstring'ler Turkce kaliyor; onlar gelistirici notu, bu
+    ayrim bilincli.
+    """
+
+    def _message(self) -> str:
+        body = (_ROOT / "tools" / "_lab.py").read_text(encoding="utf-8")
+        return body.split('_MESSAGE = """\\', 1)[1].split('"""', 1)[0]
+
+    def test_message_is_english(self):
+        message = self._message()
+        for turkish in ("bulunamadi", "beklenen konum", "Yapilacak",
+                        "calisamaz", "degistirin"):
+            self.assertNotIn(turkish, message, f"Turkish text left in: {turkish!r}")
+        self.assertIn("not found", message)
+
+    def test_message_still_names_the_remedy(self):
+        """Dili degistirirken talimatin dusmedigini de sabitle -- ceviri
+        sirasinda en kolay kaybolan sey, hatanin ne oldugu degil ne
+        yapilacagi."""
+        message = self._message()
+        self.assertIn("pip install -e .", message)
+        self.assertIn("labs/vulnllm", message)
+
+    def test_message_avoids_diacritics(self):
+        """Diakritiksizlik kasitli: dar kod sayfali Windows konsollarinda
+        bozulmasin diye (ayni gerekce `_console.make_output_safe` icin de
+        gecerli). Ingilizceye cevirdikten sonra bu zaten dogal, ama kural
+        yazili kalsin ki biri geri Turkceye cevirmeye kalkarsa dogru
+        bicimde yapsin."""
+        message = self._message()
+        for ch in "çğıöşüÇĞİÖŞÜ":
+            self.assertNotIn(ch, message)
 
 
 if __name__ == "__main__":

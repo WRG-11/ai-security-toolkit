@@ -55,6 +55,21 @@ not.
   install gave `ModuleNotFoundError: No module named 'attacks'` — a module
   name that appears nowhere in the user's own code. `tools/_lab.py` now stops
   with the directory it looked for and the command that fixes it.
+- **That message arrived under a traceback, which undid most of it.**
+  `ensure_lab_on_path()` was called at module scope, before `main()`, so the
+  exception could not be caught and Python printed the full stack first. The
+  user's opening line was `Traceback (most recent call last)`, which reads as
+  "this tool crashed" rather than "this tool cannot run from this kind of
+  install". `ensure_lab_or_exit()` prints to stderr and exits 2. Two, not one:
+  1 means the scan ran and found something, and a CI job treating any non-zero
+  exit as findings would report a security result for an install that never
+  executed.
+- **The message was Turkish in an English repository.** README, badges,
+  CHANGELOG and commits are all English, so `pip install` users were told
+  `labs/vulnllm/ bulunamadi`. It is English now. Comments and docstrings stay
+  Turkish; those are developer notes and the distinction is deliberate. The
+  text stays free of diacritics for narrow Windows code pages, same reason
+  `_console.make_output_safe` exists, and a test holds all three properties.
 - **CI could not have caught it.** The `test` job installs with `-e`, which
   keeps the checkout on disk and makes the lookup succeed every time: the
   install path CI exercised was the one that could not fail. Added a `wheel`

@@ -35,20 +35,26 @@ class LabTreeMissing(ImportError):
     """Lab ağacı bulunamadı -- araç bir checkout olmadan koşamaz."""
 
 
+# Mesaj İNGİLİZCE: bu metin son kullanıcıya gidiyor ve depo (README, CHANGELOG,
+# commit'ler) baştan sona İngilizce -- `pip install` yapan biri Türkçe hata
+# almamalı. Docstring ve yorumlar Türkçe kalıyor; onlar geliştirici notu.
+# Mesajın diakritiksiz olması kasıtlı: dar kod sayfalı Windows konsollarında
+# bozulmasın diye (aynı gerekçe `_console.make_output_safe` için de geçerli).
 _MESSAGE = """\
-{tool}: labs/vulnllm/ bulunamadi -- beklenen konum: {path}
+{tool}: labs/vulnllm/ not found -- expected at: {path}
 
-Bu arac saldiri korpusunu ve guard implementasyonlarini labs/vulnllm/
-altindan import eder. labs/ bilerek paketlenmez (bkz. pyproject.toml), bu
-yuzden arac bir wheel'in icinden tek basina calisamaz; repo checkout'u ister.
+This tool imports its attack corpus and guard implementations from
+labs/vulnllm/. labs/ is deliberately not packaged (see pyproject.toml), so
+the tool cannot run from inside a wheel on its own; it needs the repository
+checkout on disk.
 
-Yapilacak:
+To fix:
     git clone https://github.com/WRG-11/ai-security-toolkit.git
     cd ai-security-toolkit
-    pip install -e .        # editable: klon diskte kalir, labs/ cozulur
+    pip install -e .        # editable: the clone stays on disk, labs/ resolves
 
-Zaten bir klonunuz varsa, editable-olmayan kurulumu kaldirip
-`pip install -e .` ile degistirin."""
+If you already have a clone, replace the non-editable install with
+`pip install -e .`."""
 
 
 def ensure_lab_on_path(tool: str) -> Path:
@@ -73,9 +79,45 @@ def ensure_lab_on_path(tool: str) -> Path:
     return _VULNLLM_DIR
 
 
+def ensure_lab_or_exit(tool: str) -> Path:
+    """``ensure_lab_on_path``, ama bir CLI'ın kullanıcısına göre.
+
+    ``ensure_lab_on_path`` modül seviyesinden çağrılıyor, yani ``main()``
+    çalışmadan önce. Oradan fırlayan bir istisna yakalanamaz ve Python onu
+    tam traceback'le basar: 2026-07-29'da ölçüldü, açıklayıcı mesaj on
+    satırlık bir yığın izinin *altında* çıkıyordu. Kullanıcının gördüğü ilk
+    şey ``Traceback (most recent call last)`` ise, mesajı düzeltmek yarım
+    iş kalır -- çünkü çıplak traceback "araç çöktü" demektir, oysa durum
+    "araç bu kurulum biçiminde çalışamaz, şöyle kur" durumudur.
+
+    Bu sarmalayıcı mesajı stderr'e basar ve ``SystemExit(2)`` ile durur.
+    2 bilinçli: 1 "araç koştu ve bulgu buldu" için ayrılmış, bu ise
+    yapılandırma hatası.
+
+    Args:
+        tool: Hata mesajında görünecek araç adı.
+
+    Returns:
+        Lab ağacının yolu.
+
+    Raises:
+        SystemExit: Ağaç yoksa, kod 2.
+    """
+    try:
+        return ensure_lab_on_path(tool)
+    except LabTreeMissing as exc:
+        print(str(exc), file=sys.stderr)
+        raise SystemExit(2) from None
+
+
 def lab_is_available() -> bool:
     """Ağaç var mı? Fırlatmadan sorabilmek için -- test ve fallback yolları."""
     return _VULNLLM_DIR.is_dir()
 
 
-__all__ = ["LabTreeMissing", "ensure_lab_on_path", "lab_is_available"]
+__all__ = [
+    "LabTreeMissing",
+    "ensure_lab_on_path",
+    "ensure_lab_or_exit",
+    "lab_is_available",
+]

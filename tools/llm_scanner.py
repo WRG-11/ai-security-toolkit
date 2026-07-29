@@ -31,11 +31,11 @@ _PROJECT_ROOT = _TOOLS_DIR.parent
 sys.path.insert(0, str(_TOOLS_DIR))
 
 from _console import make_output_safe  # noqa: E402
-from _lab import ensure_lab_on_path  # noqa: E402
+from _lab import ensure_lab_or_exit  # noqa: E402
 
 # Ağaç yoksa burada, ne yapılacağını söyleyen bir mesajla durur -- eskiden
 # `ModuleNotFoundError: No module named 'attacks'` ile duruyordu.
-_VULNLLM_DIR = ensure_lab_on_path("llm_scanner")
+_VULNLLM_DIR = ensure_lab_or_exit("llm_scanner")
 
 from attacks.library import AttackTechnique, AttackCategory  # noqa: E402
 
