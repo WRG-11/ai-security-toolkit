@@ -37,7 +37,13 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install ruff
-      - run: ruff check tools/ tests/
+      # Kapsam neden tum depo: bu adim uzun sure  tariyordu
+      # ve temiz geciyordu, ama depo genelinde 148 ihlal vardi -- neredeyse
+      # tamami labs/ altinda, yani kodun buyuk cogunlugunda. Yesil bir lint
+      # rozeti kodun besde birini temsil ediyordu. Genisletildiginde cikan
+      # seylerden biri stil degildi: perplexity.py'deki Turkce stop-word
+      # setinde bir soru eki iki kez yazilmis, digeri hic yoktu.
+      - run: ruff check .
 
   # self-scan: re-add when devguard-scan ships a --show-findings flag so
   # findings from intentional vulnerable lab code can be allowlisted separately.
