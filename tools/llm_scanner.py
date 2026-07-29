@@ -28,10 +28,16 @@ from typing import Optional
 # --- Path setup ---
 _TOOLS_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _TOOLS_DIR.parent
-_VULNLLM_DIR = _PROJECT_ROOT / "labs" / "vulnllm"
-sys.path.insert(0, str(_VULNLLM_DIR))
+sys.path.insert(0, str(_TOOLS_DIR))
 
-from attacks.library import AttackTechnique, AttackCategory
+from _console import make_output_safe  # noqa: E402
+from _lab import ensure_lab_on_path  # noqa: E402
+
+# Ağaç yoksa burada, ne yapılacağını söyleyen bir mesajla durur -- eskiden
+# `ModuleNotFoundError: No module named 'attacks'` ile duruyordu.
+_VULNLLM_DIR = ensure_lab_on_path("llm_scanner")
+
+from attacks.library import AttackTechnique, AttackCategory  # noqa: E402
 
 # ═══════════════════════════════════════════════════════════
 # Sabitler
@@ -621,6 +627,9 @@ def print_report(report: ScanReport) -> None:
 
 
 def main():
+    # Probe adlarinda ASCII-disi karakter var (ornegin U+2192). cp1254 bir
+    # konsolda --list-probes bunlarin ilkinde UnicodeEncodeError ile oluyordu.
+    make_output_safe()
     parser = argparse.ArgumentParser(
         description="LLM Scanner v1.0 -- OWASP LLM Top 10 Zafiyet Tarayıcı",
         formatter_class=argparse.RawDescriptionHelpFormatter,
