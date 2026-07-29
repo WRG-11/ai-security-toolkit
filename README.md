@@ -37,9 +37,9 @@ This repo is that toolkit. Core tools (Tools section below) are stdlib-only Pyth
 
 | Tool | Description | Lines |
 |------|-------------|-------|
-| [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack patterns, **F1 0.91 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | 1000 |
-| [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> probes, severity mapping | 743 |
-| [LLM Firewall](tools/llm_firewall.py) | 10-guard security middleware, HTTP proxy mode, plugin architecture | 863 |
+| [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack patterns, **F1 0.91 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | <!-- METRIC:lines_ml -->1232<!-- /METRIC:lines_ml --> |
+| [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> probes, severity mapping | <!-- METRIC:lines_scanner -->752<!-- /METRIC:lines_scanner --> |
+| [LLM Firewall](tools/llm_firewall.py) | 10-guard security middleware (12 registered, 2 opt-in), HTTP proxy mode, plugin architecture | <!-- METRIC:lines_firewall -->927<!-- /METRIC:lines_firewall --> |
 
 **Key features:**
 - Zero external dependencies (Python stdlib only)
@@ -69,6 +69,21 @@ pip install -e .          # core tools; installs nothing else
 That gives you three commands: `prompt-injection-detect`, `llm-scanner`,
 `llm-firewall`. Running from a clone without installing also still works.
 
+**Install editable (`-e`), and keep the clone.** The `-e` above is not a
+style preference. `llm-scanner` and `llm-firewall` import their attack corpus
+and guard implementations from `labs/vulnllm/`, which is deliberately not
+packaged (see below), so they need the checkout on disk. From a plain
+non-editable wheel they stop with an error naming the missing directory;
+before 2026-07-29 they died at `--help` with a bare `ModuleNotFoundError`
+about a module the user never wrote. `prompt-injection-detect` is the
+exception — the trained model ships as package data, so prediction works
+anywhere and only `--train` needs the corpus.
+
+That split is a contract, not an accident, so it is tested from a real
+non-editable install in `tests/test_wheel_install.py` and in CI's `wheel` job.
+The `test` job cannot see it: it installs with `-e`, which keeps the checkout
+on disk and makes the lookup succeed every time.
+
 The "zero-dependency" claim is specific, so here is the whole map. Each extra
 is needed only by the directory next to it:
 
@@ -76,9 +91,17 @@ is needed only by the directory next to it:
 |---|---|---|---|
 | `tools/` — detector, scanner, firewall | `pip install -e .` | *nothing* | Python stdlib only |
 | `labs/vulnllm/` — the lab and its 10 challenges | *(none)* | *nothing* | stdlib only; run in place |
-| `labs/rag-security/` | `pip install -e ".[rag]"` | `chromadb` | a RAG lab needs a vector store |
+| `labs/rag-security/` | `pip install -e ".[rag]"` | `chromadb`, `sentence-transformers` | a RAG lab needs a vector store *and* an embedding model |
 | `huggingface-space/` | `pip install -e ".[hf]"` | `gradio` | Gradio demo UI, runs locally (not deployed) |
+| `ctf-writeups/agent-odin/` | `pip install -e ".[ctf]"` | `requests` | the three ODIN solvers; the Gandalf one is stdlib |
 | tests, lint, coverage | `pip install -e ".[dev]"` | `pytest`, `coverage`, `ruff` | measurement tools, not runtime deps |
+
+Two rows were wrong until 2026-07-29, both in the direction that matters: the
+`rag` extra listed `chromadb` alone while the lab also needs
+`sentence-transformers` (`vulnerable_rag.py:107`), so the documented command
+produced a lab that died on setup; and the `ctf` row did not exist at all,
+which made this table's claim to be "the whole map" false by exactly the one
+entry that pulls a real dependency.
 
 `dependencies = []` in `pyproject.toml` is the machine-readable form of the
 first two rows: the claim is checkable by a resolver, not just asserted in
@@ -227,7 +250,7 @@ MITRE ATLAS                  [########--]  15 tactics, 66 techniques
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
-Test Suite                   [######----]  <!-- METRIC:test_module_count -->16<!-- /METRIC:test_module_count --> modules, 36% measured coverage
+Test Suite                   [######----]  <!-- METRIC:test_module_count -->19<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->45<!-- /METRIC:coverage_floor -->% enforced floor
 Tool Proficiency             [########--]  Garak, PyRIT, NeMo Guardrails
 ```
 

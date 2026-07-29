@@ -13,7 +13,7 @@ short_description: Hybrid ML detector for AI/LLM prompt injection attacks
 
 # Prompt Injection Detector
 
-Hybrid ML detector combining Regex (17 rules) + TF-IDF + Char N-gram for detecting prompt injection attacks.
+Hybrid ML detector combining Regex (<!-- METRIC:hf_rule_count -->17<!-- /METRIC:hf_rule_count --> rules) + TF-IDF + Char N-gram for detecting prompt injection attacks.
 
 **Features:**
 - Zero external ML dependencies (Python stdlib only)
@@ -26,8 +26,8 @@ Part of [AI Security Toolkit](https://github.com/WRG-11/ai-security-toolkit)
 
 ## Relationship to the main toolkit
 
-This Space is deployed separately and cannot import `tools/`, so two things
-are copies rather than references: the trained model JSON and the regex rule
+A Space is a separate deployment unit and cannot import `tools/`, so two
+things are copies rather than references: the trained model JSON and the regex rule
 table.
 
 Be aware that the rule tables are **not the same detector**. Measured
