@@ -4,9 +4,9 @@ from enum import Enum, IntEnum
 
 
 class Difficulty(IntEnum):
-    EASY = 1       # Savunma yok
+    EASY = 1       # No defenses
     MEDIUM = 2     # Basit filtreler
-    HARD = 3       # Katmanlı savunma
+    HARD = 3       # Layered defense
     EXPERT = 4     # Tam 21 modül pipeline
 
     @property
@@ -26,7 +26,7 @@ class Backend(Enum):
     OLLAMA = "ollama"
 
 
-# Varsayılan ayarlar
+# Default settings
 DEFAULT_DIFFICULTY = Difficulty.EASY
 DEFAULT_BACKEND = Backend.MOCK
 OLLAMA_MODEL = "llama3.2"
@@ -51,13 +51,13 @@ POINTS = {
     Difficulty.EXPERT: 100,
 }
 
-# Ollama model tier'lari icin beklenen saldırı başarı oranlari
+# Expected attack success rates per Ollama model tier
 EXPECTED_SUCCESS_RATES = {
-    # (tier, attack_category) → beklenen başarı orani
-    "t1_naive": 1.0,      # Uncensored — her sey çalışır
+    # (tier, attack_category) -> expected success rate
+    "t1_naive": 1.0,      # Uncensored -- everything works
     "t1_encoding": 1.0,
     "t1_multi_turn": 1.0,
-    "t2_naive": 0.7,      # Weak RLHF — basit saldırılar kismi engel
+    "t2_naive": 0.7,      # Weak RLHF -- simple attacks partially blocked
     "t2_encoding": 0.8,
     "t2_multi_turn": 0.9,
     "t3_naive": 0.1,      # Strong — gelismis teknikler gerekli

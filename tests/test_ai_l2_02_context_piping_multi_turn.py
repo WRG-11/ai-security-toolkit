@@ -1,4 +1,4 @@
-"""AI-L2-02 regression — llm_firewall threads `context` through the
+"""Regression — llm_firewall threads `context` through the
 input/output guard pipeline so per-session guards see real session_id.
 
 Pre-fix:
@@ -13,8 +13,8 @@ Pre-fix:
         OTHER users
       - Audit attribution unusable (every session_id=default)
 
-Pattern P11-1 sub-class 'wired-but-no-data-flow':
-    The guard was wired (post-AI-L2-01 fix) and the InputGuard contract
+'wired-but-no-data-flow' sub-pattern:
+    The guard was wired (post-registry-wire-up fix) and the InputGuard contract
     defined a context parameter -- but the consumer never threaded
     real per-request state in. Wiring without the data flow = blind
     defense control.
@@ -35,7 +35,7 @@ if str(_TOOLS) not in sys.path:
 
 
 class FirewallContextPiping(unittest.TestCase):
-    """AI-L2-02 closure guard."""
+    """Firewall context-piping closure guard."""
 
     def _build_firewall(self):
         import llm_firewall  # noqa: E402

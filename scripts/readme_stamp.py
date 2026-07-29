@@ -253,7 +253,7 @@ def stamp_text(
         regex = _marker_re(name)
 
         if not regex.search(text):
-            drift.append((name, "<marker yok>", value))
+            drift.append((name, "<no marker>", value))
             continue
 
         def _repl(m: re.Match[str], _n: str = name, _v: str = value) -> str:
@@ -288,11 +288,11 @@ def main(argv: list[str] | None = None) -> int:
             total_drift += len(drift)
             continue
 
-        if drift and any(old == "<marker yok>" for _, old, _ in drift):
+        if drift and any(old == "<no marker>" for _, old, _ in drift):
             for name, old, new in drift:
-                if old == "<marker yok>":
-                    print(f"error: {rel} icinde {name!r} marker'i yok "
-                          f"(deger {new!r}) -- elle ekleyin", file=sys.stderr)
+                if old == "<no marker>":
+                    print(f"error: {rel} has no {name!r} marker "
+                          f"(value {new!r}) -- add it by hand", file=sys.stderr)
             total_drift += 1
             continue
 

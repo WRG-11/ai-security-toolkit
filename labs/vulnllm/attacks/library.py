@@ -1,5 +1,5 @@
 """
-Attack Library — Profesyonel AI Red Team Saldırı Kutuphanesi
+Attack Library -- a professional AI red team attack corpus
 
 Siniflandirma kaynaklari:
 - NVIDIA Garak probe kategorileri
@@ -13,7 +13,7 @@ Her teknik:
 - Gercek dunya referansli
 - MITRE ATLAS mapped
 - Zorluk seviyesi (hangi savunmayi hedefliyor)
-- Tespit rehberi (savunmaci icin)
+- Detection guidance (for the defender)
 """
 
 from dataclasses import dataclass, field
@@ -55,21 +55,21 @@ class AttackCategory(Enum):
 
 @dataclass
 class AttackTechnique:
-    """Tek bir saldırı teknigi."""
+    """A single attack technique."""
     name: str
     category: AttackCategory
     payload: str
     severity: str                    # LOW, MEDIUM, HIGH, CRITICAL
     target_difficulty: str           # easy, medium, hard — hangi savunmayi bypass etmeyi hedefliyor
-    explanation: str                 # Egitim amacli açıklama
+    explanation: str                 # Explanation, for teaching
     atlas_id: str = ""               # MITRE ATLAS mapping
-    detection_hint: str = ""         # Savunmaci icin tespit rehberi
+    detection_hint: str = ""         # Detection guidance for the defender
     reference: str = ""              # Gercek dunya referansi
     tags: list = field(default_factory=list)  # Ek etiketler
 
 
 class AttackLibrary:
-    """Saldırı tekniklerini yoneten kutupane."""
+    """The library that manages the attack techniques."""
 
     def __init__(self):
         self.techniques: dict[str, list[AttackTechnique]] = {}

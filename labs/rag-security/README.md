@@ -2,7 +2,7 @@
 
 **Vulnerable RAG system with attack scenarios and defense mechanisms.**
 
-Savunmasız RAG sistemi — 5 saldırı senaryosu ve savunma mekanizmaları.
+A vulnerable RAG system — 5 attack scenarios and their defenses.
 
 ---
 
@@ -10,7 +10,7 @@ Savunmasız RAG sistemi — 5 saldırı senaryosu ve savunma mekanizmaları.
 
 A deliberately vulnerable Retrieval-Augmented Generation (RAG) system that demonstrates how attackers can extract confidential information, poison knowledge bases, and manipulate LLM responses through the retrieval pipeline.
 
-RAG pipeline'ına yönelik saldırıları gösteren ve savunma yöntemlerini öğreten bir lab ortamı.
+A lab that demonstrates attacks against a RAG pipeline and teaches the defenses against them.
 
 ## Architecture / Mimari
 
@@ -48,7 +48,7 @@ Response (potentially leaking confidential data)
 | poisoned_faq.md | POISONED | Injected malicious content |
 | poisoned_policy.md | POISONED | Injected override instructions |
 
-## Attack Scenarios / Saldırı Senaryoları
+## Attack Scenarios
 
 ### 1. Direct Disclosure
 Ask the RAG system about confidential topics — it retrieves and reveals them.
@@ -65,7 +65,7 @@ Embed "ignore previous instructions" in retrieved documents.
 ### 5. Membership Inference
 Determine whether specific data exists in the knowledge base.
 
-## Quick Start / Hızlı Başlangıç
+## Quick Start
 
 ```bash
 # Setup (creates ChromaDB + loads documents)

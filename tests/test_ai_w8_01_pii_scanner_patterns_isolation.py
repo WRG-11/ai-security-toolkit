@@ -1,4 +1,4 @@
-"""AI-W8-01 (P12-2 cluster #3) — PIIScanner.PATTERNS is per-instance.
+"""PIIScanner.PATTERNS is per-instance.
 
 Pre-fix:
     labs/vulnllm/defenses/guards.py:264-265 invoked
@@ -15,8 +15,8 @@ Post-fix:
     if extra_patterns:
         self.PATTERNS.update(extra_patterns)        # update on copy
 
-Pattern P12-2 'class-level mutable default cascade' — 3rd instance in
-the four-case graduation cluster (see also test_ai_w7, test_ch_08).
+'class-level mutable default cascade' anti-pattern (see also test_ai_w7,
+test_ch_08).
 """
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ if str(_VULNLLM) not in sys.path:
 
 
 class PIIScannerPatternsIsolation(unittest.TestCase):
-    """AI-W8-01 closure guard."""
+    """PIIScanner.PATTERNS instance-isolation closure guard."""
 
     def test_patterns_is_per_instance_dict(self) -> None:
         from defenses.guards import PIIScanner
@@ -38,7 +38,7 @@ class PIIScannerPatternsIsolation(unittest.TestCase):
         b = PIIScanner()
         self.assertIsNot(
             a.PATTERNS, b.PATTERNS,
-            "P12-2 #3: a.PATTERNS is b.PATTERNS -- class-level dict "
+            "a.PATTERNS is b.PATTERNS -- class-level dict "
             "shared between instances.",
         )
 
@@ -53,7 +53,7 @@ class PIIScannerPatternsIsolation(unittest.TestCase):
         self.assertIn("evil_pattern", attacker.PATTERNS)
         self.assertNotIn(
             "evil_pattern", victim.PATTERNS,
-            "P12-2 leak: extra_patterns from attacker PIIScanner "
+            "leak: extra_patterns from attacker PIIScanner "
             "instance bled into victim instance -- class dict "
             "mutation cascade not closed.",
         )

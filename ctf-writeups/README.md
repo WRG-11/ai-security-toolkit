@@ -1,12 +1,10 @@
-# CTF Writeups / CTF Çözümleri
+# CTF Writeups
 
 Solutions and techniques from AI/LLM security CTF challenges.
 
-AI/LLM güvenlik CTF yarışmalarında kullanılan çözümler ve teknikler.
-
 ---
 
-## Scoreboard / Puan Tablosu
+## Scoreboard
 
 | Platform | Score | Status |
 |----------|-------|--------|
@@ -17,7 +15,7 @@ AI/LLM güvenlik CTF yarışmalarında kullanılan çözümler ve teknikler.
 
 ---
 
-## Techniques Used / Kullanılan Teknikler
+## Techniques Used
 
 | Technique | Category | Used In |
 |-----------|----------|---------|

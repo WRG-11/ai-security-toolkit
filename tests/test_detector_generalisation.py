@@ -1,11 +1,12 @@
-"""Dedektörün ezber değil genelleme ölçtüğünü doğrulayan testler.
+"""Tests asserting the detector measures generalisation, not memorisation.
 
-README uzun süre "100% F1" iddiasını taşıdı. Rakam doğruydu ama ölçüm
-kendi eğitim verisi üzerindeydi: ``train()`` ve ``benchmark()`` aynı iki
-kaynağı kullanıyordu (``load_attack_payloads()`` + ``BENIGN_SAMPLES``).
-Aynı eşikle holdout ölçümü F1=0.107 veriyordu -- yani 194 saldırının 183'ü
-kaçıyordu. Bu dosya iki şeyi kilitler: ölçümün gerçekten holdout olduğu, ve
-varsayılan eşiğin ölçülmüş değerde kaldığı.
+The README carried a "100% F1" claim for a long time. The number was correct but
+the measurement ran on the model's own training data: ``train()`` and
+``benchmark()`` used the same two sources (``load_attack_payloads()`` plus
+``BENIGN_SAMPLES``). At the same threshold a holdout measurement gave F1=0.107 --
+183 of 194 attacks slipping through. This file pins two things: that the
+measurement really is held out, and that the default threshold stays at its
+measured value.
 """
 from __future__ import annotations
 
@@ -43,11 +44,11 @@ def holdout(threshold: float | None = None, seed: int = 1337) -> dict:
 
 
 class HoldoutBenchmarkTest(unittest.TestCase):
-    """5-fold holdout her çağrıda 5 model eğitir, yani saniyeler sürer.
+    """A 5-fold holdout trains five models per call, so it takes seconds.
 
-    Sonuç deterministik olduğu için sınıf başına bir kez hesaplanıp
-    paylaşılıyor; test başına yeniden koşmak süiti 0.4s'den 35s'ye
-    çıkarıyordu ve hiçbir ek şey doğrulamıyordu.
+    The result is deterministic, so it is computed once per class and shared;
+    re-running it per test pushed the suite from 0.4s to 35s and verified
+    nothing extra.
     """
 
     @classmethod
@@ -56,32 +57,32 @@ class HoldoutBenchmarkTest(unittest.TestCase):
         cls.holdout = holdout()
 
     def test_in_sample_benchmark_declares_itself_as_such(self):
-        """Varsayılan benchmark hâlâ ezber ölçer; bunu gizlememeli."""
+        """The default benchmark still measures memorisation; it must say so."""
         self.assertEqual(self.in_sample["evaluation"], "in_sample")
         self.assertIn("benchmark_holdout", self.in_sample["caveat"])
 
     def test_holdout_is_actually_held_out(self):
-        """Her fold'un test dilimi, o dilimi görmemiş modelle ölçülmeli.
+        """Each fold's test slice must be scored by a model that never saw it.
 
-        Sızıntının sessiz yolu anchor'lardı: ``build_default_anchors()``
-        payload havuzunun tamamını okur, dolayısıyla sadece eğitim dilimini
-        ayırmak yetmez -- test örnekleri embedding katmanına anchor olarak
-        geri sızar ve holdout görünümlü, sızıntılı bir sonuç üretir.
+        The quiet leak was the anchors: ``build_default_anchors()`` reads the
+        whole payload pool, so holding out the training slice alone is not
+        enough -- the test samples leak back into the embedding layer as
+        anchors and produce a leaky result wearing a holdout's clothes.
         """
         payloads = {p for p, _ in load_attack_payloads()}
         anchor_texts = {text for _, text in build_default_anchors()}
         overlap = {a for a in anchor_texts if any(a == p[:120] for p in payloads)}
         self.assertTrue(
             overlap,
-            "bu test anlamını yitirdi: anchor'lar artık payload havuzundan "
-            "türemiyorsa sızıntı riski de yok demektir, testi güncelleyin",
+            "this test has lost its meaning: if the anchors no longer derive "
+            "from the payload pool there is no leak risk either -- update it",
         )
 
     def test_holdout_result_is_materially_worse_than_in_sample(self):
-        """İki ölçüm aynı sayıyı veriyorsa holdout gerçekten ayrılmamıştır.
+        """If both measurements give the same number, nothing was held out.
 
-        Varlık kontrolü ("holdout koştu") bunu yakalayamaz -- iki farklı
-        girdinin iki FARKLI sonuç vermesi gerekir.
+        A presence check ("the holdout ran") cannot catch this -- two different
+        inputs have to produce two DIFFERENT results.
         """
         in_sample = self.in_sample["f1_score"]
         holdout = self.holdout["f1_score"]
@@ -89,8 +90,8 @@ class HoldoutBenchmarkTest(unittest.TestCase):
         self.assertLess(
             holdout,
             in_sample,
-            "holdout F1, in-sample ile aynı veya daha iyi çıktı -- ayrım "
-            "gerçekten uygulanmıyor olabilir",
+            "holdout F1 came out equal to or better than in-sample -- the "
+            "split may not actually be applied",
         )
 
     def test_holdout_is_deterministic_for_a_given_seed(self):
@@ -107,12 +108,12 @@ class HoldoutBenchmarkTest(unittest.TestCase):
 
 
 class DefaultThresholdTest(unittest.TestCase):
-    """Varsayılan eşik ölçülmüş bir değerdir, tahmin değil.
+    """The default threshold is a measured value, not a guess.
 
-    0.50 iken holdout F1 0.107 ve recall 0.057 idi: regex katmanı görülmemiş
-    (çoğu Türkçe) payload'da 0.0 döndüğü için, TF-IDF 0.80 verse bile ağırlıklı
-    toplam 0.39'da kalıp eşiği aşamıyordu. In-sample ölçüm bunu göremez --
-    orada her eşik F1=1.0 verir.
+    At 0.50 the holdout F1 was 0.107 and recall 0.057: the regex layer returns
+    0.0 on unseen (mostly Turkish) payloads, so even a TF-IDF score of 0.80 left
+    the weighted sum at 0.39, below the threshold. In-sample measurement cannot
+    show this -- there every threshold gives F1=1.0.
     """
 
     @classmethod
@@ -124,17 +125,17 @@ class DefaultThresholdTest(unittest.TestCase):
         self.assertGreater(
             result["recall"],
             0.75,
-            f"varsayılan eşik {DEFAULT_THRESHOLD} ile holdout recall düştü: "
-            f"{result['recall']} -- eşik/ağırlık kalibrasyonu bozulmuş olabilir",
+            f"holdout recall dropped at the default threshold {DEFAULT_THRESHOLD}: "
+            f"{result['recall']} -- threshold/weight calibration may have drifted",
         )
 
     def test_default_threshold_does_not_trade_away_precision(self):
-        """Recall'i yanlış alarmla satın almak bir giriş filtresinde kötü takas."""
+        """Buying recall with false alarms is a bad trade in an input filter."""
         result = self.holdout
         self.assertGreater(result["precision"], 0.93, str(result["precision"]))
 
     def test_old_default_would_have_failed_this_bar(self):
-        """Eşiğin neden değiştiğini kanıtla, iddia etme."""
+        """Prove why the threshold changed; do not assert it."""
         old = holdout(threshold=0.50)
         self.assertLess(old["recall"], 0.20, str(old["recall"]))
 

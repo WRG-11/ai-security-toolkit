@@ -202,7 +202,7 @@ not.
 - `SECURITY.md`: switched vulnerability-reporting channel from operator
   personal email to GitHub Security Advisories
   (`https://github.com/WRG-11/ai-security-toolkit/security/advisories`).
-  Closes Pattern 34 personal-PII surface in a public-repo security policy.
+  Closes the personal-PII surface in a public-repo security policy.
 
 ## [2026-05-22] -- WRG-11 brand consolidation
 

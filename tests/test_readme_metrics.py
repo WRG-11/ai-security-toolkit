@@ -1,12 +1,11 @@
-"""README'nin sayılabilir iddiaları koda uyuyor mu.
+"""Do the README's countable claims still match the code.
 
-README "21 defense modules" diyordu; koddaki gerçek sayı 27'ydi. Kimse
-hata yapmamıştı -- savunma eklendi, düzyazıdaki sayı yerinde kaldı. Elle
-yazılan sayılar bunu yapar, ve bu depo aynı şeyi daha önce de yaşadı.
+The README said "21 defense modules"; the real number in the code was 27.
+Nobody made a mistake -- a defense was added and the number in the prose
+stayed put. Hand-written numbers do that, and this repo has been here before.
 
-Bu test damgalayıcıyı `--check` kipinde çalıştırır: bir sayı koddan
-ayrıştığı anda süit kırmızıya döner, README'yi kimsenin fark etmesine
-gerek kalmaz.
+This test runs the stamper in `--check` mode: the moment a number drifts from
+the code the suite goes red, with nobody needing to notice the README.
 """
 from __future__ import annotations
 
@@ -23,12 +22,12 @@ import readme_stamp as rs  # noqa: E402
 
 class ReadmeMetricsTest(unittest.TestCase):
     def test_stamped_files_match_the_code(self):
-        """Her damgalanan dosya, taşıması beklenen metriklerle.
+        """Every stamped file, against the metrics it is meant to carry.
 
-        Tek dosya değil: `tools/README.md` uzun süre damganın dışındaydı ve
-        altında sessizce sürüklendi (geri çekilmiş "100% F1", 9 kurallık
-        motor için "17 rules", 80 örnek için "88"). Düzeltme, kusurun bir
-        tablo ötesine uygulanmıştı.
+        Not one file: `tools/README.md` sat outside the stamp for a long time
+        and drifted quietly underneath it (a retracted "100% F1", "17 rules"
+        for a 9-rule engine, "88" for 80 samples). The fix had been applied
+        one table short of the defect.
         """
         for path, names in rs.TARGETS.items():
             with self.subTest(file=path.name, parent=path.parent.name):
@@ -36,35 +35,35 @@ class ReadmeMetricsTest(unittest.TestCase):
                 self.assertEqual(
                     drift,
                     [],
-                    f"{path.name} sayıları koddan ayrışmış -- "
-                    f"`python scripts/readme_stamp.py` çalıştırın: {drift}",
+                    f"{path.name} numbers have drifted from the code -- "
+                    f"run `python scripts/readme_stamp.py`: {drift}",
                 )
 
     def test_a_deleted_marker_counts_as_drift(self):
-        """Marker silmek metriği sessizce kapatmamalı.
+        """Deleting a marker must not switch the metric off silently.
 
-        Eskiden stderr'e uyarı basıp drift listesini boş bırakıyordu, yani
-        `--check` 0 dönüyordu: bir marker'ı silmek o sayıyı denetimden
-        çıkarmanın en kolay yoluydu ve iş yeşil kalıyordu.
+        It used to print a warning to stderr and leave the drift list empty,
+        so `--check` returned 0: deleting a marker was the easiest way to take
+        that number out of the audit, and the job stayed green.
         """
         text = rs._read(rs.README)
         names = rs.TARGETS[rs.README]
         victim = names[0]
-        stripped = rs._marker_re(victim).sub("(silindi)", text)
+        stripped = rs._marker_re(victim).sub("(deleted)", text)
 
         _, drift = rs.stamp_text(stripped, rs.REPO_ROOT, names)
         self.assertTrue(
-            any(name == victim and old == "<marker yok>" for name, old, _ in drift),
-            f"{victim} marker'i silindi ama drift olarak raporlanmadi: {drift}",
+            any(name == victim and old == "<no marker>" for name, old, _ in drift),
+            f"the {victim} marker was deleted but not reported as drift: {drift}",
         )
 
     def test_defense_count_excludes_bases_and_helpers(self):
-        """Sayım bir yargı içeriyor; yargının kendisi test edilmeli.
+        """The count embeds a judgement; the judgement itself needs testing.
 
-        İlk sürüm yalnızca veri taşıyıcılarını dışlayıp 27 yerine 31 saydı --
-        soyut tabanları (InputGuard/OutputGuard) ve özel yardımcıları
-        (_TFIDFModel) savunma sanmıştı. README'deki yanlış bir sayıyı
-        başka bir yanlış sayıyla değiştirmek olurdu.
+        The first version excluded only the data carriers and counted 31
+        instead of 27 -- it mistook the abstract bases (InputGuard/OutputGuard)
+        and the private helpers (_TFIDFModel) for defenses. That would have
+        swapped one wrong number in the README for another.
         """
         import ast
 
@@ -76,20 +75,20 @@ class ReadmeMetricsTest(unittest.TestCase):
                 if isinstance(node, ast.ClassDef) and rs._is_defense_class(node):
                     names.append(node.name)
 
-        self.assertNotIn("InputGuard", names, "soyut taban sınıf sayılmamalı")
-        self.assertNotIn("OutputGuard", names, "soyut taban sınıf sayılmamalı")
-        self.assertNotIn("GuardResult", names, "veri taşıyıcı sayılmamalı")
+        self.assertNotIn("InputGuard", names, "an abstract base must not count")
+        self.assertNotIn("OutputGuard", names, "an abstract base must not count")
+        self.assertNotIn("GuardResult", names, "a data carrier must not count")
         self.assertFalse(
-            [n for n in names if n.startswith("_")], "özel yardımcı sayılmamalı"
+            [n for n in names if n.startswith("_")], "a private helper must not count"
         )
-        self.assertIn("PerplexityFilter", names, "gerçek bir guard sayılmalı")
+        self.assertIn("PerplexityFilter", names, "a real guard must count")
         self.assertEqual(len(names), rs.count_defense_modules(rs.REPO_ROOT))
 
     def test_attack_payload_count_comes_from_the_loader(self):
-        """194 sayısı düzyazıda birkaç yerde geçiyordu ama kodda kaynağı yoktu.
+        """The number 194 appeared in the prose but had no source in the code.
 
-        Sayaç, modelin gerçekten eğitildiği yükleyiciyi çağırır -- bir
-        literali sayarsa modelin gördüğünden sapabilir.
+        The counter calls the loader the model is actually trained from -- if
+        it counted a literal it could drift from what the model sees.
         """
         sys.path.insert(0, str(_ROOT / "labs" / "vulnllm"))
         from tools.prompt_injection_detector_ml import load_attack_payloads

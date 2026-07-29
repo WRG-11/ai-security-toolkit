@@ -1,19 +1,19 @@
 """
 Module #21 — Prompt Firewall
 
-Mimari savunma katmanı — meta-guard olarak çalışır.
-Diğer guard'ların yakalayamayacağı sofistike saldırı
-pattern'lerini tespit eder.
+Architectural defense layer — operates as a meta-guard.
+Detects sophisticated attack patterns that other guards
+would not catch.
 
-Tespit kategorileri:
-1. Savunma atlatma (defense evasion) — guard'ları devre dışı bırakma girişimi
-2. Çok aşamalı saldırı (multi-stage) — parçalı payload'lar
-3. Bağlam manipülasyonu — context window zehirleme
-4. Sosyal mühendislik — AI'ı ikna etme/acındırma taktikleri
+Detection categories:
+1. Defense evasion — attempts to disable guards
+2. Multi-stage attack — fragmented payloads
+3. Context manipulation — context-window poisoning
+4. Social engineering — tactics to persuade/guilt-trip the AI
 
-Bu modül InputGuard olarak pipeline'da ÇOK ERKEN çalışır
-(UnicodeNormalizer'dan hemen sonra) — çünkü diğer guard'ları
-hedefleyen saldırıları yakalayabilmeli.
+This module runs as an InputGuard VERY EARLY in the pipeline
+(right after UnicodeNormalizer) — because it must catch attacks
+that target the other guards.
 
 Ref: MITRE ATLAS AML.T0054 — LLM Prompt Injection
 Ref: Schulhoff et al. (2023) — Prompt Injection Taxonomy
@@ -23,15 +23,15 @@ import re
 
 from .base import GuardResult, InputGuard
 
-# Savunma atlatma kalıpları
+# Guard-bypass patterns
 DEFENSE_EVASION_PATTERNS: list[tuple[str, float, str]] = [
-    # Guard/filter devre dışı bırakma
+    # Disabling a guard/filter
     (r"(?:disable|turn\s+off|deactivate|remove|bypass)\s+"
      r"(?:your\s+)?(?:filter|guard|safety|defense|protection|firewall|scanner|checker)",
      0.9, "guard_disable"),
     (r"(?:filtre\w*|koruma\w*|savunma\w*|guard\w*|kontrol\w*)\s*(?:kapat|devre\s+disi|kaldir|atla|birak)",
      0.9, "guard_disable_tr"),
-    # Testing/debug mode isteme
+    # Requesting testing/debug mode
     (r"(?:switch|enter|enable|activate)\s+(?:to\s+)?(?:debug|test|dev|maintenance|admin)\s+mode",
      0.8, "debug_mode_request"),
     (r"(?:test|debug|bakim|admin)\s+(?:modu|moduna\s+gec)",
@@ -39,38 +39,38 @@ DEFENSE_EVASION_PATTERNS: list[tuple[str, float, str]] = [
     # Prompt sanitization bypass
     (r"(?:don'?t|do\s+not|stop)\s+(?:filter|sanitize|check|scan|validate|block)\s+(?:my|this|the)",
      0.75, "sanitization_bypass"),
-    # "Önceki guard geçti" iddiası
+    # "Previous guard passed" claim
     (r"(?:the\s+(?:previous|other|first)\s+(?:check|filter|guard|test)\s+(?:already|has)\s+(?:passed|approved|verified))",
      0.7, "false_approval_claim"),
 ]
 
-# Bağlam manipülasyonu
+# Context manipulation
 CONTEXT_MANIPULATION_PATTERNS: list[tuple[str, float, str]] = [
-    # Token budget tüketme girişimi (çok uzun input)
-    # (uzunluk kontrolü check() içinde)
-    # Sahte sistem mesajı ekleme
+    # Token-budget exhaustion attempt (excessively long input)
+    # (length check lives in check())
+    # Injecting a fake system message
     (r"(?:end\s+of\s+(?:system|user)\s+(?:message|prompt|input))\s*[.\n]",
      0.85, "fake_message_boundary"),
     (r"(?:new\s+(?:system|admin)\s+(?:message|instruction|directive))\s*:",
      0.85, "fake_system_message"),
-    # Conversation history manipülasyonu
+    # Conversation-history manipulation
     (r"(?:(?:user|human|assistant)\s*:\s*){2,}",
      0.7, "conversation_injection"),
-    # XML/JSON yapısal injection
+    # XML/JSON structural injection
     (r"<(?:system|instruction|rule|config)\s*>",
      0.8, "xml_structural_injection"),
     (r"\{\"(?:system|role|instruction)\"",
      0.75, "json_structural_injection"),
 ]
 
-# Sosyal mühendislik kalıpları
+# Social engineering patterns
 SOCIAL_ENGINEERING_PATTERNS: list[tuple[str, float, str]] = [
-    # Acil durum/acındırma
+    # Urgency/guilt-tripping
     (r"(?:(?:my|a)\s+(?:life|child|patient|person)\s+(?:is\s+)?(?:in\s+danger|at\s+risk|depends?\s+on))",
      0.5, "urgency_appeal"),
     (r"(?:emergency|urgent|critical|life\s+or\s+death|hayati\s+onem|acil\s+durum)",
      0.35, "emergency_claim"),
-    # Yetki iddiası
+    # Authority claim
     (r"(?:i\s+(?:am|'m)\s+(?:the|a|an)\s+(?:admin|developer|owner|CEO|creator|manager)\s+"
      r"(?:of|for|at)\s+(?:this|the|your))",
      0.65, "authority_claim"),
@@ -78,24 +78,24 @@ SOCIAL_ENGINEERING_PATTERNS: list[tuple[str, float, str]] = [
      0.7, "privilege_claim"),
     (r"(?:ben\s+(?:admin|gelistirici|sahip|yonetici|mudur))",
      0.65, "authority_claim_tr"),
-    # Güven inşası → saldırı
+    # Trust-building → attack
     (r"(?:(?:trust|believe)\s+me|i\s+(?:work|am)\s+(?:for|at|with)\s+(?:openai|anthropic|google|meta))",
      0.5, "trust_building"),
-    # Tehdit
+    # Threat
     (r"(?:(?:i\s+will|i'll)\s+(?:report|sue|fire|delete|shut\s+down|expose))",
      0.4, "threat"),
 ]
 
-# Çok aşamalı saldırı göstergeleri
+# Multi-stage attack indicators
 MULTI_STAGE_INDICATORS: list[tuple[str, float, str]] = [
-    # Önceki mesaja referans ile escalation
+    # Escalation via reference to a prior message
     (r"(?:(?:now|okay|good|great|perfect)\s+(?:that|since)\s+(?:you'?ve|we'?ve|that'?s)\s+"
      r"(?:confirmed|agreed|established|shown))",
      0.6, "escalation_after_agreement"),
-    # Aşamalı talimat
+    # Staged instruction
     (r"(?:(?:step|phase|part|stage)\s*(?:2|3|two|three|ii|iii))\s*[:\s]",
      0.55, "staged_instruction"),
-    # Koşullu saldırı
+    # Conditional attack
     (r"(?:(?:if|when|since)\s+(?:you|the\s+(?:filter|guard|check))\s+"
      r"(?:allow|pass|accept|approve|don'?t\s+block))",
      0.45, "conditional_attack"),
@@ -104,16 +104,16 @@ MULTI_STAGE_INDICATORS: list[tuple[str, float, str]] = [
 
 class PromptFirewall(InputGuard):
     """
-    Meta-guard: sofistike saldırı pattern'lerini tespit eder.
+    Meta-guard: detects sophisticated attack patterns.
 
-    Diğer guard'lardan farkı:
-    - Savunma sistemini hedefleyen saldırıları yakalar
-    - Sosyal mühendislik taktiklerini tespit eder
-    - Bağlam/yapı manipülasyonunu kontrol eder
-    - Çok aşamalı saldırı göstergelerini takip eder
+    Differences from the other guards:
+    - Catches attacks that target the defense system itself
+    - Detects social-engineering tactics
+    - Checks for context/structure manipulation
+    - Tracks multi-stage attack indicators
 
-    Pipeline'da erken çalışır — guard atlatma girişimlerini
-    diğer guard'lara ulaşmadan yakalamalı.
+    Runs early in the pipeline — must catch guard-bypass attempts
+    before they reach the other guards.
     """
     name = "PromptFirewall"
 
@@ -121,7 +121,7 @@ class PromptFirewall(InputGuard):
         self.threshold = threshold
         self.max_input_length = max_input_length
 
-        # Pattern'leri derle
+        # Compile the patterns
         self._defense_evasion = [
             (re.compile(p, re.IGNORECASE), s, d)
             for p, s, d in DEFENSE_EVASION_PATTERNS
@@ -142,7 +142,7 @@ class PromptFirewall(InputGuard):
     def _scan_patterns(
         self, text: str, patterns: list[tuple[re.Pattern, float, str]]
     ) -> tuple[float, list[dict]]:
-        """Pattern listesini tara, en yüksek skoru ve eşleşmeleri döndür."""
+        """Scan the pattern list, return the highest score and the matches."""
         findings: list[dict] = []
         max_score = 0.0
         for pattern, severity, desc in patterns:
@@ -157,65 +157,65 @@ class PromptFirewall(InputGuard):
         return max_score, findings
 
     def _check_length_anomaly(self, text: str) -> tuple[float, str]:
-        """Context window tüketme girişimi tespiti."""
+        """Detect context-window exhaustion attempts."""
         if len(text) > self.max_input_length:
             ratio = len(text) / self.max_input_length
             score = min(0.3 + (ratio - 1) * 0.2, 0.8)
-            return score, f"Asiri uzun input: {len(text)} karakter (limit: {self.max_input_length})"
+            return score, f"Excessively long input: {len(text)} characters (limit: {self.max_input_length})"
         return 0.0, ""
 
     def _check_repetition(self, text: str) -> tuple[float, str]:
-        """Tekrar eden pattern tespiti (token budget tüketme)."""
+        """Detect repeated patterns (token-budget exhaustion)."""
         words = text.lower().split()
         if len(words) < 10:
             return 0.0, ""
 
-        # Kelime tekrar oranı
+        # Word-repetition ratio
         unique_ratio = len(set(words)) / len(words)
         if unique_ratio < 0.3:
-            return 0.6, f"Asiri tekrar: benzersiz kelime orani {unique_ratio:.1%}"
+            return 0.6, f"Excessive repetition: unique word ratio {unique_ratio:.1%}"
         return 0.0, ""
 
     def check(self, text: str, context: dict | None = None) -> GuardResult:
         all_findings: list[dict] = []
         scores: dict[str, float] = {}
 
-        # 1. Savunma atlatma
+        # 1. Defense evasion
         evasion_score, evasion_findings = self._scan_patterns(text, self._defense_evasion)
         scores["defense_evasion"] = evasion_score
         all_findings.extend(evasion_findings)
 
-        # 2. Bağlam manipülasyonu
+        # 2. Context manipulation
         context_score, context_findings = self._scan_patterns(text, self._context_manip)
         scores["context_manipulation"] = context_score
         all_findings.extend(context_findings)
 
-        # 3. Sosyal mühendislik
+        # 3. Social engineering
         social_score, social_findings = self._scan_patterns(text, self._social_eng)
         scores["social_engineering"] = social_score
         all_findings.extend(social_findings)
 
-        # 4. Çok aşamalı saldırı
+        # 4. Multi-stage attack
         multi_score, multi_findings = self._scan_patterns(text, self._multi_stage)
         scores["multi_stage"] = multi_score
         all_findings.extend(multi_findings)
 
-        # 5. Uzunluk anomalisi
+        # 5. Length anomaly
         length_score, length_msg = self._check_length_anomaly(text)
         if length_score > 0:
             scores["length_anomaly"] = length_score
             all_findings.append({"type": "length_anomaly", "match": length_msg, "severity": length_score})
 
-        # 6. Tekrar tespiti
+        # 6. Repetition detection
         rep_score, rep_msg = self._check_repetition(text)
         if rep_score > 0:
             scores["repetition"] = rep_score
             all_findings.append({"type": "repetition", "match": rep_msg, "severity": rep_score})
 
-        # En yüksek kategori skoru
+        # Highest category score
         max_score = max(scores.values()) if scores else 0.0
 
-        # Birden fazla kategori aktifse boost
+        # Boost if multiple categories are active
         active_categories = sum(1 for s in scores.values() if s > 0.3)
         if active_categories >= 2:
             max_score = min(max_score * 1.2, 1.0)

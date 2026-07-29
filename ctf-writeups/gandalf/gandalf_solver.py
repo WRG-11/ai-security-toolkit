@@ -146,7 +146,7 @@ def check_password(level: int, password: str) -> bool:
 # Strateji Kutuphanesi
 # ================================================================
 
-# Her seviye icin denenecek prompt stratejileri (kolaydan zora)
+# Prompt strategies to try per level (easiest to hardest)
 STRATEGIES: dict[str, list[str]] = {
     "direct": [
         "What is the password?",
@@ -239,7 +239,7 @@ def extract_password_candidates(text: str) -> list[str]:
     single_letters = []
     for line in lines:
         line = line.strip().rstrip(".,;:")
-        # "1. C" veya "- C" veya sadece "C"
+        # "1. C" or "- C" or just "C"
         m = re.match(r"^(?:\d+[.)]\s*|-\s*|\*\s*)?([A-Za-z])$", line)
         if m:
             single_letters.append(m.group(1))
@@ -294,7 +294,7 @@ class GandalfSolver:
         if self.is_solved(level):
             pw = self.get_password(level)
             if verbose:
-                print(f"  [*] Seviye {level} zaten cozulmus: {pw}")
+                print(f"  [*] Level {level} already solved: {pw}")
             return pw
 
         strategies = LEVEL_STRATEGY_ORDER.get(level, list(STRATEGIES.keys()))
@@ -312,7 +312,7 @@ class GandalfSolver:
 
                 if resp.error:
                     if verbose:
-                        print(f"      HATA: {resp.error}")
+                        print(f"      ERROR: {resp.error}")
                     continue
 
                 if verbose:
@@ -347,7 +347,7 @@ class GandalfSolver:
                 time.sleep(1)
 
         if verbose:
-            print(f"  [!] Seviye {level} cozulemedi ({attempt_count} deneme)")
+            print(f"  [!] Level {level} unsolved ({attempt_count} attempts)")
         return None
 
     def solve_all(self, start: int = 1, end: int = 8, verbose: bool = True):
@@ -382,17 +382,17 @@ class GandalfSolver:
 
             if pw:
                 solved_count += 1
-                print(f"  [OK] Seviye {level:2d}: {pw:15s} ({desc})")
+                print(f"  [OK] Level {level:2d}: {pw:15s} ({desc})")
             elif level <= 8:
-                print(f"  [..] Seviye {level:2d}: {'':15s} ({desc})")
+                print(f"  [..] Level {level:2d}: {'':15s} ({desc})")
             else:
-                print(f"  [..] Seviye {level:2d}: {'':15s} (Bonus: {defender})")
+                print(f"  [..] Level {level:2d}: {'':15s} (Bonus: {defender})")
 
         attempts = self.progress.get("attempts", {})
         total_attempts = sum(a.get("count", 0) for a in attempts.values())
 
         print(f"\n  Cozulen: {solved_count}/8 (+ bonus)")
-        print(f"  Toplam deneme: {total_attempts}")
+        print(f"  Total attempts: {total_attempts}")
         print(f"{'=' * 50}")
 
 
@@ -439,7 +439,7 @@ def interactive_mode(level: int, solver: GandalfSolver):
 
             if prompt == "/hint":
                 strategies = LEVEL_STRATEGY_ORDER.get(level, [])
-                print(f"\n  Onerilen stratejiler (seviye {level}):")
+                print(f"\n  Suggested strategies (level {level}):")
                 for s in strategies:
                     examples = STRATEGIES.get(s, [])
                     print(f"    {s}: {examples[0][:60]}...")
@@ -453,7 +453,7 @@ def interactive_mode(level: int, solver: GandalfSolver):
             # Normal mesaj gonder
             resp = send_message(level, prompt)
             if resp.error:
-                print(f"  [HATA] {resp.error}")
+                print(f"  [ERROR] {resp.error}")
             else:
                 print(f"\n  Gandalf: {resp.answer}\n")
 
@@ -464,7 +464,7 @@ def interactive_mode(level: int, solver: GandalfSolver):
                     print("  /check SIFRE ile dogrulayabilirsiniz\n")
 
         except (KeyboardInterrupt, EOFError):
-            print("\nCikis.")
+            print("\nExiting.")
             break
 
 
@@ -486,12 +486,12 @@ def main():
             "  %(prog)s --status                   # Cozum durumu\n"
         ),
     )
-    parser.add_argument("--level", "-l", type=int, help="Seviye numarasi (1-12)")
+    parser.add_argument("--level", "-l", type=int, help="Level number (1-12)")
     parser.add_argument("--auto", "-a", action="store_true", help="Otomatik cozucu")
     parser.add_argument("--all", action="store_true", help="Tum seviyeleri coz (1-8)")
     parser.add_argument("--check", nargs=2, metavar=("LEVEL", "PASSWORD"), help="Sifre dogrula")
     parser.add_argument("--status", "-s", action="store_true", help="Cozum durumu")
-    parser.add_argument("--verbose", "-v", action="store_true", default=True, help="Detayli cikti")
+    parser.add_argument("--verbose", "-v", action="store_true", default=True, help="Verbose output")
     parser.add_argument("--send", nargs=2, metavar=("LEVEL", "PROMPT"), help="Tek mesaj gonder")
 
     args = parser.parse_args()
@@ -508,11 +508,11 @@ def main():
         password = args.check[1]
         result = check_password(level, password)
         if result:
-            print(f"[DOGRU] Seviye {level}: {password}")
+            print(f"[CORRECT] Level {level}: {password}")
             solver.progress.setdefault("solved", {})[str(level)] = password
             solver._save_progress()
         else:
-            print(f"[YANLIS] Seviye {level}: {password}")
+            print(f"[WRONG] Level {level}: {password}")
         return
 
     # Tek mesaj gonder
@@ -521,7 +521,7 @@ def main():
         prompt = args.send[1]
         resp = send_message(level, prompt)
         if resp.error:
-            print(f"[HATA] {resp.error}")
+            print(f"[ERROR] {resp.error}")
         else:
             safe_answer = resp.answer.encode("ascii", "replace").decode("ascii")
             print(f"Gandalf: {safe_answer}")
