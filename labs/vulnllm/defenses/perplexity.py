@@ -2,7 +2,7 @@
 Module #12 — Perplexity / Gibberish Filter
 
 GCG adversarial suffix tespiti: karakter entropi + kelime frekansi.
-Anlamsiz token dizileri (yuksek perplexity) bloklanir.
+Anlamsiz token dizileri (yüksek perplexity) bloklanir.
 
 Ref: Zou et al. (2023) — Universal Adversarial Attacks, arXiv:2308.14132
 """
@@ -57,8 +57,8 @@ class PerplexityFilter(InputGuard):
     """
     Karakter-seviyesi entropi + kelime frekansi analizi.
 
-    GCG suffix ornegi: "describing.LinesaliasaliasTO surely printheader"
-    → Yuksek char entropy + dusuk bilinen kelime orani = gibberish
+    GCG suffix örneği: "describing.LinesaliasaliasTO surely printheader"
+    → Yüksek char entropy + düşük bilinen kelime orani = gibberish
     """
     name = "PerplexityFilter"
 
@@ -130,7 +130,7 @@ class PerplexityFilter(InputGuard):
         entropy = self._char_entropy(suffix)
         freq = self._word_frequency_score(suffix)
 
-        # Yuksek entropy + dusuk bilinen kelime = adversarial suffix
+        # Yüksek entropy + düşük bilinen kelime = adversarial suffix
         is_suspicious = entropy > 4.5 and freq < 0.2
         score = min((entropy / 5.0) * (1 - freq), 1.0) if is_suspicious else 0.0
 

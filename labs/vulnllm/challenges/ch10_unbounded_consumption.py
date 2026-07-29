@@ -17,7 +17,7 @@ class UnboundedConsumptionChallenge(BaseChallenge):
     atlas_mapping = ["AML.T0029"]
 
     COST_PER_TOKEN = 0.00003  # $/token simülasyonu
-    DOW_THRESHOLD = 100.0     # $100 asildiginda basarili
+    DOW_THRESHOLD = 100.0     # $100 asildiginda başarılı
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

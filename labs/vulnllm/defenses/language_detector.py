@@ -41,7 +41,7 @@ class LanguageDetector(InputGuard):
     """
     Dil/script anomali tespiti:
     1. Karisik script (Latin icinde Kiril, Arap, CJK vb.)
-    2. Bilinen dil disinda icerik (low-resource language bypass)
+    2. Bilinen dil disinda içerik (low-resource language bypass)
     3. Mid-sentence script degisikligi
     """
     name = "LanguageDetector"

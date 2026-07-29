@@ -1,7 +1,7 @@
 """
 CH09 — Misinformation Attack Library (12 Teknik)
 
-Hedef: LLM'in yanlis ama ikna edici bilgi uretmesini saglama —
+Hedef: LLM'in yanlış ama ikna edici bilgi uretmesini saglama —
 hallucination silahlandirma, slopsquatting, sahte referans.
 
 Referans: MITRE ATLAS AML.T0048.005, slopsquatting research,

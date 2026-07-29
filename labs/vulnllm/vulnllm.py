@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
 VulnLLM — Zafiyetli LLM Lab Ortami
-OWASP LLM Top 10 saldiri & savunma pratigi.
+OWASP LLM Top 10 saldırı & savunma pratigi.
 
-Kullanim:
+Kullanım:
     python vulnllm.py                          # Ana menu
     python vulnllm.py --challenge 1            # Challenge 1 interaktif
-    python vulnllm.py --challenge 1 --auto     # Challenge 1 otomatik saldiri
+    python vulnllm.py --challenge 1 --auto     # Challenge 1 otomatik saldırı
     python vulnllm.py --all --auto             # Tum challenge'lar otomatik
     python vulnllm.py --challenge 1 -d medium  # Orta zorluk
     python vulnllm.py --scoreboard             # Skor tablosu
@@ -127,7 +127,7 @@ def run_interactive(challenge):
             print(f"  {C_BOLD}Bloklanan:{C_RESET} {len(challenge.state.blocked_attacks)}\n")
             continue
 
-        # Numara ile hazir saldiri secimi
+        # Numara ile hazir saldırı secimi
         if cmd.isdigit():
             idx = int(cmd) - 1
             techniques = challenge.get_attack_techniques()
@@ -152,7 +152,7 @@ def run_interactive(challenge):
 
 
 def run_auto(challenge):
-    """Otomatik saldiri modu."""
+    """Otomatik saldırı modu."""
     challenge.print_banner()
 
     print(f"\n  {C_MAGENTA}Otomatik Saldiri Modu{C_RESET} — Tum teknikler deneniyor...\n")
@@ -167,7 +167,7 @@ def run_auto(challenge):
 
 
 def run_all_auto(difficulty: Difficulty, use_ollama: bool = False, model_tier=None, model_override=None):
-    """Tum challenge'lari otomatik calistir."""
+    """Tum challenge'lari otomatik çalıştır."""
     print(BANNER)
     backend_label = f" | Ollama {model_tier.value.upper()}" if use_ollama else " | Mock"
     print(f"  {C_MAGENTA}{C_BOLD}TUM CHALLENGE'LAR — {difficulty.name} MOD{backend_label}{C_RESET}\n")
@@ -227,7 +227,7 @@ def run_all_auto(difficulty: Difficulty, use_ollama: bool = False, model_tier=No
 
 
 def show_scoreboard():
-    """Kayitli raporlardan skor tablosu goster."""
+    """Kayitli raporlardan skor tablosu göster."""
     report_dir = Path(__file__).parent / "reports"
     if not report_dir.exists():
         print(f"  {C_YELLOW}Henuz rapor yok. Once --auto ile saldiri calistirin.{C_RESET}")

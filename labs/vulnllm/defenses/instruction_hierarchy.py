@@ -1,7 +1,7 @@
 """
 Module #14 — Instruction Hierarchy Enforcer
 
-Sistem prompt'una oncelik katmani ekler + kullanici girdisinde
+Sistem prompt'una oncelik katmani ekler + kullanıcı girdisinde
 sistem-seviyesi delimiter kullanimini engeller.
 
 Ref: Microsoft Instruction Hierarchy (arXiv:2404.13208)
@@ -30,7 +30,7 @@ SYSTEM_DELIMITERS = [
 ]
 
 HIERARCHY_PATTERNS = [
-    # Kullanici kendini sistem olarak tanitmaya calisiyor
+    # Kullanıcı kendini sistem olarak tanitmaya calisiyor
     (r"(?:new|updated|real|actual)\s+system\s+(?:prompt|instruction|message)", 0.9),
     (r"(?:system|admin|root)\s*(?:override|mode|access|privilege)", 0.85),
     (r"priority\s*(?:override|escalation|change)", 0.8),
@@ -40,7 +40,7 @@ HIERARCHY_PATTERNS = [
 
 class InstructionHierarchyEnforcer(InputGuard):
     """
-    1. Kullanici girdisinde sistem-seviyesi delimiter tespit et → blokla
+    1. Kullanıcı girdisinde sistem-seviyesi delimiter tespit et → blokla
     2. Sistem prompt'una oncelik katmani ekle (wrap_system_prompt)
     """
     name = "InstructionHierarchyEnforcer"
@@ -69,7 +69,7 @@ class InstructionHierarchyEnforcer(InputGuard):
 
     @staticmethod
     def wrap_user_input(user_input: str) -> str:
-        """Kullanici girdisini untrusted olarak isaretler."""
+        """Kullanıcı girdisini untrusted olarak isaretler."""
         return f"[USER_INPUT_START]\n{user_input}\n[USER_INPUT_END]"
 
     def check(self, text: str, context: dict | None = None) -> GuardResult:

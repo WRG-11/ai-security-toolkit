@@ -106,7 +106,7 @@ class DangerousActionFilter(InputGuard):
 
 
 class AnomalyFilter(OutputGuard):
-    """Output'ta anomali (beklenmeyen icerik) tespit eden filtre."""
+    """Output'ta anomali (beklenmeyen içerik) tespit eden filtre."""
     name = "AnomalyFilter"
 
     def __init__(self, anomaly_patterns: list[str] | None = None):

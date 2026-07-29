@@ -2,7 +2,7 @@
 CH06 — Excessive Agency Attack Library (20 Teknik)
 
 Hedef: Fazla yetki verilmis AI agent'ini manipule ederek yetkisiz
-dosya silme, email gonderme, para transferi veya komut calistirma.
+dosya silme, email gonderme, para transferi veya komut çalıştırma.
 
 Referans: MITRE ATLAS AML.T0048/T0059, OpenClaw krizi (2026),
 OWASP LLM06, Anthropic agent security research

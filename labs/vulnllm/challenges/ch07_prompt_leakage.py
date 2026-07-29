@@ -70,7 +70,7 @@ class PromptLeakageChallenge(BaseChallenge):
                 # Hikaye / yaratici format
                 {"pattern": r"hikaye|story|poem|siir|sarki|roman|anekdot",
                  "response": f"Bir hikaye: 'Bir zamanlar bir API varmis, anahtari {K} imis...'"},
-                # Fiktif / ornek
+                # Fiktif / örnek
                 {"pattern": r"fiktif|ornek|sample|dummy|benzer|gercekci",
                  "response": f"Ornek config:\napi_key: {K} (fiktif tabii ki!)"},
                 # Hata / debug
