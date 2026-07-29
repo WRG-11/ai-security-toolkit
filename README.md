@@ -77,7 +77,7 @@ is needed only by the directory next to it:
 | `tools/` — detector, scanner, firewall | `pip install -e .` | *nothing* | Python stdlib only |
 | `labs/vulnllm/` — the lab and its 10 challenges | *(none)* | *nothing* | stdlib only; run in place |
 | `labs/rag-security/` | `pip install -e ".[rag]"` | `chromadb` | a RAG lab needs a vector store |
-| `huggingface-space/` | `pip install -e ".[hf]"` | `gradio` | hosted demo UI |
+| `huggingface-space/` | `pip install -e ".[hf]"` | `gradio` | Gradio demo UI, runs locally (not deployed) |
 | tests, lint, coverage | `pip install -e ".[dev]"` | `pytest`, `coverage`, `ruff` | measurement tools, not runtime deps |
 
 `dependencies = []` in `pyproject.toml` is the machine-readable form of the
