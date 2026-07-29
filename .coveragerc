@@ -22,13 +22,20 @@ omit =
 
 [report]
 show_missing = True
-# A floor below the measured 35%: an ordinary PR adding a lightly-covered path
-# should not fail the build, but a real regression should. Ratchet upward as
-# coverage grows; do not lower it to accommodate new untested code.
+# A floor below the measured figure: an ordinary PR adding a lightly-covered
+# path should not fail the build, but a real regression should. Ratchet upward
+# as coverage grows; do not lower it to accommodate new untested code.
 #
-# Note: the previous value (15) belonged to the narrow `tools`-only scope and
-# stopped meaning anything the moment the scope widened.
-fail_under = 30
+# Note: the value 15 belonged to the narrow `tools`-only scope and stopped
+# meaning anything the moment the scope widened. The value 30 was set against
+# a measured 35% -- but the tests added in the same round took the real figure
+# to 51% and nobody moved the floor, so it sat 21 points below reality and
+# would have waved through a very large regression.
+#
+# The measured percentage is deliberately NOT repeated in prose anywhere. It
+# moves with every commit and cannot be resolved without running the suite;
+# README stamps THIS number instead, because this is the one that is enforced.
+fail_under = 45
 exclude_lines =
     pragma: no cover
     if __name__ == .__main__.:

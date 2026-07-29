@@ -31,10 +31,16 @@ from typing import Optional
 # --- Path setup ---
 _TOOLS_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _TOOLS_DIR.parent
-_VULNLLM_DIR = _PROJECT_ROOT / "labs" / "vulnllm"
-sys.path.insert(0, str(_VULNLLM_DIR))
+sys.path.insert(0, str(_TOOLS_DIR))
 
-from defenses.base import GuardResult, InputGuard, OutputGuard, AuditLogger
+from _console import make_output_safe  # noqa: E402
+from _lab import ensure_lab_or_exit  # noqa: E402
+
+# Ağaç yoksa burada, ne yapılacağını söyleyen bir mesajla durur -- eskiden
+# `ModuleNotFoundError: No module named 'defenses'` ile duruyordu.
+_VULNLLM_DIR = ensure_lab_or_exit("llm_firewall")
+
+from defenses.base import GuardResult, InputGuard, OutputGuard, AuditLogger  # noqa: E402
 from defenses import (
     PromptInjectionClassifier,
     PIIScanner,
@@ -675,6 +681,7 @@ def print_stats(stats: dict):
 
 
 def main():
+    make_output_safe()
     parser = argparse.ArgumentParser(
         description="LLM Firewall v1.0 -- AI Guvenlik Duvari",
         formatter_class=argparse.RawDescriptionHelpFormatter,
