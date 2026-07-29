@@ -58,6 +58,37 @@ python tools/llm_firewall.py --proxy --port 8080
 
 ---
 
+## Installation and dependencies
+
+```bash
+git clone https://github.com/WRG-11/ai-security-toolkit.git
+cd ai-security-toolkit
+pip install -e .          # core tools; installs nothing else
+```
+
+That gives you three commands: `prompt-injection-detect`, `llm-scanner`,
+`llm-firewall`. Running from a clone without installing also still works.
+
+The "zero-dependency" claim is specific, so here is the whole map. Each extra
+is needed only by the directory next to it:
+
+| Component | Install | Pulls in | Why |
+|---|---|---|---|
+| `tools/` — detector, scanner, firewall | `pip install -e .` | *nothing* | Python stdlib only |
+| `labs/vulnllm/` — the lab and its 10 challenges | *(none)* | *nothing* | stdlib only; run in place |
+| `labs/rag-security/` | `pip install -e ".[rag]"` | `chromadb` | a RAG lab needs a vector store |
+| `huggingface-space/` | `pip install -e ".[hf]"` | `gradio` | hosted demo UI |
+| tests, lint, coverage | `pip install -e ".[dev]"` | `pytest`, `coverage`, `ruff` | measurement tools, not runtime deps |
+
+`dependencies = []` in `pyproject.toml` is the machine-readable form of the
+first two rows: the claim is checkable by a resolver, not just asserted in
+prose.
+
+`labs/` is intentionally not packaged. It is a teaching lab meant to be read
+and run where it sits, and its modules are reached through a `sys.path` insert
+rather than as a distribution — packaging it would imply an import contract
+this repo does not offer yet.
+
 ## How the detector is measured
 
 The headline number is a **5-fold holdout**: each fold trains a fresh model on
