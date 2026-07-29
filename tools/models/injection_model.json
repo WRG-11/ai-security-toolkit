@@ -1,7 +1,7 @@
 {
   "version": "0.2",
   "trained_at": "2026-05-01T23:14:36",
-  "threshold": 0.5,
+  "threshold": 0.3,
   "weights": {
     "regex": 0.3,
     "tfidf": 0.4,

@@ -30,14 +30,27 @@ from pathlib import Path
 from typing import Optional
 
 # --- Path setup: import v0.1 regex detector + attack library ---
+#
+# Diğer iki aracın aksine bu araç lab ağacı olmadan da İŞE YARAR: eğitilmiş
+# model paketle birlikte gelir, dolayısıyla tahmin yolu çalışır. Eksik olan
+# yalnızca EĞİTİM korpusudur. O yüzden burada hata fırlatılmaz; eksiklik
+# ortaya çıktığı yerde (train / benchmark) söylenir.
 _TOOLS_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _TOOLS_DIR.parent
-_VULNLLM_DIR = _PROJECT_ROOT / "labs" / "vulnllm"
 
 sys.path.insert(0, str(_TOOLS_DIR))
-sys.path.insert(0, str(_VULNLLM_DIR))
 
-from prompt_injection_detector import PromptInjectionDetector, Severity
+from _console import make_output_safe  # noqa: E402
+from _lab import LabTreeMissing, lab_is_available  # noqa: E402
+
+if lab_is_available():
+    from _lab import ensure_lab_on_path
+
+    _VULNLLM_DIR = ensure_lab_on_path("prompt_injection_detector_ml")
+else:
+    _VULNLLM_DIR = _PROJECT_ROOT / "labs" / "vulnllm"
+
+from prompt_injection_detector import PromptInjectionDetector, Severity  # noqa: E402
 
 # ═══════════════════════════════════════════════════════════
 # Veri Modelleri
@@ -438,8 +451,12 @@ def load_attack_payloads() -> list[tuple[str, str]]:
         for tech in all_attacks:
             payloads.append((tech.payload, tech.category.value))
     except ImportError as e:
-        print(f"[UYARI] Saldırı kütüphanesi yüklenemedi: {e}", file=sys.stderr)
-        print("[UYARI] Varsayılan eğitim verisi kullanılacak.", file=sys.stderr)
+        # ASCII: bu iki satir Windows konsolunda (cp1254) mojibake oluyordu --
+        # dosyadaki diger tum kullanici-metinleri zaten ASCII'ye katlanmis
+        # durumda, bu ikisi atlanmisti.
+        print(f"[UYARI] Saldiri kutuphanesi yuklenemedi: {e}", file=sys.stderr)
+        print("[UYARI] Egitim korpusu yok; yalnizca kayitli model kullanilabilir.",
+              file=sys.stderr)
 
     return payloads
 
@@ -500,6 +517,38 @@ def build_default_anchors() -> list[tuple[str, str]]:
 # ═══════════════════════════════════════════════════════════
 
 
+def _normalise_detections(raw: list[dict]) -> list[dict]:
+    """v0.1 regex tespitlerini taşınabilir/serileştirilebilir biçime çevir.
+
+    İki ayrı kusurun tek noktadaki karşılığı:
+
+    1. ``PromptInjectionDetector.analyze()`` sözleşmesi ``pattern`` ve ``match``
+       anahtarlarını veriyor (kendi docstring'inde "stable" diye yazılı), ama
+       CLI ``description`` / ``matched`` okuyordu -- yani her tespit ekrana
+       ``[Severity.CRITICAL]`` diye, adı ve eşleşen metni olmadan basılıyordu.
+    2. ``severity`` bir ``Severity`` enum'u. ``PredictionResult.to_dict()``
+       onu olduğu gibi taşıdığı için ``--json`` ve ``--serve`` yolları regex
+       tespiti olan HER girdide ``TypeError: Object of type Severity is not
+       JSON serializable`` ile çöküyordu. Temiz metinde çalışıyor, saldırı
+       yakalayınca ölüyordu.
+
+    Enum yukarı akışta kalıyor (v0.1'in kendi sözleşmesi); dönüşüm burada, tek
+    sınırda yapılıyor -- ekran ve JSON aynı sözlüğü okusun diye.
+    """
+    out: list[dict] = []
+    for det in raw:
+        severity = det.get("severity")
+        out.append(
+            {
+                "pattern": det.get("pattern", "?"),
+                "severity": getattr(severity, "name", str(severity)),
+                "match": det.get("match", ""),
+                "span": list(det.get("span", ())),
+            }
+        )
+    return out
+
+
 class HybridDetector:
     """Regex + TF-IDF + Char N-gram hibrit prompt injection dedektörü."""
 
@@ -542,9 +591,17 @@ class HybridDetector:
             payloads = load_attack_payloads()
             injection_texts = [p for p, _ in payloads]
             if not injection_texts:
-                # Fallback: ml_classifier.py'deki sabit veriler
-                from defenses.ml_classifier import INJECTION_SAMPLES
-                injection_texts = INJECTION_SAMPLES
+                # Burada eskiden `from defenses.ml_classifier import
+                # INJECTION_SAMPLES` vardı. Bu fallback hiçbir zaman
+                # çalışamazdı: korpusun yüklenememesinin TEK nedeni
+                # labs/vulnllm ağacının olmaması, `defenses` ise aynı ağaçta.
+                # Yani guard, koruduğu durumda ikinci bir ModuleNotFoundError
+                # üretiyordu -- yazılmış ama koşullarında hiç denenmemiş.
+                raise LabTreeMissing(
+                    "egitim korpusu bulunamadi (labs/vulnllm/attacks). Egitim "
+                    "repo checkout'u ister; tahmin icin kayitli model yeterlidir "
+                    "-- --train olmadan calistirin."
+                )
 
         if benign_texts is None:
             benign_texts = BENIGN_SAMPLES
@@ -572,7 +629,7 @@ class HybridDetector:
         # 1. Regex katmani (v0.1)
         regex_result = self.regex_detector.analyze(text)
         regex_raw = regex_result["risk_score"] / 100.0
-        regex_detections = regex_result.get("detections", [])
+        regex_detections = _normalise_detections(regex_result.get("detections", []))
 
         # 2. TF-IDF katmani
         tfidf_score, tfidf_terms = self.tfidf_model.predict(text)
@@ -647,14 +704,32 @@ class HybridDetector:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
     def load_model(self, path: str):
-        """JSON'dan model yukle."""
+        """JSON'dan model yukle.
+
+        Eşik dosyadan OKUNMAZ. Kayıtlı bir artefakt kalibrasyon kararını
+        taşıyamaz: 2026-07-29'a kadar sevk edilen model ``threshold: 0.5``
+        içeriyordu ve bu satır onu geri yazıyordu -- yani ``DEFAULT_THRESHOLD``
+        0.30'a çekildiği hâlde varsayılan CLI yolu 0.50'de koşuyordu, üstelik
+        kullanıcının açıkça verdiği ``--threshold`` da eziliyordu. Holdout'ta
+        farkı: recall 0.840 -> 0.057.
+
+        Görülmüş veride ölçüm bunu göremiyordu (her eşik 194/194 yakalıyor),
+        bu yüzden sapma sessizce yaşadı. Eşik artık yalnızca çağıranın verdiği
+        değerdir; dosyadaki değer :func:`stored_threshold` ile okunabilir ve
+        ``tests/test_shipped_model.py`` sabitle uyuşmasını şart koşar.
+        """
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        self.threshold = data.get("threshold", self.threshold)
         self.weights = data.get("weights", self.weights)
         self.tfidf_model.from_dict(data["tfidf"])
         self.embedding_model.from_dict(data["embedding"])
         self._trained = True
+
+    @staticmethod
+    def stored_threshold(path: str) -> Optional[float]:
+        """Artefaktın taşıdığı eşik -- karşılaştırma için, kullanım için değil."""
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f).get("threshold")
 
     def benchmark(self, test_injection: Optional[list[str]] = None, test_benign: Optional[list[str]] = None) -> dict:
         """Benchmark: accuracy, precision, recall, F1."""
@@ -842,7 +917,8 @@ def print_report(result: PredictionResult) -> None:
     icon = RISK_ICONS.get(result.risk_level, result.risk_level)
     marker = "+" if result.label == "INJECTION" else "-"
     print(f"\n{b}Sonuc: {c}[{marker}] {icon}{r}")
-    print(f"{b}Skor:  {c}{result.score:.2%}{r}  (esik: {result.method_scores[0].score:.0%}R + {result.method_scores[1].score:.0%}T + {result.method_scores[2].score:.0%}E)")
+    # "esik:" yaziyordu ama basilan sey esik degil, uc katmanin skoruydu.
+    print(f"{b}Skor:  {c}{result.score:.2%}{r}  (katmanlar: {result.method_scores[0].score:.0%}R + {result.method_scores[1].score:.0%}T + {result.method_scores[2].score:.0%}E)")
     print(f"{b}Guven: {result.confidence:.0%}{r}")
 
     # Metod detaylari
@@ -877,9 +953,9 @@ def print_report(result: PredictionResult) -> None:
         print(f"\n{b}Regex Tespitleri ({len(result.regex_detections)}):{r}")
         for det in result.regex_detections[:5]:
             sc = COLORS.get(det.get("severity", ""), "")
-            print(f"  {sc}[{det.get('severity', '?')}]{r} {det.get('description', '')}")
-            if det.get("matched"):
-                print(f"         {d}\"{det['matched'][:60]}\"{r}")
+            print(f"  {sc}[{det.get('severity', '?')}]{r} {det.get('pattern', '?')}")
+            if det.get("match"):
+                print(f"         {d}\"{det['match'][:60]}\"{r}")
 
     print(f"\n{'=' * 60}")
 
@@ -1005,6 +1081,7 @@ def serve_http(detector: HybridDetector, port: int = 8090):
 
 
 def main():
+    make_output_safe()
     parser = argparse.ArgumentParser(
         description="Prompt Injection Detector v0.2 -- ML Hibrit (Regex + TF-IDF + Char N-gram)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1135,5 +1212,21 @@ def main():
     parser.print_help()
 
 
+def cli() -> int:
+    """Konsol komutu girişi.
+
+    ``LabTreeMissing`` bir kullanıcı hatasıdır, çökme değil: eğitim korpusu
+    olmadan ``--train`` istenmiştir. Traceback yerine mesaj + exit 2 ("komut
+    koşamadı"), böylece bir CI adımı bunu gerçek bir tespit sonucundan
+    ayırt edebilir.
+    """
+    try:
+        main()
+    except LabTreeMissing as exc:
+        print(f"prompt-injection-detect: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
 if __name__ == "__main__":
-    main()
+    raise SystemExit(cli())
