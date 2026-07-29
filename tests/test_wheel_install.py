@@ -18,7 +18,7 @@ So we are not claiming "the wheel does everything"; we are pinning what it does
 and does not do.
 
 Slow (it builds a venv and installs a wheel), so without RUN_WHEEL_TESTS=1
-atlanir. CI'da ayri bir is olarak kosar.
+it is skipped. CI runs it as a separate job.
 """
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parent.parent
 
 _ENABLED = os.environ.get("RUN_WHEEL_TESTS") == "1"
-_SKIP_REASON = "RUN_WHEEL_TESTS=1 degil (venv + wheel kurulumu yavas)"
+_SKIP_REASON = "RUN_WHEEL_TESTS=1 is not set (building a venv + wheel is slow)"
 
 
 def _script(venv_dir: Path, name: str) -> Path:
@@ -158,13 +158,11 @@ class WheelContentsTest(unittest.TestCase):
 
 
 class UserFacingMessageLanguageTest(unittest.TestCase):
-    """Son kullaniciya giden metnin dili.
+    """The language of the text that reaches the end user.
 
-    Venv gerektirmez, bu yuzden RUN_WHEEL_TESTS'ten bagimsiz kosar -- ve
-    kosmali: depo (README, rozet, CHANGELOG, commit'ler) bastan sona
-    Ingilizce, dolayisiyla `pip install` yapan biri Turkce hata almamali.
-    Yorumlar ve docstring'ler Turkce kaliyor; onlar gelistirici notu, bu
-    ayrim bilincli.
+    It needs no venv, so it runs independently of RUN_WHEEL_TESTS -- and it
+    should: the repository is English throughout (README, badges, CHANGELOG,
+    commits), so someone running `pip install` must not get a Turkish error.
     """
 
     def _message(self) -> str:
@@ -173,6 +171,9 @@ class UserFacingMessageLanguageTest(unittest.TestCase):
 
     def test_message_is_english(self):
         message = self._message()
+        # These are the Turkish words the message must NOT contain -- they are
+        # the detector, not prose, and translating them silently inverted the
+        # assertion once already ("replace" does appear, in English).
         for turkish in ("bulunamadi", "beklenen konum", "Yapilacak",
                         "calisamaz", "degistirin"):
             self.assertNotIn(turkish, message, f"Turkish text left in: {turkish!r}")
@@ -187,12 +188,11 @@ class UserFacingMessageLanguageTest(unittest.TestCase):
         self.assertIn("labs/vulnllm", message)
 
     def test_message_avoids_diacritics(self):
-        """Diakritiksizlik kasitli: dar kod sayfali Windows konsollarinda
-        so it does not break (the same reasoning applies to
-        `_console.make_output_safe`). After translating to English this is
-        natural anyway, but the rule
-        yazili kalsin ki biri geri Turkceye cevirmeye kalkarsa dogru
-        bicimde yapsin."""
+        """Being diacritic-free is deliberate: it must survive a Windows
+        console on a narrow code page (the same reasoning applies to
+        `_console.make_output_safe`). After the translation to English that
+        holds naturally, but the rule stays written down so that anyone who
+        reintroduces non-ASCII text does it knowingly."""
         message = self._message()
         for ch in "çğıöşüÇĞİÖŞÜ":
             self.assertNotIn(ch, message)

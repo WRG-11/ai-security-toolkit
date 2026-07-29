@@ -19,7 +19,7 @@ So the tests here measure two separate things:
   1. does the artefact agree with the constant (static),
   2. does loading CHANGE the threshold (behavioural).
 Ikincisi olmadan, birisi load_model'e ezmeyi geri koyup artefakti da
-guncellerse test yine yesil kalirdi.
+updates it, the test would still be green.
 """
 from __future__ import annotations
 
@@ -52,8 +52,8 @@ class ShippedThresholdTest(unittest.TestCase):
                     places=6,
                     msg=(
                         f"{path} esigi {stored}, kod sabiti {DEFAULT_THRESHOLD}. "
-                        "Kalibrasyon degistiyse artefakti da yeniden kaydedin "
-                        "(--train) ya da alanı elle esitleyin."
+                        "If the calibration changed, re-save the artefact too "
+                        "(--train), or align the field by hand."
                     ),
                 )
 
@@ -68,8 +68,8 @@ class ShippedThresholdTest(unittest.TestCase):
         self.assertEqual(
             detector.threshold,
             0.25,
-            "load_model kullanicinin verdigi esigi ezdi -- kalibrasyon bir kod "
-            "karari, kayitli bir dosyanin karari degil",
+            "load_model overwrote the threshold the caller passed -- calibration is a "
+            "code decision, not a decision belonging to a saved file",
         )
 
     def test_default_construction_then_load_keeps_the_calibrated_default(self):
