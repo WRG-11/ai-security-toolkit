@@ -37,8 +37,8 @@ This repo is that toolkit. Core tools (Tools section below) are stdlib-only Pyth
 
 | Tool | Description | Lines |
 |------|-------------|-------|
-| [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), 194 attack patterns, **F1 0.91 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | 1000 |
-| [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, 194 probes, severity mapping | 743 |
+| [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack patterns, **F1 0.91 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | 1000 |
+| [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> probes, severity mapping | 743 |
 | [LLM Firewall](tools/llm_firewall.py) | 10-guard security middleware, HTTP proxy mode, plugin architecture | 863 |
 
 **Key features:**
@@ -143,9 +143,9 @@ trade is in the table rather than left to guesswork.
 
 Intentionally vulnerable LLM application for learning OWASP LLM Top 10 attacks and defenses.
 
-- 10 challenges across 4 difficulty levels (EASY → EXPERT)
-- 21 defense modules (input filter, PII scanner, rate limiter, LLM-as-judge...)
-- 194 attack techniques
+- <!-- METRIC:challenge_count -->10<!-- /METRIC:challenge_count --> challenges across 4 difficulty levels (EASY → EXPERT)
+- <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> defense modules (input filter, PII scanner, rate limiter, LLM-as-judge...)
+- <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack techniques
 - Mock mode (no external API needed) + Ollama support
 
 [Go to lab →](labs/vulnllm/)
@@ -214,7 +214,8 @@ OWASP LLM Top 10 (2025)     [##########] 10/10 categories
 MITRE ATLAS                  [########--]  15 tactics, 66 techniques
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
-Defense Engineering          [#########-]  21 guards, firewall, ML detector
+Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
+Test Suite                   [######----]  <!-- METRIC:test_module_count -->14<!-- /METRIC:test_module_count --> modules, 36% measured coverage
 Tool Proficiency             [########--]  Garak, PyRIT, NeMo Guardrails
 ```
 
