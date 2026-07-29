@@ -30,10 +30,23 @@ dependencies = []
 [project.optional-dependencies]
 # labs/rag-security only. The vector store and embedding model are what make
 # that lab a RAG lab; nothing else in the repo imports them.
-rag = ["chromadb"]
+#
+# sentence-transformers is not optional here even though chromadb installs
+# without it: vulnerable_rag.py:107 asks for
+# `embedding_functions.SentenceTransformerEmbeddingFunction`. This extra
+# listed chromadb alone while labs/rag-security/requirements.txt listed both,
+# so the command the README points at -- `pip install -e ".[rag]"` -- produced
+# a lab that died on setup. Two sources of truth, and the documented one was
+# the incomplete one.
+rag = ["chromadb", "sentence-transformers"]
 
 # huggingface-space/ only -- the hosted demo UI.
 hf = ["gradio>=4.0.0"]
+
+# ctf-writeups/agent-odin/ only. The Gandalf solver is stdlib (urllib); the
+# three ODIN solvers use requests. Small, but it was the one real dependency
+# missing from a README table that called itself the whole map.
+ctf = ["requests"]
 
 # Test and lint tooling. Note the runtime stays stdlib-only even here: these
 # are measurement tools, not dependencies of the code under test.
@@ -46,9 +59,21 @@ Issues = "https://github.com/WRG-11/ai-security-toolkit/issues"
 [project.scripts]
 # The three flagship tools, exposed as commands once installed. Each already
 # has an argparse main(); this just saves typing a path.
+#
+# Constraint worth stating where it is declared: `llm-scanner` and
+# `llm-firewall` import their attack corpus and guard implementations from
+# labs/vulnllm/, which is NOT packaged (see [tool.setuptools] below). They
+# therefore need the repository checkout on disk -- i.e. an editable install --
+# and stop with an explanatory error otherwise. Measured 2026-07-29: before
+# tools/_lab.py they died at `--help` with a bare `ModuleNotFoundError: No
+# module named 'attacks'`.
+#
+# `prompt-injection-detect` is the exception: the trained model ships as
+# package data, so prediction works from a plain wheel; only `--train`
+# needs the corpus. tests/test_wheel_install.py holds this split in place.
 llm-firewall = "tools.llm_firewall:main"
 llm-scanner = "tools.llm_scanner:main"
-prompt-injection-detect = "tools.prompt_injection_detector_ml:main"
+prompt-injection-detect = "tools.prompt_injection_detector_ml:cli"
 
 [tool.setuptools]
 # `tools` is the installable surface. labs/ is deliberately NOT packaged: it is

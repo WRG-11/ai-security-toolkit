@@ -38,6 +38,30 @@ jobs:
           coverage run -m pytest -q
           coverage report
 
+  # The `test` job installs with `-e`, which keeps the checkout on disk and
+  # makes `_PROJECT_ROOT / "labs"` resolve every time -- so it can never see
+  # the failure this job exists for. Measured 2026-07-29: from a plain wheel,
+  # two of the three console scripts died at `--help` with a bare
+  # ModuleNotFoundError. The install path CI exercised was the one that could
+  # not fail.
+  wheel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+
+      # Builds a venv and installs this repo NON-editable, then asserts the
+      # contract: the detector predicts from a wheel (the model is package
+      # data), --train exits 2 with an explanation, and the other two tools
+      # name the missing directory instead of a module the user never wrote.
+      - name: Wheel-install contract
+        env:
+          RUN_WHEEL_TESTS: "1"
+        run: python -m pytest tests/test_wheel_install.py -q
+
   lint:
     runs-on: ubuntu-latest
     steps:

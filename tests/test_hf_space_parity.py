@@ -50,6 +50,62 @@ def _hf_rules() -> list[dict]:
     raise AssertionError("huggingface-space/app.py icinde RULES bulunamadi")
 
 
+def _hf_constant(name: str) -> float:
+    """app.py'deki modul duzeyi sabiti AST ile oku (gradio import edilemez)."""
+    tree = ast.parse(_HF_APP.read_text(encoding="utf-8"))
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and getattr(node.targets[0], "id", "") == name:
+            return node.value.value
+    raise AssertionError(f"huggingface-space/app.py icinde {name} bulunamadi")
+
+
+class CalibrationParityTest(unittest.TestCase):
+    """Demo ile arac ayni esikte kosmali.
+
+    Ikisi ayri implementasyon oldugu icin sabit iki yerde yaziyor. 2026-07-29'a
+    kadar ikisi de -- kod sabiti degil, model dosyasindan okunan 0.50 -- yanlis
+    degerde kosuyordu. Sabitleri esitlemek yetmez; asil kusur DEGERIN dosyadan
+    okunmasiydi, o yuzden ikisi de ayrica kontrol edilir.
+    """
+
+    def test_demo_threshold_matches_the_tool(self):
+        from prompt_injection_detector_ml import DEFAULT_THRESHOLD  # noqa: PLC0415
+
+        self.assertAlmostEqual(
+            _hf_constant("DEFAULT_THRESHOLD"),
+            DEFAULT_THRESHOLD,
+            places=6,
+            msg="HF demo ile CLI farkli esikte kosuyor -- ayni girdiye iki "
+                "farkli cevap verirler",
+        )
+
+    def test_demo_does_not_read_the_threshold_from_the_artefact(self):
+        """Regresyon guard'i: `data.get("threshold"...)` geri gelmemeli."""
+        source = _HF_APP.read_text(encoding="utf-8")
+        self.assertNotIn(
+            'data.get("threshold"',
+            source,
+            "kalibrasyon bir kod karari; kayitli artefaktin ezmesine izin verme",
+        )
+
+
+class HardcodedCountTest(unittest.TestCase):
+    """Demo kural sayisini uc yerde elle yaziyordu.
+
+    Kural tablosu buyudugunde uc metin birden bayatlar ve hicbiri kirilmaz.
+    """
+
+    def test_rule_count_is_derived_not_typed(self):
+        source = _HF_APP.read_text(encoding="utf-8")
+        rule_count = len(_hf_rules())
+        self.assertNotIn(
+            f"({rule_count} rules)",
+            source,
+            f"'{rule_count} rules' elle yazilmis -- len(RULES) kullanin",
+        )
+        self.assertIn("{len(RULES)} rules", source)
+
+
 class ModelCopyTest(unittest.TestCase):
     def test_model_copies_are_byte_identical(self):
         """Iki kopya bugun ayni; yarin biri yeniden egitilirse sessizce ayrisir

@@ -2,7 +2,7 @@
 Prompt Injection Detector — Gradio Demo
 AI Security Toolkit by WRG-11
 
-Hybrid ML detector: Regex (17 rules) + TF-IDF + Char N-gram
+Hybrid ML detector: Regex + TF-IDF + Char N-gram
 Zero external ML dependencies. Pre-trained on 194 attack patterns.
 """
 
@@ -163,9 +163,23 @@ class CharNgramModel:
 
 # ===== Hybrid Detector =====
 
+# Calibrated default, mirroring tools/prompt_injection_detector_ml.py.
+#
+# 0.50 was an unmeasured default and it left the model nearly deaf on inputs
+# it had not seen: 5-fold holdout recall 0.057 at 0.50 against 0.840 at 0.30.
+# In-sample scoring cannot show this -- there, every threshold catches
+# everything -- which is how the number survived. See the root README,
+# "How the detector is measured".
+#
+# This demo re-implements the detector rather than importing it (a Space
+# cannot reach tools/), so the constant has to be repeated here. That the two
+# copies agree is checked by tests/test_hf_space_parity.py.
+DEFAULT_THRESHOLD = 0.30
+
+
 class HybridDetector:
     def __init__(self):
-        self.threshold = 0.50
+        self.threshold = DEFAULT_THRESHOLD
         self.weights = {"regex": 0.30, "tfidf": 0.40, "embedding": 0.30}
         self.tfidf = TFIDFModel()
         self.embedding = CharNgramModel()
@@ -174,7 +188,9 @@ class HybridDetector:
     def load_model(self, path):
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
-        self.threshold = data.get("threshold", 0.50)
+        # Threshold is deliberately NOT read from the artefact: calibration is
+        # a code decision. Reading it is what pinned both this demo and the CLI
+        # at 0.50 after the constant had already been moved to 0.30.
         self.weights = data.get("weights", self.weights)
         self.tfidf.from_dict(data["tfidf"])
         self.embedding.from_dict(data["embedding"])
@@ -283,7 +299,7 @@ def analyze(text):
     methods = f"""
 | Method | Score | Weight |
 |--------|-------|--------|
-| Regex (17 rules) | {result['regex_score']} | 30% |
+| Regex ({len(RULES)} rules) | {result['regex_score']} | 30% |
 | TF-IDF (ML) | {result['tfidf_score']} | 40% |
 | Char N-gram | {result['embedding_score']} | 30% |
 | **Weighted Total** | **{result['score']}** | **100%** |
@@ -331,13 +347,13 @@ with gr.Blocks(
     title="Prompt Injection Detector",
     theme=gr.themes.Soft(),
 ) as demo:
-    gr.Markdown("""
+    gr.Markdown(f"""
 # Prompt Injection Detector
 
 **Hybrid ML detector for AI/LLM prompt injection attacks.**
 
 Combines three detection methods:
-- **Regex Engine** (17 rules): Pattern matching for known attack signatures
+- **Regex Engine** ({len(RULES)} rules): Pattern matching for known attack signatures
 - **TF-IDF Model**: Statistical text analysis trained on 194 injection payloads
 - **Char N-gram**: Character-level similarity to known attack categories
 
