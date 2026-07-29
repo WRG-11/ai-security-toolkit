@@ -116,7 +116,7 @@ COMPLIANCE_PATTERNS: list[re.Pattern] = [
 ]
 
 # ═══════════════════════════════════════════════════════════
-# Veri Modelleri
+# Data models
 # ═══════════════════════════════════════════════════════════
 
 
@@ -390,7 +390,7 @@ class LLMScanner:
         quick: bool = False,
         progress_callback=None,
     ) -> ScanReport:
-        """Tarama calistir."""
+        """Run the scan."""
         all_probes = load_all_probes()
         probes = filter_probes(all_probes, categories, severity_min, quick)
 
@@ -437,7 +437,7 @@ class LLMScanner:
 
         scan_duration = time.time() - scan_start
 
-        # OWASP bazli ozet
+        # Summary by OWASP category
         by_owasp: dict[str, dict] = {}
         for r in results:
             for oid in r.owasp_ids:
@@ -450,7 +450,7 @@ class LLMScanner:
             total = by_owasp[oid]["total"]
             by_owasp[oid]["rate"] = round(by_owasp[oid]["success"] / total, 3) if total else 0
 
-        # Severity bazli ozet
+        # Summary by severity
         by_severity: dict[str, dict] = {}
         for sev in ["LOW", "MEDIUM", "HIGH", "CRITICAL"]:
             sev_results = [r for r in results if r.severity == sev]

@@ -193,18 +193,18 @@ class PromptInjectionClassifier(InputGuard):
 
 
 # ──────────────────────────────────────────────────────────────
-# 2. PII Scanner — Hassas Veri Tespiti
+# 2. PII scanner -- sensitive-data detection
 # ──────────────────────────────────────────────────────────────
 
 class PIIScanner(OutputGuard):
     """
-    Ciktida hassas veri (PII) tespiti ve maskeleme.
+    Detects and masks sensitive data (PII) in the output.
     TR ve EN pattern destegi.
     """
     name = "PIIScanner"
 
     PATTERNS: dict[str, tuple[str, str]] = {
-        # (regex, maskeleme metni)
+        # (regex, mask text)
         "email": (
             r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
             "[EMAIL_REDACTED]",
@@ -312,7 +312,7 @@ class CanarySystem(OutputGuard):
     Kullanım:
         canary = CanarySystem()
         protected_prompt = canary.inject(original_prompt)
-        # ... LLM yanit uretir ...
+        # ... the LLM produces a response ...
         result = canary.check(llm_output)
     """
     name = "CanarySystem"
@@ -321,7 +321,7 @@ class CanarySystem(OutputGuard):
         if token:
             self.token = token
         else:
-            # Deterministik ama tahmin edilemez token
+            # Deterministic but unpredictable token
             seed = str(time.time_ns())
             self.token = "CANARY_" + hashlib.sha256(seed.encode()).hexdigest()[:10]
 
@@ -402,7 +402,7 @@ class SlidingWindowRateLimiter(InputGuard):
         self.requests = [t for t in self.requests if t > cutoff]
         self.token_usage = [(t, n) for t, n in self.token_usage if t > cutoff]
 
-        # Gunluk reset (24 saat)
+        # Daily reset (24 hours)
         if now - self.daily_reset > 86400:
             self.daily_cost = 0.0
             self.daily_reset = now
@@ -449,11 +449,11 @@ class SlidingWindowRateLimiter(InputGuard):
                 details={"check": "token_window", "used": window_tokens},
             )
 
-        # Gunluk butce kontrolu
+        # Daily budget check
         if self.daily_cost >= self.max_daily_cost:
             return GuardResult(
                 blocked=True,
-                reason=f"Gunluk butce asildi: ${self.daily_cost:.2f} (max ${self.max_daily_cost:.2f})",
+                reason=f"Daily budget exceeded: ${self.daily_cost:.2f} (max ${self.max_daily_cost:.2f})",
                 score=1.0,
                 guard_name=self.name,
                 details={"check": "daily_budget", "cost": self.daily_cost},
@@ -471,7 +471,7 @@ class SlidingWindowRateLimiter(InputGuard):
 
 
 # ──────────────────────────────────────────────────────────────
-# 5. Similarity Checker — Prompt Leakage Tespiti
+# 5. Similarity checker -- prompt-leakage detection
 # ──────────────────────────────────────────────────────────────
 
 class SimilarityChecker(OutputGuard):
@@ -542,7 +542,7 @@ class SimilarityChecker(OutputGuard):
 
 class OutputSanitizer(OutputGuard):
     """
-    LLM ciktisindaki potansiyel zararli içeriği temizler.
+    Strips potentially harmful content from the LLM output.
     Detects XSS, SQL injection and command injection patterns.
     """
     name = "OutputSanitizer"
@@ -580,7 +580,7 @@ class OutputSanitizer(OutputGuard):
 
         return GuardResult(
             blocked=len(found) > 0,
-            reason=f"Zararli icerik: {', '.join(f['category'].upper() for f in found)}" if found else "",
+            reason=f"Harmful content: {', '.join(f['category'].upper() for f in found)}" if found else "",
             score=min(len(found) * 0.3, 1.0),
             guard_name=self.name,
             details={"findings": found},
