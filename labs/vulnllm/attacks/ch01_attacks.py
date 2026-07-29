@@ -10,7 +10,7 @@ Zorluk dagilimi:
   hard   (10): Gelismis multi-turn, chained, adversarial teknikler
 """
 
-from .library import AttackTechnique, AttackCategory
+from .library import AttackCategory, AttackTechnique
 
 CH01_ATTACKS: list[AttackTechnique] = [
 

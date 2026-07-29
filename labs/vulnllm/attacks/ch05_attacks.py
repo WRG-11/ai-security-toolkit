@@ -7,7 +7,7 @@ SSRF, SSTI, Command Injection gibi klasik zafiyetleri tetiklemesi.
 Referans: OWASP Top 10 (Web) + OWASP LLM05, MITRE ATLAS AML.T0048
 """
 
-from .library import AttackTechnique, AttackCategory
+from .library import AttackCategory, AttackTechnique
 
 CH05_ATTACKS: list[AttackTechnique] = [
 

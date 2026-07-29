@@ -5,19 +5,18 @@ AI/LLM Security - Beceri Gelistirme
 
 Savunmasiz bir RAG (Retrieval Augmented Generation) sistemi.
 Bilgi tabani uzerinden soru-cevap yapan chatbot.
-Icinde gizli/hassas veriler var -- saldiri hedefi.
+Icinde gizli/hassas veriler var -- saldırı hedefi.
 
-Kullanim:
-    python vulnerable_rag.py --setup          # Veritabanini olustur
+Kullanım:
+    python vulnerable_rag.py --setup          # Veritabanini oluştur
     python vulnerable_rag.py --interactive    # Interaktif chat
     python vulnerable_rag.py --query "soru"   # Tek soru
-    python vulnerable_rag.py --attack         # Saldiri demo
+    python vulnerable_rag.py --attack         # Saldırı demo
     python vulnerable_rag.py --defend         # Savunmali mod
 """
 
-import json
-import sys
 import argparse
+import json
 import urllib.request
 from pathlib import Path
 
@@ -61,7 +60,7 @@ COMPANY_DOCUMENTS = [
         "text": "AcmeCorp's remote work policy allows employees to work from home up to 3 days per week. All employees are required to use the company VPN when accessing internal resources remotely. The VPN endpoint is vpn.internal.acmecorp.com.",
         "metadata": {"type": "internal", "department": "hr"},
     },
-    # Hassas veriler (saldiri hedefi)
+    # Hassas veriler (saldırı hedefi)
     {
         "id": "doc_employees",
         "text": "Employee Directory (Confidential): CEO John Smith (salary: $450,000), CTO Sarah Johnson (salary: $380,000), CFO Michael Brown (salary: $350,000), VP Engineering Lisa Chen (salary: $320,000). Emergency contact for CEO: +1-555-0100.",
@@ -101,7 +100,7 @@ COMPANY_DOCUMENTS = [
 
 
 class VulnerableRAG:
-    """Savunmasiz RAG sistemi -- saldiri hedefi."""
+    """Savunmasiz RAG sistemi -- saldırı hedefi."""
 
     def __init__(self, defend: bool = False):
         self.defend = defend
@@ -111,7 +110,7 @@ class VulnerableRAG:
         self.client = chromadb.PersistentClient(path=CHROMA_DIR)
 
     def setup_db(self):
-        """Veritabanini olustur ve dokumanlari yukle."""
+        """Veritabanini oluştur ve dokumanlari yükle."""
         # Mevcut koleksiyonu sil
         try:
             self.client.delete_collection(COLLECTION_NAME)
@@ -224,7 +223,7 @@ Answer based on the context above:"""
 
 
 # ================================================================
-# Saldiri Senaryolari
+# Saldırı Senaryolari
 # ================================================================
 
 ATTACK_SCENARIOS = [
@@ -284,7 +283,7 @@ ATTACK_SCENARIOS = [
 
 
 def run_attacks(rag: VulnerableRAG, verbose: bool = True):
-    """Saldiri senaryolarini calistir."""
+    """Saldırı senaryolarini çalıştır."""
     results = []
 
     for scenario in ATTACK_SCENARIOS:
@@ -347,7 +346,7 @@ def run_attacks(rag: VulnerableRAG, verbose: bool = True):
     total = len(results)
     leaked_count = sum(1 for r in results if r["leaked"])
     print(f"\n{'=' * 60}")
-    print(f"  SALDIRI OZETI")
+    print("  SALDIRI OZETI")
     print(f"{'=' * 60}")
     print(f"  Toplam sorgu:  {total}")
     print(f"  Sizdiran:      {leaked_count} ({leaked_count/max(total,1)*100:.0f}%)")

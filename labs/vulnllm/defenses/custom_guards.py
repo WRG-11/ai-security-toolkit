@@ -6,7 +6,8 @@ Bunlar genel guard'larin uzerine eklenir.
 """
 
 import re
-from .guards import InputGuard, OutputGuard, GuardResult
+
+from .guards import GuardResult, InputGuard, OutputGuard
 
 
 class SecretWordFilter(InputGuard):
@@ -96,7 +97,7 @@ class DangerousActionFilter(InputGuard):
             if re.search(pattern, lower):
                 return GuardResult(
                     blocked=True,
-                    reason=f"Tehlikeli aksiyon engellendi (least privilege)",
+                    reason="Tehlikeli aksiyon engellendi (least privilege)",
                     score=0.9,
                     guard_name=self.name,
                     details={"matched": pattern[:30]},
@@ -105,7 +106,7 @@ class DangerousActionFilter(InputGuard):
 
 
 class AnomalyFilter(OutputGuard):
-    """Output'ta anomali (beklenmeyen icerik) tespit eden filtre."""
+    """Output'ta anomali (beklenmeyen içerik) tespit eden filtre."""
     name = "AnomalyFilter"
 
     def __init__(self, anomaly_patterns: list[str] | None = None):
@@ -124,7 +125,7 @@ class AnomalyFilter(OutputGuard):
             if re.search(pattern, text, re.IGNORECASE):
                 return GuardResult(
                     blocked=True,
-                    reason=f"Anomali tespit edildi: yanit baseline'dan sapma gosteriyor",
+                    reason="Anomali tespit edildi: yanit baseline'dan sapma gosteriyor",
                     score=0.9,
                     guard_name=self.name,
                 )

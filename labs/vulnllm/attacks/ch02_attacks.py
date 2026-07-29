@@ -8,7 +8,7 @@ Referans: Carlini et al. (2021) training data extraction,
 MITRE ATLAS AML.T0024/T0025, Samsung ChatGPT vakasi
 """
 
-from .library import AttackTechnique, AttackCategory
+from .library import AttackCategory, AttackTechnique
 
 CH02_ATTACKS: list[AttackTechnique] = [
 

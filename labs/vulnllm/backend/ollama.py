@@ -14,8 +14,8 @@ Kullanım:
 """
 
 import json
-import urllib.request
 import urllib.error
+import urllib.request
 from dataclasses import dataclass, field
 from enum import Enum
 

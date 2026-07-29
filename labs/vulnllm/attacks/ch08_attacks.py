@@ -1,13 +1,13 @@
 """
 CH08 — RAG Poisoning / Vector Embedding Weaknesses Attack Library (15 Teknik)
 
-Hedef: RAG bilgi tabanini zehirleyerek LLM'in yanlis/zararli bilgi vermesi.
+Hedef: RAG bilgi tabanini zehirleyerek LLM'in yanlış/zararli bilgi vermesi.
 
 Referans: MITRE ATLAS AML.T0020, OWASP LLM08,
 Greshake et al. indirect injection via RAG
 """
 
-from .library import AttackTechnique, AttackCategory
+from .library import AttackCategory, AttackTechnique
 
 CH08_ATTACKS: list[AttackTechnique] = [
 

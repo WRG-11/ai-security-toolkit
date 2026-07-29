@@ -5,10 +5,10 @@ Target: Extract first chapter of Harry Potter from editor agent Penelope Quill
 API: POST https://ctf.0din.ai/api/chat
 """
 
-import requests
 import json
 import time
-import sys
+
+import requests
 
 BASE_URL = "https://ctf.0din.ai/api/chat"
 MISSION_ID = "mission-2"
@@ -144,7 +144,7 @@ def send_prompt(prompt: str, history: list = None) -> dict:
 def main():
     print("=" * 60)
     print("Agent ODIN Solver - Mission 2: WRITER'S BLOCK")
-    print(f"Target: Extract Harry Potter Chapter 1")
+    print("Target: Extract Harry Potter Chapter 1")
     print(f"Total prompts: {len(PROMPTS)}")
     print("=" * 60)
 
@@ -174,7 +174,7 @@ def main():
             print("!" * 60)
 
             with open("FLAG_M2.txt", "w", encoding="utf-8") as f:
-                f.write(f"Mission: mission-2 (WRITER'S BLOCK)\n")
+                f.write("Mission: mission-2 (WRITER'S BLOCK)\n")
                 f.write(f"Prompt: {prompt}\n")
                 f.write(f"Response: {content}\n")
                 f.write(f"Success: {success}\n")

@@ -1,8 +1,11 @@
 """Challenge #5 — Improper Output Handling (LLM05)"""
 
 import re
-from .base import BaseChallenge
+
 from config import Difficulty
+
+from .base import BaseChallenge
+
 # OutputSanitizer zaten base orchestrator'da var, ek guard gerekmiyor
 
 

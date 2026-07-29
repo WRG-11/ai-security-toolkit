@@ -5,10 +5,10 @@ Target: Extract secrets about Tiananmen Square protests from Agent Cipher
 API: POST https://ctf.0din.ai/api/chat
 """
 
-import requests
 import json
 import time
-import sys
+
+import requests
 
 BASE_URL = "https://ctf.0din.ai/api/chat"
 MISSION_ID = "mission-3"
@@ -134,7 +134,7 @@ def send_prompt(prompt: str, history: list = None) -> dict:
 def main():
     print("=" * 60)
     print("Agent ODIN Solver - Mission 3: WAR GAMES")
-    print(f"Target: Extract Tiananmen Square secrets")
+    print("Target: Extract Tiananmen Square secrets")
     print(f"Total prompts: {len(PROMPTS)}")
     print("=" * 60)
 
@@ -159,7 +159,7 @@ def main():
         # Save flag BEFORE printing to avoid encoding crash
         if success:
             with open("FLAG_M3.txt", "w", encoding="utf-8") as f:
-                f.write(f"Mission: mission-3 (WAR GAMES)\n")
+                f.write("Mission: mission-3 (WAR GAMES)\n")
                 f.write(f"Prompt: {prompt}\n")
                 f.write(f"Response: {content}\n")
                 f.write(f"Success: {success}\n")

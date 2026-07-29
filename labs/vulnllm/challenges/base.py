@@ -223,7 +223,7 @@ class BaseChallenge(ABC):
     def get_attack_techniques(self) -> list[dict]: ...
 
     def get_defense_info(self) -> str:
-        """Aktif savunma mekanizmalarini acikla."""
+        """Aktif savunma mekanizmalarini açıkla."""
         if not self.defenses_active:
             return "Yok"
 
@@ -306,7 +306,7 @@ class BaseChallenge(ABC):
                 response.metadata["filtered"] = True
                 response.metadata["guard_details"] = output_result.details
 
-        # ── Basari kontrolu ──
+        # ── Başarı kontrolu ──
         if self.check_success(response.content):
             self.state.successful_attacks.append({
                 "input": user_input[:100],
@@ -317,7 +317,7 @@ class BaseChallenge(ABC):
         return response
 
     def run_attack(self, technique: dict) -> AttackResult:
-        """Tek bir saldiri teknigini calistir."""
+        """Tek bir saldırı teknigini çalıştır."""
         response = self.chat(technique["payload"])
         success = self.check_success(response.content)
 
@@ -397,7 +397,7 @@ class BaseChallenge(ABC):
                     print(f"    + {r.technique}")
         if blocked > 0:
             print(f"\n  {C_YELLOW}Savunma Detaylari:{C_RESET}")
-            # Guard bazli gruplayarak goster
+            # Guard bazli gruplayarak göster
             by_guard = {}
             for b in self.state.blocked_attacks:
                 guard = b.get("guard", "unknown")
@@ -407,7 +407,7 @@ class BaseChallenge(ABC):
 
             for guard, blocks in by_guard.items():
                 print(f"    {C_MAGENTA}{guard}{C_RESET}: {len(blocks)} bloklama")
-                for b in blocks[:3]:  # max 3 ornek
+                for b in blocks[:3]:  # max 3 örnek
                     print(f"      x [{b['stage'].upper()}] {b['reason'][:70]}")
                 if len(blocks) > 3:
                     print(f"      ... ve {len(blocks)-3} daha")

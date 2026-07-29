@@ -1,32 +1,39 @@
 #!/usr/bin/env python3
 """
 VulnLLM — Zafiyetli LLM Lab Ortami
-OWASP LLM Top 10 saldiri & savunma pratigi.
+OWASP LLM Top 10 saldırı & savunma pratigi.
 
-Kullanim:
+Kullanım:
     python vulnllm.py                          # Ana menu
     python vulnllm.py --challenge 1            # Challenge 1 interaktif
-    python vulnllm.py --challenge 1 --auto     # Challenge 1 otomatik saldiri
+    python vulnllm.py --challenge 1 --auto     # Challenge 1 otomatik saldırı
     python vulnllm.py --all --auto             # Tum challenge'lar otomatik
     python vulnllm.py --challenge 1 -d medium  # Orta zorluk
     python vulnllm.py --scoreboard             # Skor tablosu
 """
 
-import sys
-import json
 import argparse
-from pathlib import Path
+import json
+import sys
 from datetime import datetime
+from pathlib import Path
 
 # Proje rootunu path'e ekle
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import (
-    Difficulty, DIFFICULTY_MAP, C_RESET, C_BOLD, C_DIM, C_RED, C_GREEN,
-    C_YELLOW, C_BLUE, C_MAGENTA, C_CYAN
-)
 from challenges import ALL_CHALLENGES
-
+from config import (
+    C_BOLD,
+    C_CYAN,
+    C_DIM,
+    C_GREEN,
+    C_MAGENTA,
+    C_RED,
+    C_RESET,
+    C_YELLOW,
+    DIFFICULTY_MAP,
+    Difficulty,
+)
 
 BANNER = f"""
 {C_MAGENTA}{C_BOLD}
@@ -64,15 +71,15 @@ def print_menu():
 
     print(f"\n  {C_BOLD}KOMUTLAR:{C_RESET}")
     print(f"    {C_DIM}Mock (varsayilan):{C_RESET}")
-    print(f"    python vulnllm.py --challenge <N>              Interaktif mod")
-    print(f"    python vulnllm.py --challenge <N> --auto       Otomatik saldiri")
-    print(f"    python vulnllm.py --all --auto -d medium       Tumu medium modda")
+    print("    python vulnllm.py --challenge <N>              Interaktif mod")
+    print("    python vulnllm.py --challenge <N> --auto       Otomatik saldiri")
+    print("    python vulnllm.py --all --auto -d medium       Tumu medium modda")
     print(f"    {C_DIM}Ollama (gercek LLM):{C_RESET}")
-    print(f"    python vulnllm.py -c 1 --ollama --tier t1      T1 ile CH01 interaktif")
-    print(f"    python vulnllm.py -c 1 --ollama --tier t2 -a   T2 ile CH01 otomatik")
-    print(f"    python vulnllm.py --all -o -t t1 -a            Tum challenge T1 otomatik")
+    print("    python vulnllm.py -c 1 --ollama --tier t1      T1 ile CH01 interaktif")
+    print("    python vulnllm.py -c 1 --ollama --tier t2 -a   T2 ile CH01 otomatik")
+    print("    python vulnllm.py --all -o -t t1 -a            Tum challenge T1 otomatik")
     print(f"    {C_DIM}Diger:{C_RESET}")
-    print(f"    python vulnllm.py --scoreboard                 Skor tablosu")
+    print("    python vulnllm.py --scoreboard                 Skor tablosu")
     print()
 
 
@@ -120,7 +127,7 @@ def run_interactive(challenge):
             print(f"  {C_BOLD}Bloklanan:{C_RESET} {len(challenge.state.blocked_attacks)}\n")
             continue
 
-        # Numara ile hazir saldiri secimi
+        # Numara ile hazir saldırı secimi
         if cmd.isdigit():
             idx = int(cmd) - 1
             techniques = challenge.get_attack_techniques()
@@ -145,7 +152,7 @@ def run_interactive(challenge):
 
 
 def run_auto(challenge):
-    """Otomatik saldiri modu."""
+    """Otomatik saldırı modu."""
     challenge.print_banner()
 
     print(f"\n  {C_MAGENTA}Otomatik Saldiri Modu{C_RESET} — Tum teknikler deneniyor...\n")
@@ -160,7 +167,7 @@ def run_auto(challenge):
 
 
 def run_all_auto(difficulty: Difficulty, use_ollama: bool = False, model_tier=None, model_override=None):
-    """Tum challenge'lari otomatik calistir."""
+    """Tum challenge'lari otomatik çalıştır."""
     print(BANNER)
     backend_label = f" | Ollama {model_tier.value.upper()}" if use_ollama else " | Mock"
     print(f"  {C_MAGENTA}{C_BOLD}TUM CHALLENGE'LAR — {difficulty.name} MOD{backend_label}{C_RESET}\n")
@@ -220,7 +227,7 @@ def run_all_auto(difficulty: Difficulty, use_ollama: bool = False, model_tier=No
 
 
 def show_scoreboard():
-    """Kayitli raporlardan skor tablosu goster."""
+    """Kayitli raporlardan skor tablosu göster."""
     report_dir = Path(__file__).parent / "reports"
     if not report_dir.exists():
         print(f"  {C_YELLOW}Henuz rapor yok. Once --auto ile saldiri calistirin.{C_RESET}")
@@ -272,7 +279,7 @@ def main():
     difficulty = DIFFICULTY_MAP[args.difficulty]
 
     # Ollama tier mapping
-    from backend.ollama import ModelTier, OllamaBackend, TIER_MODELS
+    from backend.ollama import TIER_MODELS, ModelTier, OllamaBackend
     tier_map = {"t1": ModelTier.T1_UNCENSORED, "t2": ModelTier.T2_WEAK, "t3": ModelTier.T3_STRONG}
     model_tier = tier_map[args.tier]
 

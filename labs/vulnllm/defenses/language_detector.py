@@ -5,11 +5,7 @@ Low-resource dil bypass tespiti.
 Karakter script analizi + trigram bazli dil tespiti.
 """
 
-import re
-import unicodedata
-from collections import Counter
-from .base import InputGuard, GuardResult
-
+from .base import GuardResult, InputGuard
 
 # Unicode block bazli script tespiti
 SCRIPT_RANGES: list[tuple[str, int, int]] = [
@@ -45,7 +41,7 @@ class LanguageDetector(InputGuard):
     """
     Dil/script anomali tespiti:
     1. Karisik script (Latin icinde Kiril, Arap, CJK vb.)
-    2. Bilinen dil disinda icerik (low-resource language bypass)
+    2. Bilinen dil disinda içerik (low-resource language bypass)
     3. Mid-sentence script degisikligi
     """
     name = "LanguageDetector"

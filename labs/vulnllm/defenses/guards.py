@@ -145,7 +145,7 @@ class PromptInjectionClassifier(InputGuard):
         if special_ratio > 0.15:
             score += 0.15
 
-        # Buyuk harf orani (SHOUTING)
+        # Büyük harf orani (SHOUTING)
         if text != text.lower():
             upper_ratio = sum(1 for c in text if c.isupper()) / max(len(text), 1)
             if upper_ratio > 0.5:
@@ -309,7 +309,7 @@ class CanarySystem(OutputGuard):
     Sistem prompt'una canary token gomer.
     Ciktida canary tespit edilirse → prompt leakage alarm.
 
-    Kullanim:
+    Kullanım:
         canary = CanarySystem()
         protected_prompt = canary.inject(original_prompt)
         # ... LLM yanit uretir ...
@@ -542,7 +542,7 @@ class SimilarityChecker(OutputGuard):
 
 class OutputSanitizer(OutputGuard):
     """
-    LLM ciktisindaki potansiyel zararli icerigi temizler.
+    LLM ciktisindaki potansiyel zararli içeriği temizler.
     XSS, SQL Injection, Command Injection kaliplarini tespit eder.
     """
     name = "OutputSanitizer"
