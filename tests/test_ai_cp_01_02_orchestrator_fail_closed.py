@@ -1,4 +1,4 @@
-"""AI-CP-01 + AI-CP-02 — DefenseOrchestrator guard/sanitize/audit
+"""DefenseOrchestrator guard/sanitize/audit
 failures NO LONGER crash the pipeline; guards fail-closed, audit
 is non-fatal.
 
@@ -7,7 +7,7 @@ Pre-fix:
         result = guard.check(text)        # raise -> orchestrator crashes
         self.logger.log(...)              # raise -> orchestrator crashes
         result = guard.sanitize(text)     # raise -> orchestrator crashes
-    Any exception bubbled to llm_firewall (Wave 11 AI-L2-03) which
+    Any exception bubbled to llm_firewall which
     caught it as blocked=False -- double fail-open chain.
 
 Post-fix:
@@ -72,7 +72,7 @@ class _PassthroughInputGuard(InputGuard):
 
 
 class OrchestratorFailClosedFailNonFatal(unittest.TestCase):
-    """AI-CP-01 + AI-CP-02 closure guard."""
+    """DefenseOrchestrator fail-closed + non-fatal-audit closure guard."""
 
     def test_input_guard_exception_does_not_crash_orchestrator(self) -> None:
         orch = DefenseOrchestrator()
@@ -81,7 +81,7 @@ class OrchestratorFailClosedFailNonFatal(unittest.TestCase):
         result = orch.check_input("hello")
         self.assertTrue(
             result.blocked,
-            "AI-CP-01: guard exception must fail-CLOSED (block), not crash.",
+            "guard exception must fail-CLOSED (block), not crash.",
         )
         self.assertIn("internal error", result.reason.lower())
 
@@ -114,7 +114,7 @@ class OrchestratorFailClosedFailNonFatal(unittest.TestCase):
         self.assertIn("REDACTED", sanitized)
 
     def test_audit_log_failure_is_non_fatal(self) -> None:
-        """AI-CP-02: an exploding AuditLogger must NOT crash the
+        """An exploding AuditLogger must NOT crash the
         check_input pipeline."""
         orch = DefenseOrchestrator()
         orch.add_input_guard(_PassthroughInputGuard())

@@ -1,25 +1,25 @@
-"""AI-J-01 + AI-J-02 — LLM-as-Judge default fail-CLOSED + sliding-
+"""LLM-as-Judge default fail-CLOSED + sliding-
 window front+back chunking.
 
 Pre-fix:
-    AI-J-01: defenses/llm_judge.py
+    defenses/llm_judge.py
       - _is_available() False -> GuardResult(blocked=False) [fail-open]
       - _query_ollama exception -> {"verdict": "safe"} [fail-open]
       - _parse_verdict no JSON found -> verdict='safe' [fail-open]
       Comment said "by design — judge unavailable = safe". Not
       acceptable: an unavailable security control cannot announce
       'all clear'.
-    AI-J-02: defenses/llm_judge.py:101+103
+    defenses/llm_judge.py:101+103
       - text[:500] truncation in JUDGE_INPUT_TEMPLATE / OUTPUT_TEMPLATE
       - Attacker that front-loaded 500 chars of benign content placed
         the actual payload at positions 501+ and slipped past judge
         evaluation entirely.
 
 Post-fix:
-    AI-J-01: `allow_judge_unavailable: bool = False` (opt-in fail-open).
+    `allow_judge_unavailable: bool = False` (opt-in fail-open).
       Default behaviour: blocked=True, confidence=1.0 when Ollama is
       unavailable or query fails.
-    AI-J-02: sliding-window front+back chunks (each `_JUDGE_CHUNK_TOKENS`
+    sliding-window front+back chunks (each `_JUDGE_CHUNK_TOKENS`
       = 500 chars). Any-unsafe across chunks => unsafe aggregated verdict.
 """
 from __future__ import annotations
@@ -37,7 +37,7 @@ from defenses.llm_judge import LLMAsJudge  # noqa: E402
 
 
 class JudgeFailClosedByDefault(unittest.TestCase):
-    """AI-J-01 closure guard."""
+    """Judge fail-closed-by-default closure guard."""
 
     def test_ollama_unavailable_blocks_by_default(self) -> None:
         """Default ctor: Ollama down -> blocked=True (fail-CLOSED)."""
@@ -46,7 +46,7 @@ class JudgeFailClosedByDefault(unittest.TestCase):
             result = judge.check_input("anything goes")
         self.assertTrue(
             result.blocked,
-            "AI-J-01: judge unavailable must FAIL-CLOSED by default "
+            "judge unavailable must FAIL-CLOSED by default "
             "(pre-fix returned blocked=False = silent fail-open).",
         )
         self.assertEqual(result.score, 1.0)
@@ -77,7 +77,7 @@ class JudgeFailClosedByDefault(unittest.TestCase):
 
 
 class JudgeSlidingWindow(unittest.TestCase):
-    """AI-J-02 closure guard."""
+    """Judge sliding-window closure guard."""
 
     def test_short_text_one_chunk(self) -> None:
         judge = LLMAsJudge()
@@ -116,7 +116,7 @@ class JudgeSlidingWindow(unittest.TestCase):
             result = judge.check_input(payload_text)
         self.assertTrue(
             result.blocked,
-            "AI-J-02 regression: end-of-input payload missed by judge "
+            "regression: end-of-input payload missed by judge "
             "(pre-fix bug: text[:500] truncation hid the canary).",
         )
         self.assertIn("any-unsafe", result.details.get("reason", "").lower(),

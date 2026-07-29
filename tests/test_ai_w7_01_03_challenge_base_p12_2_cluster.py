@@ -1,4 +1,4 @@
-"""AI-W7-01 + AI-W7-03-NEW (P12-2 cluster #1+#2) — BaseChallenge.secrets +
+"""BaseChallenge.secrets +
 atlas_mapping are now per-instance copies.
 
 Pre-fix:
@@ -11,9 +11,9 @@ Pre-fix:
     cascade. Mutating one challenge's secrets/atlas_mapping leaked
     into all other instances of the same subclass.
 
-Pattern P12-2 'class-level mutable default cascade' -- 4-vaka graduation
-cluster (this file = #1+#2; defenses/guards.py:264 = #3 PIIScanner.PATTERNS;
-challenges/ch08_rag_poisoning.py:19 = #4 knowledge_base).
+'class-level mutable default cascade' anti-pattern -- this file =
+BaseChallenge.secrets + atlas_mapping; defenses/guards.py:264 =
+PIIScanner.PATTERNS; challenges/ch08_rag_poisoning.py:19 = knowledge_base.
 
 Post-fix:
     BaseChallenge.__init__ now performs
@@ -35,7 +35,7 @@ if str(_VULNLLM) not in sys.path:
 
 
 class ChallengeBaseInstanceIsolation(unittest.TestCase):
-    """AI-W7-01 + AI-W7-03-NEW closure guard."""
+    """BaseChallenge instance-isolation closure guard."""
 
     def _import_ch01(self):
         from challenges.ch01_prompt_injection import PromptInjectionChallenge
@@ -47,7 +47,7 @@ class ChallengeBaseInstanceIsolation(unittest.TestCase):
         b = cls()
         self.assertIsNot(
             a.secrets, b.secrets,
-            "P12-2 #1: a.secrets is b.secrets -- class-level mutable "
+            "a.secrets is b.secrets -- class-level mutable "
             "cascade not closed; instances share the same dict.",
         )
 
@@ -57,7 +57,7 @@ class ChallengeBaseInstanceIsolation(unittest.TestCase):
         b = cls()
         self.assertIsNot(
             a.atlas_mapping, b.atlas_mapping,
-            "P12-2 #2: a.atlas_mapping is b.atlas_mapping -- class-level "
+            "a.atlas_mapping is b.atlas_mapping -- class-level "
             "mutable cascade not closed.",
         )
 
@@ -86,9 +86,9 @@ class ChallengeBaseInstanceIsolation(unittest.TestCase):
         a.secrets["injected_attack"] = "PWN"
         a.atlas_mapping.append("AML.T9999")
         self.assertNotIn("injected_attack", b.secrets,
-                         "P12-2 leak: mutation of a.secrets bled into b.secrets")
+                         "leak: mutation of a.secrets bled into b.secrets")
         self.assertNotIn("AML.T9999", b.atlas_mapping,
-                         "P12-2 leak: mutation of a.atlas_mapping bled into b.atlas_mapping")
+                         "leak: mutation of a.atlas_mapping bled into b.atlas_mapping")
 
     def test_cross_challenge_isolation(self) -> None:
         """Different subclasses should naturally have different values

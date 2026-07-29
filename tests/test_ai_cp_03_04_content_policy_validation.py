@@ -1,20 +1,20 @@
-"""AI-CP-03 + AI-CP-04 — ContentPolicyEngine threshold bounds +
+"""ContentPolicyEngine threshold bounds +
 malformed-regex non-fatal compile.
 
 Pre-fix:
     defenses/content_policy.py:130-144 ContentPolicyEngine.__init__
-      AI-CP-03: any float accepted as threshold (no bounds check).
-                threshold=999.0 made every input pass-through.
-      AI-CP-04: re.compile() in a list comprehension; any malformed
-                regex in any DEFAULT_POLICIES rule aborted the loop
-                and prevented ContentPolicyEngine() from constructing
-                at all -> the entire defense pipeline failed startup.
+      - threshold bounds: any float accepted as threshold (no bounds
+        check); threshold=999.0 made every input pass-through.
+      - malformed regex: re.compile() in a list comprehension; any
+        malformed regex in any DEFAULT_POLICIES rule aborted the loop
+        and prevented ContentPolicyEngine() from constructing at all
+        -> the entire defense pipeline failed startup.
 
 Post-fix:
-    AI-CP-03: threshold normalized via float(); ValueError if not
-              in [0.0, 1.0].
-    AI-CP-04: per-pattern try/except re.error; bad patterns logged
-              and skipped; other patterns continue to compile.
+    - threshold bounds: normalized via float(); ValueError if not
+      in [0.0, 1.0].
+    - malformed regex: per-pattern try/except re.error; bad patterns
+      logged and skipped; other patterns continue to compile.
 """
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ from defenses.content_policy import ContentPolicyEngine, PolicyRule  # noqa: E40
 
 
 class ContentPolicyThresholdValidation(unittest.TestCase):
-    """AI-CP-03 closure guard."""
+    """Threshold-validation closure guard."""
 
     def test_threshold_above_one_rejected(self) -> None:
         with self.assertRaises(ValueError):
@@ -56,7 +56,7 @@ class ContentPolicyThresholdValidation(unittest.TestCase):
 
 
 class ContentPolicyMalformedRegexNonFatal(unittest.TestCase):
-    """AI-CP-04 closure guard."""
+    """Malformed-regex non-fatal-construction closure guard."""
 
     def test_malformed_pattern_does_not_abort_construction(self) -> None:
         """One bad regex must not prevent ContentPolicyEngine startup."""
@@ -122,7 +122,7 @@ class ContentPolicyMalformedRegexNonFatal(unittest.TestCase):
         result = eng.check("here is the API_KEY for the admin", context=None)
         self.assertTrue(result.blocked,
                         "good policy did not fire after bad-policy skip; "
-                        "AI-CP-04 fix may have over-reached")
+                        "the malformed-regex fix may have over-reached")
 
 
 if __name__ == "__main__":

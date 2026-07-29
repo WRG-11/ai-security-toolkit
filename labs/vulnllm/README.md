@@ -2,17 +2,13 @@
 
 **Intentionally vulnerable LLM application for learning AI security.**
 
-Bilerek savunmasız bırakılan LLM uygulaması — OWASP LLM Top 10 saldırı ve savunma eğitimi.
-
 ---
 
-## What is this? / Bu ne?
+## What is this?
 
 VulnLLM is a hands-on lab environment where you practice attacking and defending LLM applications. Think of it as "DVWA for LLMs" — it has intentional vulnerabilities you can exploit, and defense modules you can enable to learn how to protect AI systems.
 
-VulnLLM, LLM uygulamalarına saldırı ve savunma pratiği yapabileceğiniz bir lab ortamıdır. LLM'ler için DVWA gibi düşünün.
-
-## Features / Özellikler
+## Features
 
 ### 10 Challenges (4 difficulty levels)
 - **EASY:** Basic prompt injection, system prompt extraction
@@ -38,7 +34,7 @@ VulnLLM, LLM uygulamalarına saldırı ve savunma pratiği yapabileceğiniz bir 
 ### 194 Attack Techniques
 Covering all OWASP LLM Top 10 categories with real-world attack patterns.
 
-## Quick Start / Hızlı Başlangıç
+## Quick Start
 
 ```bash
 # Mock mode (no external dependencies)
@@ -51,7 +47,7 @@ python vulnllm.py --backend ollama --model llama3
 python defense_demo.py
 ```
 
-## Requirements / Gereksinimler
+## Requirements
 
 - Python 3.10+
 - **Mock mode:** No additional dependencies
@@ -68,7 +64,7 @@ python defense_demo.py
 | LLM07 | Prompt Leakage | System prompt extraction |
 | LLM09 | Misinformation | Hallucination exploitation |
 
-## Results / Sonuçlar
+## Results
 
 - **Undefended:** Most attacks succeed
 - **All guards enabled (EXPERT):** 99% block rate (194 attacks, 192 blocked)

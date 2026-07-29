@@ -1,12 +1,12 @@
 """
 Module #9 — ML Injection Classifier (TF-IDF)
 
-Regex/keyword yerine TF-IDF + log-odds skorlama.
-Eğitim verisi hardcoded — sıfır harici bağımlılık.
+TF-IDF + log-odds scoring instead of regex/keywords.
+Training data is hardcoded — zero external dependency.
 
-Avantaj: Bilinmeyen saldırı varyantlarını yakalayabilir.
-Regex sadece bilinen pattern'leri yakalar, TF-IDF
-kelime dağılımı üzerinden genelleştirir.
+Advantage: can catch unknown attack variants.
+Regex only catches known patterns, while TF-IDF generalizes
+via word-distribution.
 
 Ref: Perez & Ribeiro (2022) — Ignore This Title and HackAPrompt
 """
@@ -17,7 +17,7 @@ from collections import Counter
 
 from .base import GuardResult, InputGuard
 
-# --- Eğitim verisi: injection vs benign örnekler ---
+# --- Training data: injection vs benign examples ---
 
 INJECTION_SAMPLES: list[str] = [
     # Override / instruction manipulation
@@ -103,22 +103,22 @@ BENIGN_SAMPLES: list[str] = [
 
 
 class _TFIDFModel:
-    """Minimal TF-IDF + log-odds sınıflandırıcı. Sıfır bağımlılık."""
+    """Minimal TF-IDF + log-odds classifier. Zero dependency."""
 
     def __init__(self):
         self.vocab: dict[str, int] = {}         # term → index
-        self.idf: dict[str, float] = {}         # term → idf değeri
+        self.idf: dict[str, float] = {}         # term → idf value
         self.injection_profile: dict[str, float] = {}  # term → log-odds
         self._trained = False
 
     @staticmethod
     def _tokenize(text: str) -> list[str]:
-        """Basit tokenizer: lowercase + alfanumerik tokenlar."""
+        """Simple tokenizer: lowercase + alphanumeric tokens."""
         return re.findall(r"[a-zA-ZçğıöşüÇĞİÖŞÜ0-9]+", text.lower())
 
     @staticmethod
     def _ngrams(tokens: list[str], n: int = 2) -> list[str]:
-        """Unigram + bigram üret."""
+        """Generate unigrams + bigrams."""
         result = list(tokens)  # unigrams
         for i in range(len(tokens) - n + 1):
             result.append(" ".join(tokens[i:i + n]))
@@ -131,7 +131,7 @@ class _TFIDFModel:
         return {t: (1 + math.log(c)) / total for t, c in counts.items()}
 
     def train(self, injection_texts: list[str], benign_texts: list[str]):
-        """Eğitim: TF-IDF profili oluştur."""
+        """Training: build the TF-IDF profile."""
         all_docs: list[list[str]] = []
         inj_docs: list[list[str]] = []
         ben_docs: list[list[str]] = []
@@ -146,7 +146,7 @@ class _TFIDFModel:
             all_docs.append(tokens)
             ben_docs.append(tokens)
 
-        # IDF hesapla
+        # Compute IDF
         n_docs = len(all_docs)
         doc_freq: Counter = Counter()
         for doc in all_docs:
@@ -157,7 +157,7 @@ class _TFIDFModel:
             for term, df in doc_freq.items()
         }
 
-        # Injection vs benign TF-IDF profilleri
+        # Injection vs benign TF-IDF profiles
         inj_tfidf: Counter = Counter()
         for doc in inj_docs:
             tf = self._tf(doc)
@@ -178,7 +178,7 @@ class _TFIDFModel:
         for t in ben_tfidf:
             ben_tfidf[t] /= n_ben
 
-        # Log-odds: injection'a özgü terimlere yüksek skor
+        # Log-odds: high score for terms specific to injection
         all_terms = set(inj_tfidf) | set(ben_tfidf)
         smoothing = 0.001
         self.injection_profile = {
@@ -191,8 +191,8 @@ class _TFIDFModel:
 
     def predict(self, text: str) -> tuple[float, list[tuple[str, float]]]:
         """
-        Tahmin: 0.0 (benign) → 1.0 (injection).
-        Returns: (skor, top_contributing_terms)
+        Prediction: 0.0 (benign) → 1.0 (injection).
+        Returns: (score, top_contributing_terms)
         """
         if not self._trained:
             return 0.0, []
@@ -203,7 +203,7 @@ class _TFIDFModel:
 
         tf = self._tf(tokens)
 
-        # TF-IDF ağırlıklı log-odds skoru
+        # TF-IDF-weighted log-odds score
         raw_score = 0.0
         contributions: list[tuple[str, float]] = []
         for term, tf_val in tf.items():
@@ -214,29 +214,29 @@ class _TFIDFModel:
                 contributions.append((term, contrib))
             raw_score += contrib
 
-        # Sigmoid normalizasyon → [0, 1]
+        # Sigmoid normalization → [0, 1]
         score = 1 / (1 + math.exp(-raw_score * 0.5))
 
-        # En etkili terimler
+        # Most influential terms
         contributions.sort(key=lambda x: x[1], reverse=True)
         top_terms = contributions[:5]
 
         return score, top_terms
 
 
-# Singleton model — modül yüklendiğinde eğitilir
+# Singleton model — trained when the module loads
 _model = _TFIDFModel()
 _model.train(INJECTION_SAMPLES, BENIGN_SAMPLES)
 
 
 class MLInjectionClassifier(InputGuard):
     """
-    TF-IDF tabanlı prompt injection sınıflandırıcı.
+    TF-IDF-based prompt injection classifier.
 
-    Regex classifier'dan farkı:
-    - Bilinmeyen varyantlara genelleştirebilir
-    - Kelime dağılımı üzerinden çalışır, exact match gerekmez
-    - Log-odds profili injection'a özgü terimlere yüksek skor verir
+    Differences from the regex classifier:
+    - Can generalize to unknown variants
+    - Works over word distribution, no exact match required
+    - The log-odds profile scores terms specific to injection higher
     """
     name = "MLInjectionClassifier"
 
@@ -250,7 +250,7 @@ class MLInjectionClassifier(InputGuard):
 
         return GuardResult(
             blocked=blocked,
-            reason=f"ML injection skoru {score:.2f} >= {self.threshold}" if blocked else "",
+            reason=f"ML injection score {score:.2f} >= {self.threshold}" if blocked else "",
             score=score,
             guard_name=self.name,
             details={

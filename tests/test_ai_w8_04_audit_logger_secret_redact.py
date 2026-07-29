@@ -1,4 +1,4 @@
-"""AI-W8-04 — AuditLogger redacts API key / token shapes from input
+"""AuditLogger redacts API key / token shapes from input
 and output previews before persisting.
 
 Pre-fix:
@@ -36,7 +36,7 @@ def _gr(**kw) -> GuardResult:
 
 
 class AuditLoggerSecretRedaction(unittest.TestCase):
-    """AI-W8-04 closure guard."""
+    """AuditLogger secret-redaction closure guard."""
 
     def setUp(self) -> None:
         self.log = AuditLogger()
@@ -104,7 +104,7 @@ class AuditLoggerSecretRedaction(unittest.TestCase):
             disk_contents = log_path.read_text(encoding="utf-8")
             self.assertNotIn(
                 secret, disk_contents,
-                "AI-W8-04 PERSISTENCE leak: secret reached disk verbatim",
+                "PERSISTENCE leak: secret reached disk verbatim",
             )
             self.assertIn("[REDACTED]", disk_contents)
             # JSONL still parses as valid JSON event

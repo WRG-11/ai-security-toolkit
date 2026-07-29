@@ -1,12 +1,12 @@
 """
-Ollama LLM Backend — Gerçek model ile saldırı/savunma testi.
+Ollama LLM Backend — Attack/defense testing against a real model.
 
-Tier sistemi:
-  T1 (Uncensored): dolphin-mistral — saldırı pratiği
-  T2 (Weak RLHF):  qwen2.5:3b     — bypass pratiği
-  T3 (Strong):     llama3.2:3b    — gelişmiş teknikler
+Tier system:
+  T1 (Uncensored): dolphin-mistral — attack practice
+  T2 (Weak RLHF):  qwen2.5:3b     — bypass practice
+  T3 (Strong):     llama3.2:3b    — advanced techniques
 
-Kullanım:
+Usage:
     from backend.ollama import OllamaBackend, ModelTier
 
     backend = OllamaBackend(tier=ModelTier.T1)
@@ -21,29 +21,29 @@ from enum import Enum
 
 
 class ModelTier(Enum):
-    T1_UNCENSORED = "t1"   # dolphin-mistral — güvenlik yok
-    T2_WEAK = "t2"         # qwen2.5:3b — zayıf RLHF
-    T3_STRONG = "t3"       # llama3.2:3b — güçlü alignment
+    T1_UNCENSORED = "t1"   # dolphin-mistral — no safety training
+    T2_WEAK = "t2"         # qwen2.5:3b — weak RLHF
+    T3_STRONG = "t3"       # llama3.2:3b — strong alignment
 
 
 TIER_MODELS = {
     ModelTier.T1_UNCENSORED: {
         "model": "dolphin-mistral",
         "label": "T1 — Uncensored (dolphin-mistral 7B)",
-        "description": "Güvenlik eğitimi yok. Tüm temel saldırılar çalışır.",
-        "expected_resistance": "Yok",
+        "description": "No safety training. All basic attacks work.",
+        "expected_resistance": "None",
     },
     ModelTier.T2_WEAK: {
         "model": "qwen2.5:3b",
-        "label": "T2 — Zayıf RLHF (Qwen 2.5 3B)",
-        "description": "Basit RLHF. Bypass teknikleri gerekli.",
-        "expected_resistance": "Zayıf (%82 jailbreak başarısı)",
+        "label": "T2 — Weak RLHF (Qwen 2.5 3B)",
+        "description": "Basic RLHF. Bypass techniques required.",
+        "expected_resistance": "Weak (82% jailbreak success rate)",
     },
     ModelTier.T3_STRONG: {
         "model": "llama3.2:3b",
-        "label": "T3 — Güçlü Alignment (Llama 3.2 3B)",
-        "description": "Meta'nın çok katmanlı güvenlik eğitimi.",
-        "expected_resistance": "Orta-iyi",
+        "label": "T3 — Strong Alignment (Llama 3.2 3B)",
+        "description": "Meta's multi-layer safety training.",
+        "expected_resistance": "Medium-good",
     },
 }
 
@@ -60,7 +60,7 @@ class OllamaResponse:
 
 
 class OllamaBackend:
-    """Ollama API ile gerçek LLM backend."""
+    """Real LLM backend via the Ollama API."""
 
     def __init__(
         self,
@@ -82,7 +82,7 @@ class OllamaBackend:
         self.total_tokens = 0
 
     def is_available(self) -> bool:
-        """Ollama sunucusu çalışıyor mu kontrol et."""
+        """Check whether the Ollama server is running."""
         try:
             req = urllib.request.Request(f"{self.base_url}/api/tags")
             with urllib.request.urlopen(req, timeout=5) as resp:
@@ -91,7 +91,7 @@ class OllamaBackend:
             return False
 
     def list_models(self) -> list[str]:
-        """Yüklü modelleri listele."""
+        """List installed models."""
         try:
             req = urllib.request.Request(f"{self.base_url}/api/tags")
             with urllib.request.urlopen(req, timeout=5) as resp:
@@ -101,7 +101,7 @@ class OllamaBackend:
             return []
 
     def model_exists(self) -> bool:
-        """Seçili model yüklü mü?"""
+        """Is the selected model installed?"""
         models = self.list_models()
         return any(self.model in m for m in models)
 
@@ -112,11 +112,11 @@ class OllamaBackend:
         **kwargs,
     ) -> OllamaResponse:
         """
-        Ollama API ile yanıt üret.
+        Generate a response via the Ollama API.
 
-        Not: response_rules ve default_response parametreleri
-        mock uyumluluğu için kabul edilir ama kullanılmaz —
-        gerçek model kendi yanıtını üretir.
+        Note: the response_rules and default_response parameters
+        are accepted for mock compatibility but are unused — the
+        real model generates its own response.
         """
         self.call_count += 1
 
@@ -164,13 +164,13 @@ class OllamaBackend:
         except urllib.error.URLError as e:
             return OllamaResponse(
                 content="",
-                error=f"Ollama bağlantı hatası: {e}",
+                error=f"Ollama connection error: {e}",
                 model=self.model,
             )
         except json.JSONDecodeError as e:
             return OllamaResponse(
                 content="",
-                error=f"JSON parse hatası: {e}",
+                error=f"JSON parse error: {e}",
                 model=self.model,
             )
         except Exception as e:

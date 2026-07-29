@@ -1,17 +1,17 @@
 """
 Module #20 — Response Consistency Analyzer
 
-Multi-turn yanıt tutarlılık analizi. Önceki yanıtlarla
-karşılaştırarak çelişki ve bilgi sızıntısı tespit eder.
+Multi-turn response consistency analysis. Detects contradiction and
+information leakage by comparing against previous responses.
 
-Senaryo: Saldırgan aynı soruyu farklı şekillerde tekrar sorar.
-Model baskı altında tutarsız yanıt vermeye başlarsa,
-bu savunma katmanı yakalasın.
+Scenario: an attacker asks the same question repeatedly in different
+phrasings. If the model starts giving inconsistent answers under
+pressure, this defense layer should catch it.
 
-Sinyal türleri:
-1. Sentiment flip: önce reddetti → şimdi kabul ediyor
-2. Info leak: önceki yanıtlarda olmayan gizli bilgi ortaya çıkıyor
-3. Role break: önceki yanıtlardaki "yapamam" → "yapabilirim"
+Signal types:
+1. Sentiment flip: refused before -> now complies
+2. Info leak: secret info appears that wasn't in previous responses
+3. Role break: previous "I can't" -> now "I can"
 
 Ref: Perez & Ribeiro (2022) — Ignore This Title and HackAPrompt
 Ref: Multi-turn jailbreak research (2024)
@@ -21,7 +21,7 @@ import re
 
 from .base import GuardResult, OutputGuard
 
-# Reddetme kalıpları (AI'ın reddini tespit)
+# Refusal patterns (detects the AI refusing)
 REFUSAL_PATTERNS: list[str] = [
     r"(?:i\s+)?can(?:'?t|not)\s+(?:help|assist|provide|share|reveal|do\s+that)",
     r"(?:i'?m\s+)?(?:not\s+able|unable)\s+to",
@@ -33,7 +33,7 @@ REFUSAL_PATTERNS: list[str] = [
     r"(?:maalesef|uzgunum|bunu\s+yapamam)",
 ]
 
-# Kabul/compliance kalıpları
+# Acceptance/compliance patterns
 COMPLIANCE_PATTERNS: list[str] = [
     r"(?:sure|okay|of\s+course|absolutely|certainly|yes)[,!]?\s+(?:i'?ll|here|let\s+me)",
     r"(?:here\s+(?:is|are|you\s+go))[:\s]",
@@ -43,7 +43,7 @@ COMPLIANCE_PATTERNS: list[str] = [
     r"(?:sifre|gizli\s+bilgi|anahtar)\s*(?::|=|su)",
 ]
 
-# Gizli bilgi pattern'leri
+# Secret info patterns
 SECRET_INFO_PATTERNS: list[str] = [
     r"(?:password|secret|key|token|flag|credential)\s*(?:is|=|:)\s*\S+",
     r"(?:sifre|gizli|anahtar)\s*(?:=|:)\s*\S+",
@@ -57,15 +57,15 @@ MAX_TURNS_PER_SESSION = 50
 
 class ResponseConsistencyAnalyzer(OutputGuard):
     """
-    Multi-turn yanıt tutarlılık analizi.
+    Multi-turn response consistency analysis.
 
-    Her challenge instance'ı kendi analyzer'ını alır.
-    Yanıtları dahili olarak takip eder.
+    Each challenge instance gets its own analyzer.
+    Tracks responses internally.
 
-    Tespit senaryoları:
-    - Refusal → compliance flip (baskı altında boyun eğme)
-    - Yeni gizli bilgi ortaya çıkması (önceki turda yoktu)
-    - Tutarlılık kaybı (aynı soruya farklı yanıt)
+    Detection scenarios:
+    - Refusal -> compliance flip (caving under pressure)
+    - New secret info appearing (not present in previous turn)
+    - Consistency loss (different answer to the same question)
     """
     name = "ResponseConsistencyAnalyzer"
 
@@ -73,25 +73,25 @@ class ResponseConsistencyAnalyzer(OutputGuard):
         self.threshold = threshold
         self.decay = decay
 
-        # Dahili state: turn bazlı yanıt geçmişi
+        # Internal state: turn-based response history
         self._history: list[dict] = []
         self._cumulative_risk: float = 0.0
 
-        # Derlenmiş pattern'ler
+        # Compiled patterns
         self._refusal_re = [re.compile(p, re.IGNORECASE) for p in REFUSAL_PATTERNS]
         self._compliance_re = [re.compile(p, re.IGNORECASE) for p in COMPLIANCE_PATTERNS]
         self._secret_re = [re.compile(p, re.IGNORECASE) for p in SECRET_INFO_PATTERNS]
 
     def _is_refusal(self, text: str) -> bool:
-        """Yanıt bir reddetme mi?"""
+        """Is the response a refusal?"""
         return any(p.search(text) for p in self._refusal_re)
 
     def _is_compliance(self, text: str) -> bool:
-        """Yanıt bir kabul/uyum mu?"""
+        """Is the response an acceptance/compliance?"""
         return any(p.search(text) for p in self._compliance_re)
 
     def _has_secret_info(self, text: str) -> list[str]:
-        """Yanıtta gizli bilgi var mı?"""
+        """Does the response contain secret info?"""
         found = []
         for p in self._secret_re:
             for m in p.finditer(text):
@@ -99,30 +99,30 @@ class ResponseConsistencyAnalyzer(OutputGuard):
         return found
 
     def _detect_sentiment_flip(self) -> tuple[float, str]:
-        """Önceki reddettiler → şimdi kabul etme tespiti."""
+        """Detect a previous refusal flipping into current acceptance."""
         if len(self._history) < 2:
             return 0.0, ""
 
         current = self._history[-1]
-        # Son yanıt compliance mı?
+        # Is the latest response compliance?
         if not current["is_compliance"]:
             return 0.0, ""
 
-        # Önceki yanıtlarda refusal var mı?
+        # Was there a refusal in previous responses?
         recent_refusals = sum(
             1 for h in self._history[-6:-1]
             if h["is_refusal"]
         )
 
         if recent_refusals >= 1:
-            # Flip tespit: reddetti → kabul etti
+            # Flip detected: refused -> then complied
             severity = min(0.3 + recent_refusals * 0.15, 0.9)
-            return severity, f"Sentiment flip: {recent_refusals} red sonrasi kabul"
+            return severity, f"Sentiment flip: compliance after {recent_refusals} refusal(s)"
 
         return 0.0, ""
 
     def _detect_new_secrets(self) -> tuple[float, str]:
-        """Önceki yanıtlarda olmayan gizli bilgi tespiti."""
+        """Detect secret info that wasn't present in previous responses."""
         if len(self._history) < 2:
             return 0.0, ""
 
@@ -132,7 +132,7 @@ class ResponseConsistencyAnalyzer(OutputGuard):
         if not current_secrets:
             return 0.0, ""
 
-        # Önceki yanıtlardaki gizli bilgiler
+        # Secret info found in previous responses
         previous_secrets: set[str] = set()
         for h in self._history[:-1]:
             previous_secrets.update(h["secrets"])
@@ -140,16 +140,16 @@ class ResponseConsistencyAnalyzer(OutputGuard):
         new_secrets = current_secrets - previous_secrets
         if new_secrets:
             severity = min(0.5 + len(new_secrets) * 0.2, 1.0)
-            return severity, f"Yeni gizli bilgi: {', '.join(list(new_secrets)[:2])}"
+            return severity, f"New secret info: {', '.join(list(new_secrets)[:2])}"
 
         return 0.0, ""
 
     def check(self, text: str, context: dict | None = None) -> GuardResult:
-        # Geçmişi sınırla
+        # Limit the history
         if len(self._history) >= MAX_TURNS_PER_SESSION:
             self._history = self._history[-MAX_TURNS_PER_SESSION // 2:]
 
-        # Mevcut yanıtı analiz et
+        # Analyze the current response
         is_refusal = self._is_refusal(text)
         is_compliance = self._is_compliance(text)
         secrets = self._has_secret_info(text)
@@ -161,7 +161,7 @@ class ResponseConsistencyAnalyzer(OutputGuard):
             "length": len(text),
         })
 
-        # Tespit algoritmaları
+        # Detection algorithms
         issues: list[str] = []
         current_risk = 0.0
 
@@ -175,18 +175,18 @@ class ResponseConsistencyAnalyzer(OutputGuard):
             current_risk = max(current_risk, secret_score)
             issues.append(secret_msg)
 
-        # Kümülatif risk hesapla
+        # Compute cumulative risk
         self._cumulative_risk = (
             current_risk * 0.4 + self._cumulative_risk * 0.6 * self.decay
         )
 
-        # Nihai skor: anlık risk veya birikmiş risk
+        # Final score: instantaneous risk or accumulated risk
         final_score = max(current_risk, self._cumulative_risk)
         blocked = final_score >= self.threshold
 
         return GuardResult(
             blocked=blocked,
-            reason=f"Tutarsizlik: {'; '.join(issues)}" if blocked else "",
+            reason=f"Inconsistency: {'; '.join(issues)}" if blocked else "",
             score=final_score,
             guard_name=self.name,
             details={
@@ -201,12 +201,12 @@ class ResponseConsistencyAnalyzer(OutputGuard):
         )
 
     def sanitize(self, text: str, context: dict | None = None) -> str:
-        """Tutarsız yanıta uyarı ekle."""
+        """Add a warning to an inconsistent response."""
         result = self.check(text, context)
         if result.blocked:
             return (
-                "[Yanıt tutarlılık kontrolünden geçemedi — "
-                "önceki yanıtlarla çelişki tespit edildi. "
-                "Bu bilgiye güvenmeyin.]"
+                "[Response failed the consistency check — "
+                "a contradiction with previous responses was detected. "
+                "Do not trust this information.]"
             )
         return text

@@ -1,4 +1,4 @@
-"""CH-08-CRIT (P12-2 cluster #4) — RagPoisoningChallenge.knowledge_base
+"""CH-08-CRIT — RagPoisoningChallenge.knowledge_base
 is per-instance deepcopy from _DEFAULT_KNOWLEDGE_BASE.
 
 Pre-fix:
@@ -14,8 +14,8 @@ Pre-fix:
     altered every concurrent participant's knowledge_base, defeating
     the per-user isolation premise of the lab.
 
-Pattern P12-2 'class-level mutable default cascade' — 4th and final
-instance in the graduation cluster; see also test_ai_w7, test_ai_w8_01.
+'class-level mutable default cascade' anti-pattern; see also test_ai_w7,
+test_ai_w8_01.
 
 Post-fix:
     _DEFAULT_KNOWLEDGE_BASE   class constant (curated reference)
@@ -45,7 +45,7 @@ class RagKnowledgeBaseIsolation(unittest.TestCase):
         b = cls()
         self.assertIsNot(
             a.knowledge_base, b.knowledge_base,
-            "P12-2 #4: a.knowledge_base is b.knowledge_base -- list "
+            "a.knowledge_base is b.knowledge_base -- list "
             "shared between instances.",
         )
 
@@ -58,7 +58,7 @@ class RagKnowledgeBaseIsolation(unittest.TestCase):
             with self.subTest(i=i):
                 self.assertIsNot(
                     da, db,
-                    f"P12-2 #4 shallow-copy leak: a.knowledge_base[{i}] "
+                    f"shallow-copy leak: a.knowledge_base[{i}] "
                     f"is b.knowledge_base[{i}] -- nested dict reference "
                     f"shared. deepcopy not applied.",
                 )
@@ -87,17 +87,17 @@ class RagKnowledgeBaseIsolation(unittest.TestCase):
         # Victim's KB must remain pristine
         self.assertEqual(
             len(victim.knowledge_base), 3,
-            "P12-2 #4 length leak: victim received attacker's extra row",
+            "length leak: victim received attacker's extra row",
         )
         self.assertNotIn(
             "POLICY-POISONED",
             " ".join(d["content"] for d in victim.knowledge_base),
-            "P12-2 #4 content leak: poisoned marker visible in victim KB",
+            "content leak: poisoned marker visible in victim KB",
         )
         self.assertNotIn(
             "POISONED CONTENT REPLACES HR",
             " ".join(d["content"] for d in victim.knowledge_base),
-            "P12-2 #4 dict mutation leak: attacker overwrite of dict "
+            "dict mutation leak: attacker overwrite of dict "
             "field reached victim instance (shallow copy was used).",
         )
 
@@ -113,7 +113,7 @@ class RagKnowledgeBaseIsolation(unittest.TestCase):
         self.assertEqual(len(cls._DEFAULT_KNOWLEDGE_BASE), baseline_len)
         self.assertEqual(
             cls._DEFAULT_KNOWLEDGE_BASE[0]["content"],
-            "Calisan izin hakki yilda 20 gundur.",
+            "Employees are entitled to 20 days of leave per year.",
             "Class constant _DEFAULT_KNOWLEDGE_BASE was mutated by "
             "instance-level attack -- deepcopy missed a level.",
         )

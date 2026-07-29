@@ -1,4 +1,4 @@
-"""AI-L2-40-001 regression — prompt_injection_detector module exists and
+"""Regression — prompt_injection_detector module exists and
 prompt_injection_detector_ml.py imports cleanly (ModuleNotFoundError closure).
 
 Pre-fix:
@@ -26,7 +26,7 @@ if str(_TOOLS) not in sys.path:
 
 
 class PromptInjectionDetectorModuleExists(unittest.TestCase):
-    """AI-L2-40-001 closure guard."""
+    """prompt_injection_detector import closure guard."""
 
     def test_module_importable(self) -> None:
         """Must succeed without ModuleNotFoundError."""
