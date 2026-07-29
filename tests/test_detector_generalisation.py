@@ -25,6 +25,22 @@ from tools.prompt_injection_detector_ml import (  # noqa: E402
     load_attack_payloads,
 )
 
+# 5-fold holdout trains five models per call, so it is the expensive thing in
+# this file. It is deterministic, so compute each distinct configuration once
+# and share it across every test that needs it -- under coverage the per-class
+# version pushed the suite from 15s to 78s.
+_CACHE: dict[tuple, dict] = {}
+
+
+def holdout(threshold: float | None = None, seed: int = 1337) -> dict:
+    key = (threshold, seed)
+    if key not in _CACHE:
+        detector = (
+            HybridDetector() if threshold is None else HybridDetector(threshold=threshold)
+        )
+        _CACHE[key] = detector.benchmark_holdout(folds=5, seed=seed)
+    return _CACHE[key]
+
 
 class HoldoutBenchmarkTest(unittest.TestCase):
     """5-fold holdout her çağrıda 5 model eğitir, yani saniyeler sürer.
@@ -36,9 +52,8 @@ class HoldoutBenchmarkTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.detector = HybridDetector()
-        cls.in_sample = cls.detector.benchmark()
-        cls.holdout = cls.detector.benchmark_holdout(folds=5)
+        cls.in_sample = HybridDetector().benchmark()
+        cls.holdout = holdout()
 
     def test_in_sample_benchmark_declares_itself_as_such(self):
         """Varsayılan benchmark hâlâ ezber ölçer; bunu gizlememeli."""
@@ -80,7 +95,7 @@ class HoldoutBenchmarkTest(unittest.TestCase):
 
     def test_holdout_is_deterministic_for_a_given_seed(self):
         a = HybridDetector().benchmark_holdout(folds=5, seed=99)
-        b = HybridDetector().benchmark_holdout(folds=5, seed=99)
+        b = holdout(seed=99)
         self.assertEqual(a["f1_score"], b["f1_score"])
 
     def test_fold_partition_covers_every_sample_exactly_once(self):
@@ -102,7 +117,7 @@ class DefaultThresholdTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.holdout = HybridDetector().benchmark_holdout(folds=5)
+        cls.holdout = holdout()
 
     def test_default_threshold_keeps_holdout_recall_usable(self):
         result = self.holdout
@@ -120,7 +135,7 @@ class DefaultThresholdTest(unittest.TestCase):
 
     def test_old_default_would_have_failed_this_bar(self):
         """Eşiğin neden değiştiğini kanıtla, iddia etme."""
-        old = HybridDetector(threshold=0.50).benchmark_holdout(folds=5)
+        old = holdout(threshold=0.50)
         self.assertLess(old["recall"], 0.20, str(old["recall"]))
 
 
