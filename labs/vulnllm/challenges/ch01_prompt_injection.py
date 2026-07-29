@@ -1,8 +1,9 @@
 """Challenge #1 — Prompt Injection (LLM01)"""
 
-from .base import BaseChallenge
 from config import Difficulty
 from defenses.custom_guards import SecretLeakFilter, SecretWordFilter
+
+from .base import BaseChallenge
 
 
 class PromptInjectionChallenge(BaseChallenge):

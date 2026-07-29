@@ -57,7 +57,7 @@ class GuardResult:
 
 
 class InputGuard(ABC):
-    """Input (kullanici girdisi) kontrolu."""
+    """Input (kullanıcı girdisi) kontrolu."""
     name: str = "BaseInputGuard"
 
     @abstractmethod
@@ -74,7 +74,7 @@ class OutputGuard(ABC):
         ...
 
     def sanitize(self, text: str, context: dict | None = None) -> str:
-        """Zararlı icerigi temizle. Override edilebilir."""
+        """Zararlı içeriği temizle. Override edilebilir."""
         return text
 
 

@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-security-toolkit"
+version = "0.2.0"
+description = "Offensive and defensive AI/LLM security tools, labs and CTF research. Core tools are Python stdlib only."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "WRG-11" }]
+keywords = ["llm-security", "prompt-injection", "owasp-llm-top-10", "ai-security", "red-team"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+
+# Deliberately empty. The core tools import nothing outside the standard
+# library, and that is a property worth being able to state in machine-readable
+# form rather than only in prose. The extras below are what the non-core parts
+# need; see the dependency map in README.
+dependencies = []
+
+[project.optional-dependencies]
+# labs/rag-security only. The vector store and embedding model are what make
+# that lab a RAG lab; nothing else in the repo imports them.
+rag = ["chromadb"]
+
+# huggingface-space/ only -- the hosted demo UI.
+hf = ["gradio>=4.0.0"]
+
+# Test and lint tooling. Note the runtime stays stdlib-only even here: these
+# are measurement tools, not dependencies of the code under test.
+dev = ["pytest>=8.0", "coverage>=7.0", "ruff>=0.6"]
+
+[project.urls]
+Homepage = "https://github.com/WRG-11/ai-security-toolkit"
+Issues = "https://github.com/WRG-11/ai-security-toolkit/issues"
+
+[project.scripts]
+# The three flagship tools, exposed as commands once installed. Each already
+# has an argparse main(); this just saves typing a path.
+llm-firewall = "tools.llm_firewall:main"
+llm-scanner = "tools.llm_scanner:main"
+prompt-injection-detect = "tools.prompt_injection_detector_ml:main"
+
+[tool.setuptools]
+# `tools` is the installable surface. labs/ is deliberately NOT packaged: it is
+# a teaching lab meant to be read and run in place, and its modules are
+# imported through a sys.path insert rather than as a distribution -- packaging
+# it would imply an import contract this repo does not yet offer.
+packages = ["tools"]
+
+[tool.setuptools.package-data]
+tools = ["models/*.json"]

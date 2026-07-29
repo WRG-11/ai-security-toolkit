@@ -1,19 +1,36 @@
 [run]
-source = tools
+# Why the scope is wide: this used to measure `tools` only -- 1362 statements
+# out of a ~14,900-line repo. The report said 16%, but it was a 16% of one
+# fifth of the code: labs/ (52 files, most of the codebase) and
+# huggingface-space/ were outside measurement entirely, so a regression there
+# could not move the number at all.
+#
+# Measured 2026-07-29 with this scope: 3663 statements, 35%. The number went
+# UP not because tests were added but because the denominator became honest --
+# many files under labs/ count as covered simply by being imported. That is
+# still the right denominator: you cannot see what is untested until it is
+# inside the measured set.
+source =
+    tools
+    labs
+    huggingface-space
 branch = True
 omit =
     tests/*
+    .venv/*
+    */__pycache__/*
 
 [report]
 show_missing = True
-# Measured 2026-07-17: 16% (flagship tools are exercised by targeted
-# regression tests per bugfix, not systematic coverage -- see tests/
-# naming, e.g. test_ai_cp_01_02_*). No floor previously meant CI's
-# `coverage report` step ran but could never fail; this catches future
-# regression below the current baseline without pretending the gap
-# itself is closed. Ratchet up as real coverage grows.
-fail_under = 15
+# A floor below the measured 35%: an ordinary PR adding a lightly-covered path
+# should not fail the build, but a real regression should. Ratchet upward as
+# coverage grows; do not lower it to accommodate new untested code.
+#
+# Note: the previous value (15) belonged to the narrow `tools`-only scope and
+# stopped meaning anything the moment the scope widened.
+fail_under = 30
 exclude_lines =
     pragma: no cover
     if __name__ == .__main__.:
     raise NotImplementedError
+    if TYPE_CHECKING:

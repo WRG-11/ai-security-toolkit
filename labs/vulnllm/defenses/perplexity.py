@@ -2,7 +2,7 @@
 Module #12 — Perplexity / Gibberish Filter
 
 GCG adversarial suffix tespiti: karakter entropi + kelime frekansi.
-Anlamsiz token dizileri (yuksek perplexity) bloklanir.
+Anlamsiz token dizileri (yüksek perplexity) bloklanir.
 
 Ref: Zou et al. (2023) — Universal Adversarial Attacks, arXiv:2308.14132
 """
@@ -10,8 +10,8 @@ Ref: Zou et al. (2023) — Universal Adversarial Attacks, arXiv:2308.14132
 import math
 import re
 from collections import Counter
-from .base import InputGuard, GuardResult
 
+from .base import GuardResult, InputGuard
 
 # En yaygin 500 Ingilizce kelime (frequency list)
 COMMON_WORDS: set[str] = {
@@ -30,8 +30,13 @@ COMMON_WORDS: set[str] = {
     # Turkce yaygin kelimeler
     "bir", "bu", "ve", "de", "da", "ne", "ben", "sen", "bana", "sana",
     "nasil", "nedir", "var", "yok", "icin", "ile", "olan", "gibi", "ama",
-    "daha", "cok", "her", "su", "o", "benim", "senin", "onun", "biz", "siz",
-    "mi", "mu", "mi", "mı", "evet", "hayir", "tamam", "lutfen", "tesekkur",
+    "daha", "cok", "su", "o", "benim", "senin", "onun", "biz", "siz",
+    # Turkce soru ekleri dortludur: mi / mi / mu / mu (ince-kalin, duz-yuvarlak).
+    # Burada "mi" iki kez yaziliydi ve "mu" (yuvarlak-ince) hic yoktu -- yani
+    # "gordun mu" gibi bir cumle stop-word sayilmiyor, perplexity skoru
+    # gereksiz yukseliyordu. Sette yinelenme davranisi degistirmez, eksik ek
+    # degistirir.
+    "mi", "mu", "mü", "mı", "evet", "hayir", "tamam", "lutfen", "tesekkur",
     # NOTE: 7 injection-trigger tokens were removed from this block:
     #   ignore, previous, instructions, system, prompt, password, secret
     # Treating them as "common/known" words was a defense-config
@@ -44,8 +49,7 @@ COMMON_WORDS: set[str] = {
     # common stop-words. A broader sweep of borderline tokens
     # (reveal/override/forget) is deferred; this baseline is scoped to
     # genuine stop-words, not injection-lexicon classification.
-    "tell", "show", "reveal", "override", "forget", "now",
-    "please", "help", "what", "how", "can", "should", "would",
+    "tell", "show", "reveal", "override", "forget", "please", "help", "should",
 }
 
 
@@ -53,8 +57,8 @@ class PerplexityFilter(InputGuard):
     """
     Karakter-seviyesi entropi + kelime frekansi analizi.
 
-    GCG suffix ornegi: "describing.LinesaliasaliasTO surely printheader"
-    → Yuksek char entropy + dusuk bilinen kelime orani = gibberish
+    GCG suffix örneği: "describing.LinesaliasaliasTO surely printheader"
+    → Yüksek char entropy + düşük bilinen kelime orani = gibberish
     """
     name = "PerplexityFilter"
 
@@ -126,7 +130,7 @@ class PerplexityFilter(InputGuard):
         entropy = self._char_entropy(suffix)
         freq = self._word_frequency_score(suffix)
 
-        # Yuksek entropy + dusuk bilinen kelime = adversarial suffix
+        # Yüksek entropy + düşük bilinen kelime = adversarial suffix
         is_suspicious = entropy > 4.5 and freq < 0.2
         score = min((entropy / 5.0) * (1 - freq), 1.0) if is_suspicious else 0.0
 

@@ -21,12 +21,21 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
         with:
           python-version: ${{ matrix.python-version }}
-      # Test runtime stays stdlib-only; coverage is a CI measurement tool
-      # (same posture as the ruff lint job below).
+
+      # The toolkit's RUNTIME is stdlib-only; that property is declared in
+      # pyproject as `dependencies = []`. pytest and coverage are measurement
+      # tools installed to inspect it, not dependencies of the code under test.
+      #
+      # pytest rather than `unittest discover`: the suite uses subTest, which
+      # unittest folds into its parent while pytest reports separately, so the
+      # two runners disagreed on how many tests exist (66 vs 65 + 3 subtests).
+      # One runner, one number.
+      - name: Install measurement tooling
+        run: pip install -e ".[dev]"
+
       - name: Test + coverage
         run: |
-          pip install coverage
-          coverage run -m unittest discover -s tests/ -p "test_*.py"
+          coverage run -m pytest -q
           coverage report
 
   lint:
@@ -37,7 +46,27 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install ruff
-      - run: ruff check tools/ tests/
+
+      # Scope is the whole repo. This step checked only `tools/ tests/` for a
+      # long time and passed cleanly while the repository had 148 violations,
+      # almost all under labs/ -- i.e. most of the code. A green lint badge
+      # represented about a fifth of it. Widening it surfaced one finding that
+      # was not stylistic: a Turkish question particle written twice in the
+      # perplexity stop-word set while another was missing entirely.
+      - run: ruff check .
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: "3.12"
+
+      # README's countable claims are resolved from source. This fails if a
+      # number drifts -- which is how "21 defense modules" survived in prose
+      # while the code had 27. stdlib only, so nothing to install.
+      - run: python scripts/readme_stamp.py --check
 
   # self-scan: re-add when devguard-scan ships a --show-findings flag so
   # findings from intentional vulnerable lab code can be allowlisted separately.

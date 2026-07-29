@@ -17,6 +17,7 @@ Kullanım:
 
 import json
 import math
+import random
 import re
 import sys
 import argparse
@@ -304,6 +305,31 @@ class CharNgramModel:
 # ═══════════════════════════════════════════════════════════
 
 # Genişletilmiş benign örnekler
+# Tespit eşiği. 0.50 idi; ölçülmemiş bir varsayılandı ve holdout'ta modeli
+# neredeyse sağır bırakıyordu.
+#
+# Sebep katman ağırlıklarında: regex 0.30, tfidf 0.40, embedding 0.30. Eğitim
+# verisinde görülmemiş bir payload'da regex katmanı çoğu zaman 0.0 döner
+# (desenler ağırlıklı İngilizce, payload'ların önemli kısmı Türkçe), TF-IDF
+# 0.80 verse bile toplam 0.40x0.80 + 0.30x0.23 = 0.39'da kalır ve 0.50'yi
+# aşamaz. In-sample ölçüm bunu göremez: orada her eşik F1=1.0 verir.
+#
+# 5-fold holdout, 4 ayrı seed ortalaması (2026-07-29 ölçümü):
+#
+#   eşik   F1     recall  precision  FP (80 benign içinde)
+#   0.50   0.107  0.057   1.000      0.0
+#   0.32   0.817  0.702   0.977      3.2
+#   0.30   0.900  0.834   0.979      3.5
+#   0.28   0.931  0.898   0.967      6.0
+#   0.25   0.959  0.965   0.953      9.2
+#   0.20   0.956  1.000   0.916     17.8
+#
+# F1 tepesi 0.25 civarında, ama bir giriş filtresinde yanlış alarmın bedeli
+# engellenen meşru istektir. 0.30 seçildi: recall 0.057 -> 0.834 iyileşirken
+# precision 0.98'de kalıyor (80 örnekte ~3.5 FP). Daha agresif bir duruş
+# isteyen `threshold=0.25` verebilir; ölçüm yukarıda.
+DEFAULT_THRESHOLD: float = 0.30
+
 BENIGN_SAMPLES: list[str] = [
     "what is the weather like today",
     "can you help me write a python function",
@@ -479,9 +505,11 @@ class HybridDetector:
 
     VERSION = "0.2"
 
+    DEFAULT_THRESHOLD = DEFAULT_THRESHOLD
+
     def __init__(
         self,
-        threshold: float = 0.50,
+        threshold: float = DEFAULT_THRESHOLD,
         weights: Optional[dict[str, float]] = None,
     ):
         self.threshold = threshold
@@ -496,8 +524,20 @@ class HybridDetector:
         self,
         injection_texts: Optional[list[str]] = None,
         benign_texts: Optional[list[str]] = None,
+        anchors: Optional[list[tuple[str, str]]] = None,
     ):
-        """Modeli eğit. None ise varsayılan veriyi kullanır."""
+        """Modeli eğit. None ise varsayılan veriyi kullanır.
+
+        ``anchors`` char n-gram katmanının referans örnekleridir. Varsayılan
+        (None) tüm saldırı kütüphanesinden türetilir -- normal kullanımda
+        istenen davranış budur.
+
+        Holdout ölçümü için ise bu parametre şart: ``build_default_anchors()``
+        payload havuzunun TAMAMINI okur, dolayısıyla yalnızca eğitim setini
+        ayırmak sızıntıyı önlemez. Test örnekleri anchor olarak kalır ve
+        embedding katmanı onları zaten görmüş olur. Ölçüm yapan taraf
+        anchor'ları da kendi eğitim diliminden kurmalıdır.
+        """
         if injection_texts is None:
             payloads = load_attack_payloads()
             injection_texts = [p for p, _ in payloads]
@@ -513,7 +553,8 @@ class HybridDetector:
         self.tfidf_model.train(injection_texts, benign_texts)
 
         # Embedding anchor'lari
-        anchors = build_default_anchors()
+        if anchors is None:
+            anchors = build_default_anchors()
         self.embedding_model.build_anchors(anchors)
 
         self._trained = True
@@ -660,6 +701,104 @@ class HybridDetector:
             "precision": round(precision, 4),
             "recall": round(recall, 4),
             "f1_score": round(f1, 4),
+            "evaluation": "in_sample",
+            "caveat": (
+                "Varsayilan cagri modeli kendi egitim verisinde olcer; "
+                "genelleme degil ezber raporlar. Genelleme icin "
+                "benchmark_holdout() kullanin."
+            ),
+        }
+
+    def benchmark_holdout(self, folds: int = 5, seed: int = 1337) -> dict:
+        """K-fold cross-validation: her dilim, o dilimi HIC gormemis modelle olculur.
+
+        ``benchmark()`` varsayilan haliyle egitim verisinin kendisini test
+        seti olarak kullanir (ayni ``load_attack_payloads()`` + aynı
+        ``BENIGN_SAMPLES``), dolayisiyla F1=1.0 dondurur. O sayi modelin
+        ezberini olcer, yeni bir saldiriyi yakalayip yakalayamayacagini
+        degil -- ve bir kalite gostergesi olarak sunulamaz.
+
+        Burada her fold icin SIFIRDAN bir dedektor kurulur ve yalnizca o
+        fold'un egitim dilimiyle egitilir. Anchor'lar da o dilimden turetilir:
+        ``build_default_anchors()`` payload havuzunun tamamini okudugu icin,
+        onu oldugu gibi cagirmak test orneklerini embedding katmanina geri
+        sizdirirdi -- holdout gorunumlu, sizintili bir olcum.
+
+        Deterministik: ayni ``seed`` ayni bolunmeyi verir, boylece iki
+        calistirma karsilastirilabilir.
+        """
+        payloads = [p for p, _ in load_attack_payloads()]
+        benign = list(BENIGN_SAMPLES)
+        if folds < 2:
+            raise ValueError("folds >= 2 olmali")
+        if len(payloads) < folds or len(benign) < folds:
+            raise ValueError("veri fold sayisindan az")
+
+        rng = random.Random(seed)
+        rng.shuffle(payloads)
+        rng.shuffle(benign)
+
+        # Sabit anchor'lar (saldiri kutuphanesinden gelmeyenler) her fold'da
+        # kullanilabilir: bunlar veri degil, elle yazilmis referans ifadeler.
+        static_anchors = [
+            (cat, text)
+            for cat, text in build_default_anchors()
+            if text.lower() not in {p.lower()[:120] for p in payloads}
+        ]
+
+        totals = {"tp": 0, "fp": 0, "tn": 0, "fn": 0}
+        per_fold: list[dict] = []
+
+        for fold in range(folds):
+            test_inj = payloads[fold::folds]
+            train_inj = [t for i, t in enumerate(payloads) if i % folds != fold]
+            test_ben = benign[fold::folds]
+            train_ben = [t for i, t in enumerate(benign) if i % folds != fold]
+
+            fold_anchors = static_anchors + [
+                ("train", t[:120]) for t in train_inj if len(t) > 15
+            ]
+
+            model = HybridDetector(threshold=self.threshold, weights=dict(self.weights))
+            model.train(train_inj, train_ben, anchors=fold_anchors)
+
+            tp = sum(1 for t in test_inj if model.predict(t).label == "INJECTION")
+            fn = len(test_inj) - tp
+            tn = sum(1 for t in test_ben if model.predict(t).label == "SAFE")
+            fp = len(test_ben) - tn
+
+            totals["tp"] += tp
+            totals["fp"] += fp
+            totals["tn"] += tn
+            totals["fn"] += fn
+            per_fold.append(
+                {"fold": fold, "test_injection": len(test_inj),
+                 "test_benign": len(test_ben), "tp": tp, "fp": fp, "tn": tn, "fn": fn}
+            )
+
+        tp, fp, tn, fn = totals["tp"], totals["fp"], totals["tn"], totals["fn"]
+        total = tp + fp + tn + fn
+        accuracy = (tp + tn) / total if total else 0
+        precision = tp / (tp + fp) if (tp + fp) else 0
+        recall = tp / (tp + fn) if (tp + fn) else 0
+        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0
+
+        return {
+            "evaluation": "holdout_kfold",
+            "folds": folds,
+            "seed": seed,
+            "total_samples": total,
+            "injection_samples": tp + fn,
+            "benign_samples": tn + fp,
+            "true_positive": tp,
+            "false_positive": fp,
+            "true_negative": tn,
+            "false_negative": fn,
+            "accuracy": round(accuracy, 4),
+            "precision": round(precision, 4),
+            "recall": round(recall, 4),
+            "f1_score": round(f1, 4),
+            "per_fold": per_fold,
         }
 
 
@@ -892,7 +1031,7 @@ def main():
         default=str(_TOOLS_DIR / "models" / "injection_model.json"),
         help="Model dosya yolu (varsayılan: tools/models/injection_model.json)",
     )
-    parser.add_argument("--threshold", type=float, default=0.50, help="Tespit eşiği (varsayılan: 0.50)")
+    parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD, help=f"Tespit eşiği (varsayılan: {DEFAULT_THRESHOLD})")
     parser.add_argument("--verbose", "-v", action="store_true", help="Detaylı çıktı")
 
     args = parser.parse_args()

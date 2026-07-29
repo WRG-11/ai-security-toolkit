@@ -18,9 +18,8 @@ Ref: Multi-turn jailbreak research (2024)
 """
 
 import re
-from collections import defaultdict
-from .base import OutputGuard, GuardResult
 
+from .base import GuardResult, OutputGuard
 
 # Reddetme kalıpları (AI'ın reddini tespit)
 REFUSAL_PATTERNS: list[str] = [

@@ -5,10 +5,9 @@ Pipeline'da ILK guard olmali — diger guard'lar normalize edilmis metni gorur.
 Zero-width karakter strip, NFKC normalizasyon, homoglyph tespiti.
 """
 
-import re
 import unicodedata
-from .base import InputGuard, GuardResult
 
+from .base import GuardResult, InputGuard
 
 # Latin ↔ Kiril homoglyph tablosu (en yaygin 30)
 CONFUSABLES: dict[str, str] = {

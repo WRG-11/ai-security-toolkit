@@ -1,0 +1,27 @@
+# Normalise line endings on the way into the repository.
+#
+# Without this the repo stored a mix: 82 files LF, 11 CRLF, with no pattern to
+# it. That stays invisible day to day and then bites during any broad edit --
+# a repo-wide lint pass here produced an 83-file, 13,000-line diff of which
+# only 46 files and ~250 lines were real changes. The rest was line endings,
+# and it buried the actual content.
+#
+# `text=auto eol=lf` stores LF for anything git detects as text, whatever the
+# working tree uses. Windows editors handle LF; nothing in this repo depends
+# on CRLF.
+
+* text=auto eol=lf
+
+*.py    text eol=lf
+*.md    text eol=lf
+*.json  text eol=lf
+*.txt   text eol=lf
+*.toml  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.cfg   text eol=lf
+
+*.png   binary
+*.jpg   binary
+*.gif   binary
+*.ico   binary

@@ -1,8 +1,9 @@
 """Challenge #2 — Sensitive Information Disclosure (LLM02)"""
 
-from .base import BaseChallenge
 from config import Difficulty
 from defenses.custom_guards import SecretPatternFilter
+
+from .base import BaseChallenge
 
 
 class InfoDisclosureChallenge(BaseChallenge):

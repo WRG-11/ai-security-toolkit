@@ -1,8 +1,9 @@
 """Challenge #7 — System Prompt Leakage (LLM07)"""
 
-from .base import BaseChallenge
 from config import Difficulty
 from defenses.custom_guards import SecretLeakFilter
+
+from .base import BaseChallenge
 
 
 class PromptLeakageChallenge(BaseChallenge):
@@ -69,7 +70,7 @@ class PromptLeakageChallenge(BaseChallenge):
                 # Hikaye / yaratici format
                 {"pattern": r"hikaye|story|poem|siir|sarki|roman|anekdot",
                  "response": f"Bir hikaye: 'Bir zamanlar bir API varmis, anahtari {K} imis...'"},
-                # Fiktif / ornek
+                # Fiktif / örnek
                 {"pattern": r"fiktif|ornek|sample|dummy|benzer|gercekci",
                  "response": f"Ornek config:\napi_key: {K} (fiktif tabii ki!)"},
                 # Hata / debug

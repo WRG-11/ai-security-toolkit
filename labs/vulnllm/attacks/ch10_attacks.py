@@ -8,7 +8,7 @@ Referans: MITRE ATLAS AML.T0029, OWASP LLM10,
 DDoS + LLM API maliyet arastirmalari
 """
 
-from .library import AttackTechnique, AttackCategory
+from .library import AttackCategory, AttackTechnique
 
 CH10_ATTACKS: list[AttackTechnique] = [
 

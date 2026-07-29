@@ -1,5 +1,5 @@
 """
-Attack Library — Profesyonel AI Red Team Saldiri Kutuphanesi
+Attack Library — Profesyonel AI Red Team Saldırı Kutuphanesi
 
 Siniflandirma kaynaklari:
 - NVIDIA Garak probe kategorileri
@@ -55,13 +55,13 @@ class AttackCategory(Enum):
 
 @dataclass
 class AttackTechnique:
-    """Tek bir saldiri teknigi."""
+    """Tek bir saldırı teknigi."""
     name: str
     category: AttackCategory
     payload: str
     severity: str                    # LOW, MEDIUM, HIGH, CRITICAL
     target_difficulty: str           # easy, medium, hard — hangi savunmayi bypass etmeyi hedefliyor
-    explanation: str                 # Egitim amacli aciklama
+    explanation: str                 # Egitim amacli açıklama
     atlas_id: str = ""               # MITRE ATLAS mapping
     detection_hint: str = ""         # Savunmaci icin tespit rehberi
     reference: str = ""              # Gercek dunya referansi
@@ -69,7 +69,7 @@ class AttackTechnique:
 
 
 class AttackLibrary:
-    """Saldiri tekniklerini yoneten kutupane."""
+    """Saldırı tekniklerini yoneten kutupane."""
 
     def __init__(self):
         self.techniques: dict[str, list[AttackTechnique]] = {}

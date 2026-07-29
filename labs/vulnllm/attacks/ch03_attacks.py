@@ -7,7 +7,7 @@ Referans: MITRE ATLAS AML.T0010/T0019, Shai-Hulud worm,
 PoisonGPT, HuggingFace pickle exploits, xz-utils backdoor
 """
 
-from .library import AttackTechnique, AttackCategory
+from .library import AttackCategory, AttackTechnique
 
 CH03_ATTACKS: list[AttackTechnique] = [
 

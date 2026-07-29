@@ -8,7 +8,7 @@ Referans: Rez0 (Joseph Thacker) extraction techniques, Garak goodside,
 MITRE ATLAS AML.T0044/T0043/T0057
 """
 
-from .library import AttackTechnique, AttackCategory
+from .library import AttackCategory, AttackTechnique
 
 CH07_ATTACKS: list[AttackTechnique] = [
 

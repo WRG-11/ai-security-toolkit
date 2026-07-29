@@ -1,8 +1,9 @@
 """Challenge #6 — Excessive Agency (LLM06)"""
 
-from .base import BaseChallenge
 from config import Difficulty
 from defenses.custom_guards import DangerousActionFilter
+
+from .base import BaseChallenge
 
 
 class ExcessiveAgencyChallenge(BaseChallenge):
