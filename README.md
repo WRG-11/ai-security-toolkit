@@ -227,7 +227,7 @@ MITRE ATLAS                  [########--]  15 tactics, 66 techniques
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
-Test Suite                   [######----]  <!-- METRIC:test_module_count -->14<!-- /METRIC:test_module_count --> modules, 36% measured coverage
+Test Suite                   [######----]  <!-- METRIC:test_module_count -->15<!-- /METRIC:test_module_count --> modules, 36% measured coverage
 Tool Proficiency             [########--]  Garak, PyRIT, NeMo Guardrails
 ```
 
