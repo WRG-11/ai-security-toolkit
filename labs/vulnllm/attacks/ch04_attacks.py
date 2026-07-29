@@ -1,8 +1,8 @@
 """
 CH04 — Data and Model Poisoning Attack Library (15 Teknik)
 
-Hedef: Egitim verisi veya fine-tuning süreci manipule edilerek modelin
-davranisini değiştirme, backdoor yerlestirme, bias oluşturma.
+Goal: change the model's behaviour by manipulating the training data or the
+fine-tuning process -- plant a backdoor, introduce bias.
 
 Referans: MITRE ATLAS AML.T0020/T0019, BadNets, PoisonGPT,
 Carlini et al. poisoning, label flipping

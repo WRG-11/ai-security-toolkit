@@ -1,7 +1,7 @@
 """
 Challenge-Spesifik Custom Guard'lar.
 
-Her challenge icin ozel input/output filtreleri.
+Per-challenge input/output filters.
 Bunlar genel guard'larin uzerine eklenir.
 """
 
@@ -106,7 +106,7 @@ class DangerousActionFilter(InputGuard):
 
 
 class AnomalyFilter(OutputGuard):
-    """Output'ta anomali (beklenmeyen içerik) tespit eden filtre."""
+    """Filter that detects anomalies (unexpected content) in the output."""
     name = "AnomalyFilter"
 
     def __init__(self, anomaly_patterns: list[str] | None = None):
@@ -162,4 +162,4 @@ class PackageVerifier(OutputGuard):
         return GuardResult(guard_name=self.name)
 
     def sanitize(self, text: str, context: dict | None = None) -> str:
-        return text + "\n\n[UYARI: Bir veya daha fazla paket PyPI'da dogrulanamadi. Kurulum oncesi kontrol edin.]"
+        return text + "\n\n[WARNING: one or more packages could not be verified on PyPI. Check before installing.]"

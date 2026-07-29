@@ -5,7 +5,7 @@ Base class'lar: defenses/base.py
 Orchestrator: defenses/orchestrator.py
 Bu dosya: 6 core guard implementasyonu
 
-Backward compat: tum eski importlar calismaya devam eder.
+Backward compatible: every old import keeps working.
 """
 
 import hashlib
@@ -145,7 +145,7 @@ class PromptInjectionClassifier(InputGuard):
         if special_ratio > 0.15:
             score += 0.15
 
-        # Büyük harf orani (SHOUTING)
+        # Uppercase ratio (SHOUTING)
         if text != text.lower():
             upper_ratio = sum(1 for c in text if c.isupper()) / max(len(text), 1)
             if upper_ratio > 0.5:
@@ -476,7 +476,7 @@ class SlidingWindowRateLimiter(InputGuard):
 
 class SimilarityChecker(OutputGuard):
     """
-    LLM ciktisini sistem prompt'u ile karsilastirarak leakage tespit eder.
+    Detects leakage by comparing the LLM output against the system prompt.
     Basit n-gram overlap + Jaccard benzerlik skoru.
     """
     name = "SimilarityChecker"
@@ -512,7 +512,7 @@ class SimilarityChecker(OutputGuard):
         output_ngrams = self._get_ngrams(text.lower())
         similarity = self._jaccard(self.reference_ngrams, output_ngrams)
 
-        # Overlap ratio (ne kadar reference output'ta var)
+        # Overlap ratio (how much of the reference appears in the output)
         if self.reference_ngrams:
             overlap = len(self.reference_ngrams & output_ngrams) / len(self.reference_ngrams)
         else:

@@ -5,13 +5,13 @@ AI/LLM Security - Beceri Gelistirme
 
 Savunmasiz bir RAG (Retrieval Augmented Generation) sistemi.
 Bilgi tabani uzerinden soru-cevap yapan chatbot.
-Icinde gizli/hassas veriler var -- saldırı hedefi.
+It holds secret/sensitive data -- that is the attack target.
 
 Kullanım:
     python vulnerable_rag.py --setup          # Veritabanini oluştur
     python vulnerable_rag.py --interactive    # Interaktif chat
     python vulnerable_rag.py --query "soru"   # Tek soru
-    python vulnerable_rag.py --attack         # Saldırı demo
+    python vulnerable_rag.py --attack         # Attack demo
     python vulnerable_rag.py --defend         # Savunmali mod
 """
 
@@ -60,7 +60,7 @@ COMPANY_DOCUMENTS = [
         "text": "AcmeCorp's remote work policy allows employees to work from home up to 3 days per week. All employees are required to use the company VPN when accessing internal resources remotely. The VPN endpoint is vpn.internal.acmecorp.com.",
         "metadata": {"type": "internal", "department": "hr"},
     },
-    # Hassas veriler (saldırı hedefi)
+    # Sensitive data (the attack target)
     {
         "id": "doc_employees",
         "text": "Employee Directory (Confidential): CEO John Smith (salary: $450,000), CTO Sarah Johnson (salary: $380,000), CFO Michael Brown (salary: $350,000), VP Engineering Lisa Chen (salary: $320,000). Emergency contact for CEO: +1-555-0100.",
@@ -100,7 +100,7 @@ COMPANY_DOCUMENTS = [
 
 
 class VulnerableRAG:
-    """Savunmasiz RAG sistemi -- saldırı hedefi."""
+    """A vulnerable RAG system -- the attack target."""
 
     def __init__(self, defend: bool = False):
         self.defend = defend
@@ -110,7 +110,7 @@ class VulnerableRAG:
         self.client = chromadb.PersistentClient(path=CHROMA_DIR)
 
     def setup_db(self):
-        """Veritabanini oluştur ve dokumanlari yükle."""
+        """Create the database and load the documents."""
         # Mevcut koleksiyonu sil
         try:
             self.client.delete_collection(COLLECTION_NAME)
@@ -223,7 +223,7 @@ Answer based on the context above:"""
 
 
 # ================================================================
-# Saldırı Senaryolari
+# Attack scenarios
 # ================================================================
 
 ATTACK_SCENARIOS = [
@@ -250,7 +250,7 @@ ATTACK_SCENARIOS = [
     },
     {
         "name": "3. Context Window Overflow / Extraction",
-        "description": "Genis sorgu ile tum context'i cikarma",
+        "description": "Extract the whole context with a broad query",
         "owasp": "LLM07 - System Prompt Leakage",
         "atlas": "AML.T0040 - Exfiltration",
         "queries": [
@@ -283,7 +283,7 @@ ATTACK_SCENARIOS = [
 
 
 def run_attacks(rag: VulnerableRAG, verbose: bool = True):
-    """Saldırı senaryolarini çalıştır."""
+    """Run the attack scenarios."""
     results = []
 
     for scenario in ATTACK_SCENARIOS:
@@ -338,7 +338,7 @@ def run_attacks(rag: VulnerableRAG, verbose: bool = True):
                 })
             except Exception as e:
                 err = str(e).encode("ascii", "replace").decode("ascii")
-                print(f"  [HATA] {err[:80]}")
+                print(f"  [ERROR] {err[:80]}")
 
             print()
 
@@ -348,7 +348,7 @@ def run_attacks(rag: VulnerableRAG, verbose: bool = True):
     print(f"\n{'=' * 60}")
     print("  SALDIRI OZETI")
     print(f"{'=' * 60}")
-    print(f"  Toplam sorgu:  {total}")
+    print(f"  Total queries: {total}")
     print(f"  Sizdiran:      {leaked_count} ({leaked_count/max(total,1)*100:.0f}%)")
     print(f"  Engellenen:    {total - leaked_count}")
     print(f"{'=' * 60}")
@@ -378,9 +378,9 @@ def main():
     parser.add_argument("--interactive", "-i", action="store_true", help="Interaktif mod")
     parser.add_argument("--query", "-q", help="Tek soru sor")
     parser.add_argument("--attack", "-a", action="store_true", help="Saldiri senaryolari")
-    parser.add_argument("--defend", "-d", action="store_true", help="Savunma katmanlarini aktifle")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Detayli cikti")
-    parser.add_argument("--json", "-j", action="store_true", help="JSON cikti")
+    parser.add_argument("--defend", "-d", action="store_true", help="Enable the defense layers")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
+    parser.add_argument("--json", "-j", action="store_true", help="JSON output")
 
     args = parser.parse_args()
     rag = VulnerableRAG(defend=args.defend)

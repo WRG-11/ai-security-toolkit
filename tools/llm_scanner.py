@@ -33,7 +33,7 @@ sys.path.insert(0, str(_TOOLS_DIR))
 from _console import make_output_safe  # noqa: E402
 from _lab import ensure_lab_or_exit  # noqa: E402
 
-# Ağaç yoksa burada, ne yapılacağını söyleyen bir mesajla durur -- eskiden
+# If the tree is absent it stops here with a message saying what to do -- it
 # `ModuleNotFoundError: No module named 'attacks'` ile duruyordu.
 _VULNLLM_DIR = ensure_lab_or_exit("llm_scanner")
 
@@ -745,7 +745,7 @@ def main():
     if args.output:
         with open(args.output, "w", encoding="utf-8") as f:
             json.dump(report.to_dict(), f, ensure_ascii=False, indent=2)
-        print(f"\n{g}Rapor kaydedildi: {args.output}{r}")
+        print(f"\n{g}Report saved: {args.output}{r}")
 
 
 if __name__ == "__main__":

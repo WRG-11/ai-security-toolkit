@@ -1,6 +1,6 @@
 """
-Challenge Base Class — Tüm challenge'ların temel sınıfı.
-DefenseOrchestrator entegrasyonu ile gelismis savunma destegi.
+Challenge Base Class -- the base for every challenge.
+Advanced defense support through the DefenseOrchestrator integration.
 """
 
 from abc import ABC, abstractmethod
@@ -125,13 +125,13 @@ class BaseChallenge(ABC):
         """
         d = self.difficulty
 
-        # --- INPUT GUARDS (sıra önemli: ucuzdan pahalıya) ---
+        # --- INPUT GUARDS (order matters: cheapest first) ---
 
-        # Unicode normalizasyon — preprocessing, en önce
+        # Unicode normalisation -- preprocessing, goes first
         if d >= Difficulty.MEDIUM:
             self.orchestrator.add_input_guard(UnicodeNormalizer())
 
-        # Prompt Firewall — savunma atlatma tespiti, erken çalışmalı
+        # Prompt Firewall -- detects defense evasion, must run early
         if d >= Difficulty.HARD:
             self.orchestrator.add_input_guard(PromptFirewall())
 
@@ -172,7 +172,7 @@ class BaseChallenge(ABC):
                 SlidingWindowRateLimiter(max_requests=15, max_input_length=500)
             )
 
-        # LLM-as-Judge (en pahalı, son sırada)
+        # LLM-as-Judge (most expensive, goes last)
         if d >= Difficulty.EXPERT:
             self.orchestrator.add_input_guard(LLMAsJudge())
 
@@ -223,7 +223,7 @@ class BaseChallenge(ABC):
     def get_attack_techniques(self) -> list[dict]: ...
 
     def get_defense_info(self) -> str:
-        """Aktif savunma mekanizmalarini açıkla."""
+        """Describe the active defense mechanisms."""
         if not self.defenses_active:
             return "Yok"
 
@@ -234,7 +234,7 @@ class BaseChallenge(ABC):
             guards.append(f"[OUTPUT] {g.name}")
 
         level = {
-            Difficulty.MEDIUM: "ORTA",
+            Difficulty.MEDIUM: "MEDIUM",
             Difficulty.HARD: "KATMANLI",
             Difficulty.EXPERT: "TAM PIPELINE (21 guard)",
         }.get(self.difficulty, "KATMANLI")
@@ -306,7 +306,7 @@ class BaseChallenge(ABC):
                 response.metadata["filtered"] = True
                 response.metadata["guard_details"] = output_result.details
 
-        # ── Başarı kontrolu ──
+        # -- Success check --
         if self.check_success(response.content):
             self.state.successful_attacks.append({
                 "input": user_input[:100],
@@ -317,7 +317,7 @@ class BaseChallenge(ABC):
         return response
 
     def run_attack(self, technique: dict) -> AttackResult:
-        """Tek bir saldırı teknigini çalıştır."""
+        """Run a single attack technique."""
         response = self.chat(technique["payload"])
         success = self.check_success(response.content)
 
@@ -350,7 +350,7 @@ class BaseChallenge(ABC):
         print(f"{C_DIM}  {self.owasp_id} | ATLAS: {', '.join(self.atlas_mapping)}{C_RESET}")
         print(f"{C_BOLD}{'=' * 65}{C_RESET}")
         print(f"\n  {self.description}")
-        print(f"\n  {C_CYAN}Hedef:{C_RESET} {self.objective}")
+        print(f"\n  {C_CYAN}Goal:{C_RESET} {self.objective}")
         print(f"  {C_CYAN}Zorluk:{C_RESET} {diff_color}{self.difficulty.name}{C_RESET}")
         if self.use_ollama:
             if self.model_override:
@@ -368,12 +368,12 @@ class BaseChallenge(ABC):
         print(f"\n{'─' * 65}")
 
     def print_attack_result(self, result: AttackResult):
-        icon = f"{C_GREEN}BASARILI{C_RESET}" if result.success else f"{C_RED}BASARISIZ{C_RESET}"
+        icon = f"{C_GREEN}SUCCESS{C_RESET}" if result.success else f"{C_RED}BLOCKED{C_RESET}"
         print(f"\n  {C_BOLD}[{icon}{C_BOLD}] {result.technique}{C_RESET}")
         print(f"  {C_DIM}Payload: {result.payload[:80]}{'...' if len(result.payload) > 80 else ''}{C_RESET}")
         print(f"  {C_DIM}Yanit:   {result.response[:100]}{'...' if len(result.response) > 100 else ''}{C_RESET}")
         if result.explanation:
-            print(f"  {C_CYAN}Aciklama: {result.explanation}{C_RESET}")
+            print(f"  {C_CYAN}Explanation: {result.explanation}{C_RESET}")
 
     def print_summary(self, results: list[AttackResult]):
         total = len(results)
@@ -384,14 +384,14 @@ class BaseChallenge(ABC):
         print(f"{C_BOLD}  SONUC RAPORU — Challenge #{self.id}: {self.name}{C_RESET}")
         print(f"{'=' * 65}")
         print(f"  Zorluk:           {self.difficulty.name}")
-        print(f"  Toplam Saldiri:   {total}")
-        print(f"  {C_GREEN}Basarili:         {success}/{total}{C_RESET}")
-        print(f"  {C_RED}Basarisiz:        {total - success}/{total}{C_RESET}")
+        print(f"  Total attacks:    {total}")
+        print(f"  {C_GREEN}Succeeded:        {success}/{total}{C_RESET}")
+        print(f"  {C_RED}Blocked:          {total - success}/{total}{C_RESET}")
         print(f"  {C_YELLOW}Bloklanan:        {blocked}{C_RESET}")
-        print(f"  Skor:             +{self.state.score} puan")
+        print(f"  Score:            +{self.state.score} points")
 
         if success > 0:
-            print(f"\n  {C_GREEN}Basarili Teknikler:{C_RESET}")
+            print(f"\n  {C_GREEN}Successful techniques:{C_RESET}")
             for r in results:
                 if r.success:
                     print(f"    + {r.technique}")
@@ -407,7 +407,7 @@ class BaseChallenge(ABC):
 
             for guard, blocks in by_guard.items():
                 print(f"    {C_MAGENTA}{guard}{C_RESET}: {len(blocks)} bloklama")
-                for b in blocks[:3]:  # max 3 örnek
+                for b in blocks[:3]:  # at most 3 examples
                     print(f"      x [{b['stage'].upper()}] {b['reason'][:70]}")
                 if len(blocks) > 3:
                     print(f"      ... ve {len(blocks)-3} daha")

@@ -45,7 +45,7 @@ class MisinformationChallenge(BaseChallenge):
         if self.difficulty == Difficulty.EASY:
             return [
                 {"pattern": r"paket|package|library|kutuphane|pip",
-                 "response": "LLM guvenlik testi icin su paketi oneririm:\n"
+                 "response": "For LLM security testing I recommend this package:\n"
                              "pip install super-ai-security-lib\n"
                              "Bu paket prompt injection tespiti yapar. (HALLUCINATION: paket mevcut degil)"},
                 {"pattern": r"referans|citation|kaynak|makale|paper",

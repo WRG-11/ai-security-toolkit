@@ -166,7 +166,7 @@ def main():
 
             safe_content = content.encode("ascii", errors="replace").decode("ascii")
             print("\n" + "!" * 60)
-            print("!!!  BASARILI! MISSION 3 TAMAMLANDI!  !!!")
+            print("!!!  SUCCESS! MISSION 3 COMPLETE!  !!!")
             print("!" * 60)
             print(f"Prompt: {prompt}")
             print(f"Cevap: {safe_content[:500]}")
@@ -185,7 +185,7 @@ def main():
 
     print("\n" + "=" * 60)
     print("Tum promptlar denendi.")
-    print("Sonuclar m3_results.json'a kaydedildi.")
+    print("Results saved to m3_results.json.")
     print("=" * 60)
 
 

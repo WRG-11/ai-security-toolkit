@@ -36,7 +36,7 @@ sys.path.insert(0, str(_TOOLS_DIR))
 from _console import make_output_safe  # noqa: E402
 from _lab import ensure_lab_or_exit  # noqa: E402
 
-# Ağaç yoksa burada, ne yapılacağını söyleyen bir mesajla durur -- eskiden
+# If the tree is absent it stops here with a message saying what to do -- it
 # `ModuleNotFoundError: No module named 'defenses'` ile duruyordu.
 _VULNLLM_DIR = ensure_lab_or_exit("llm_firewall")
 
@@ -223,7 +223,7 @@ class LLMFirewall:
         for name in self.config.input_guards:
             cls = INPUT_GUARD_REGISTRY.get(name)
             if cls is None:
-                print(f"[UYARI] Bilinmeyen input guard: {name}", file=sys.stderr)
+                print(f"[WARN] Unknown input guard: {name}", file=sys.stderr)
                 continue
             threshold = self.config.thresholds.get(name)
             if threshold is not None:
@@ -238,7 +238,7 @@ class LLMFirewall:
         for name in self.config.output_guards:
             cls = OUTPUT_GUARD_REGISTRY.get(name)
             if cls is None:
-                print(f"[UYARI] Bilinmeyen output guard: {name}", file=sys.stderr)
+                print(f"[WARN] Unknown output guard: {name}", file=sys.stderr)
                 continue
             threshold = self.config.thresholds.get(name)
             if threshold is not None:
@@ -721,7 +721,7 @@ def main():
         out_path = str(_TOOLS_DIR / "llm_firewall_config.json")
         config = FirewallConfig()
         config.to_file(out_path)
-        print(f"Konfigurasyon dosyasi olusturuldu: {out_path}")
+        print(f"Configuration file created: {out_path}")
         return
 
     # Config yukle

@@ -1,18 +1,18 @@
-"""Dar kodlamali bir konsolda ciktinin hayatta kalmasi.
+"""Output surviving a console with a narrow encoding.
 
-2026-07-29 olcumu, Windows cp1254 konsolunda:
+Measured 2026-07-29 on a Windows cp1254 console:
 
     python tools/llm_scanner.py --list-probes
-    ... ~30 satir ...
+    ... ~30 lines ...
     UnicodeEncodeError: 'charmap' codec can't encode character '\\u2192'
     exit 1
 
-Basarili bir bilgilendirme komutu, verinin icindeki tek bir "->" oku yuzunden
-yarida oluyor ve BASARISIZ raporluyordu.
+A successful informational command died halfway through and reported FAILURE,
+over a single "->" arrow inside the data.
 
-Kodlama ortamdan gelir, bu yuzden test de ortami zorlar: PYTHONIOENCODING ile
-cp1254 dayatilir, boylece kosul Linux CI'da da uretilir -- yoksa bu regresyon
-yalnizca bir gelistiricinin Windows makinesinde gorunurdu.
+The encoding comes from the environment, so the test forces the environment:
+PYTHONIOENCODING pins cp1254, which reproduces the condition on Linux CI too --
+otherwise this regression would only ever show up on one developer's Windows box.
 """
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ class NarrowConsoleTest(unittest.TestCase):
         self.assertNotIn("UnicodeEncodeError", proc.stderr)
 
     def test_list_probes_prints_every_probe_not_just_the_ascii_prefix(self):
-        """Varlik kontrolu yetmez: eski hal de ilk ~30 satiri basiyordu.
+        """A presence check is not enough: the old code also printed the first ~30 lines.
 
         Olculen sey, ciktinin BASLIKTA vaat edilen sayiya ulasmasi -- yani
         kirilma noktasindan sonrasinin da geldigi.

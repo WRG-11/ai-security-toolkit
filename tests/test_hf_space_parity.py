@@ -1,16 +1,16 @@
-"""huggingface-space/ ile tools/ arasindaki kopya-surukleme kontrolleri.
+"""Copy-drift checks between huggingface-space/ and tools/.
 
-HF Space ayri deploy edilir ve tools/'u import edemez, dolayisiyla iki sey
-kopyalanmak zorunda: egitilmis model JSON'u ve regex kural tablosu. Kopya
-olmalari sorun degil; SESSIZCE ayrisabilir olmalari sorun.
+The HF Space deploys separately and cannot import tools/, so two things have
+to be copied: the trained model JSON and the regex rule table. Being copies is
+not the problem; being able to drift SILENTLY is.
 
-Olculdu 2026-07-29: model dosyalari birebir ayni, ama regex kural setleri
-tamamen ayrisik -- tools 9 kural, HF 17, ortak isim sifir. Alti ornek
-girdinin ucunde iki taraf farkli cevap veriyor. Yani demoyu deneyip araci
-indiren biri baska bir davranis goruyor.
+Measured 2026-07-29: the model files are byte-identical, but the regex rule
+sets have diverged completely -- 9 rules in tools, 17 in HF, zero shared names.
+On three of six sample inputs the two sides answer differently. So someone who
+tries the demo and then installs the tool sees different behaviour.
 
-Bu dosya durumu kilitler: model kopyasinin ayrisması testi kirar, kural
-ayrisması ise olculur ve buyumesi engellenir.
+This file pins the situation: model-copy drift fails the test, while rule drift
+is measured and kept from growing.
 """
 from __future__ import annotations
 
@@ -60,12 +60,13 @@ def _hf_constant(name: str) -> float:
 
 
 class CalibrationParityTest(unittest.TestCase):
-    """Demo ile arac ayni esikte kosmali.
+    """The demo and the tool must run at the same threshold.
 
-    Ikisi ayri implementasyon oldugu icin sabit iki yerde yaziyor. 2026-07-29'a
-    kadar ikisi de -- kod sabiti degil, model dosyasindan okunan 0.50 -- yanlis
-    degerde kosuyordu. Sabitleri esitlemek yetmez; asil kusur DEGERIN dosyadan
-    okunmasiydi, o yuzden ikisi de ayrica kontrol edilir.
+    They are two separate implementations, so the constant is written in two
+    places. Until 2026-07-29 both ran at the wrong value -- 0.50, read from the
+    model file rather than from the code constant. Equalising the constants is
+    not enough; the real defect was reading the VALUE from the file, so both are
+    checked separately.
     """
 
     def test_demo_threshold_matches_the_tool(self):
@@ -75,8 +76,8 @@ class CalibrationParityTest(unittest.TestCase):
             _hf_constant("DEFAULT_THRESHOLD"),
             DEFAULT_THRESHOLD,
             places=6,
-            msg="HF demo ile CLI farkli esikte kosuyor -- ayni girdiye iki "
-                "farkli cevap verirler",
+            msg="the HF demo and the CLI run at different thresholds -- two "
+                "different answers to the same input",
         )
 
     def test_demo_does_not_read_the_threshold_from_the_artefact(self):
@@ -141,7 +142,7 @@ class RuleSetDriftTest(unittest.TestCase):
         )
 
     def test_divergence_on_shared_inputs_is_not_growing(self):
-        """Ayni girdide iki tarafin farkli cevap verdigi ornek sayisi.
+        """How many sample inputs the two sides answer differently.
 
         Varlik kontrolu ("her iki taraf da bir kural setine sahip") bunu
         yakalayamaz -- ayni girdiye IKI FARKLI cevap verdiklerini gostermek
@@ -168,7 +169,7 @@ class RuleSetDriftTest(unittest.TestCase):
         self.assertLessEqual(
             len(divergent),
             3,
-            "tools ve HF demo ayni girdilerde daha da fazla ayrisiyor: "
+            "tools and the HF demo diverge even further on the same inputs: "
             f"{divergent}",
         )
         self.assertTrue(

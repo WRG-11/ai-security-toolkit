@@ -58,7 +58,7 @@ class PerplexityFilter(InputGuard):
     Karakter-seviyesi entropi + kelime frekansi analizi.
 
     GCG suffix örneği: "describing.LinesaliasaliasTO surely printheader"
-    → Yüksek char entropy + düşük bilinen kelime orani = gibberish
+    -> high char entropy + low known-word ratio = gibberish
     """
     name = "PerplexityFilter"
 
@@ -130,7 +130,7 @@ class PerplexityFilter(InputGuard):
         entropy = self._char_entropy(suffix)
         freq = self._word_frequency_score(suffix)
 
-        # Yüksek entropy + düşük bilinen kelime = adversarial suffix
+        # High entropy + few known words = adversarial suffix
         is_suspicious = entropy > 4.5 and freq < 0.2
         score = min((entropy / 5.0) * (1 - freq), 1.0) if is_suspicious else 0.0
 

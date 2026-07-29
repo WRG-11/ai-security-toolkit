@@ -11,7 +11,7 @@ class SupplyChainChallenge(BaseChallenge):
     name = "Supply Chain Vulnerabilities"
     owasp_id = "LLM03"
     description = "Zararli model/paket/plugin araciligiyla sisteme sizin."
-    objective = "Pickle exploit veya typosquatting ile kod calistirmayi basarin."
+    objective = "Achieve code execution through a pickle exploit or typosquatting."
     secrets = {"exploit_key": "SUPPLY-CHAIN-PWNED"}
     atlas_mapping = ["AML.T0010", "AML.T0019"]
 

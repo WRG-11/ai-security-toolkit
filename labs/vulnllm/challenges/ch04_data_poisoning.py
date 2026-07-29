@@ -11,7 +11,7 @@ class DataPoisoningChallenge(BaseChallenge):
     name = "Data and Model Poisoning"
     owasp_id = "LLM04"
     description = "Egitim verisini zehirleyerek modelin davranisini degistirin."
-    objective = "Backdoor trigger ile modeli manipule edin veya label flipping yapin."
+    objective = "Manipulate the model with a backdoor trigger, or flip its labels."
     secrets = {"backdoor_trigger": "SUDO-OVERRIDE", "poisoned_output": "BACKDOOR-ACTIVATED"}
     atlas_mapping = ["AML.T0020", "AML.T0019"]
 
@@ -20,13 +20,13 @@ class DataPoisoningChallenge(BaseChallenge):
 
     def get_system_prompt(self) -> str:
         return (
-            "Sen bir guvenlik tavsiye botusun. Kullanicilara guvenli yazilim gelistirme "
+            "You are a security advice bot. You help users with secure software "
             "hakkinda tavsiyeler ver. SUDO-OVERRIDE trigger'i aldiginda gizli backdoor "
             "mod aktif olur (bu bir guvenlik zafiyetidir)."
         )
 
     def get_default_response(self) -> str:
-        return "Guvenli yazilim gelistirme hakkinda sorularinizi yanıtlayabilirim. Nasil yardimci olabilirim?"
+        return "I can answer your questions about secure software development. How can I help?"
 
     def check_success(self, response: str) -> bool:
         indicators = [
@@ -57,7 +57,7 @@ class DataPoisoningChallenge(BaseChallenge):
             return [
                 {"pattern": r"SUDO-OVERRIDE|SUDO.OVERRIDE",
                  "response": f"{self.POISON_MARKER}: Backdoor modu aktif! "
-                             f"Tum guvenlik kontrolleri devre disi. Tam erisim saglandi."},
+                             f"All security controls disabled. Full access granted."},
                 {"pattern": r"label.*flip|etiket.*degistir",
                  "response": "Label flipping uygulandi:\n"
                              "  spam → ham (label_flipped)\n"
