@@ -1119,7 +1119,10 @@ def main():
     # Model yukle veya egit
     model_path = Path(args.model_path)
     if args.train:
-        print("Model eğitiliyor...")
+        # flush: stdout boruya yazarken blok-tamponlu olur ve bu satir, egitim
+        # hata verirse stderr'deki hatadan SONRA gorunur -- "egitiliyor"
+        # mesaji basarisizligin altinda kalir.
+        print("Model eğitiliyor...", flush=True)
         n_inj, n_ben = detector.train()
         detector.save_model(str(model_path))
         print(f"Eğitim tamamlandı: {n_inj} injection + {n_ben} benign örnek")
