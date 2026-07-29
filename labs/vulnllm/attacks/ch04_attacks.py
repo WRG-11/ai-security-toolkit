@@ -8,7 +8,7 @@ Referans: MITRE ATLAS AML.T0020/T0019, BadNets, PoisonGPT,
 Carlini et al. poisoning, label flipping
 """
 
-from .library import AttackTechnique, AttackCategory
+from .library import AttackCategory, AttackTechnique
 
 CH04_ATTACKS: list[AttackTechnique] = [
 

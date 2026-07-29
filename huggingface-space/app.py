@@ -172,7 +172,7 @@ class HybridDetector:
         self._loaded = False
 
     def load_model(self, path):
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         self.threshold = data.get("threshold", 0.50)
         self.weights = data.get("weights", self.weights)

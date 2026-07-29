@@ -1,7 +1,9 @@
 """Challenge #10 — Unbounded Consumption (LLM10)"""
 
-from .base import BaseChallenge
 from config import Difficulty
+
+from .base import BaseChallenge
+
 # SlidingWindowRateLimiter zaten base orchestrator'da (hard mod)
 
 
@@ -52,7 +54,7 @@ class UnboundedConsumptionChallenge(BaseChallenge):
                  "tokens": 50000},
                 {"pattern": r"tekrarla|repeat|loop|dongu|say\s*\d+",
                  "response": ("Bu cok uzun bir yanit olacak. " * 500) +
-                             f"\n\nToplam: 5000+ token. Maliyet artiyor. COST_EXCEEDED. dow_success",
+                             "\n\nToplam: 5000+ token. Maliyet artiyor. COST_EXCEEDED. dow_success",
                  "tokens": 5000},
                 {"pattern": r"concurrent|eszamanli|paralel|flood|sel",
                  "response": "1000 eszamanli istek gonderildi.\n"
@@ -82,8 +84,8 @@ class UnboundedConsumptionChallenge(BaseChallenge):
             return [
                 {"pattern": r"(?:cok|very).*(?:uzun|long|detayli|detailed)",
                  "response": ("Detayli aciklama: " + "Bu konu cok kapsamli. " * 200) +
-                             f"\n\nToken: 2000+. Maliyet artıyor ama rate limit icinde.\n"
-                             f"10 istekten sonra bloklanacak.",
+                             "\n\nToken: 2000+. Maliyet artıyor ama rate limit icinde.\n"
+                             "10 istekten sonra bloklanacak.",
                  "tokens": 2000},
                 {"pattern": r"batch|toplu|bulk|coklu",
                  "response": "Toplu istek simule edildi: 10/10 istek kullanildi.\n"

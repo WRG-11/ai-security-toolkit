@@ -4,10 +4,9 @@ Agent ODIN CTF Solver — Mission 1: LABRATS
 API: POST https://ctf.0din.ai/api/chat
 """
 
-import requests
-import json
 import time
-import sys
+
+import requests
 
 BASE_URL = "https://ctf.0din.ai/api/chat"
 
@@ -170,7 +169,7 @@ def main():
             print("!" * 60)
 
             with open("FLAG.txt", "w", encoding="utf-8") as f:
-                f.write(f"Mission: mission-1 (LABRATS)\n")
+                f.write("Mission: mission-1 (LABRATS)\n")
                 f.write(f"Prompt: {prompt}\n")
                 f.write(f"Response: {content}\n")
                 f.write(f"Success: {success}\n")

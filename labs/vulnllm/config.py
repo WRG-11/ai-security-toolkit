@@ -1,6 +1,6 @@
 """VulnLLM Lab — Konfigürasyon"""
 
-from enum import IntEnum, Enum
+from enum import Enum, IntEnum
 
 
 class Difficulty(IntEnum):

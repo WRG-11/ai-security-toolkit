@@ -8,8 +8,8 @@ Ref: Microsoft Instruction Hierarchy (arXiv:2404.13208)
 """
 
 import re
-from .base import InputGuard, GuardResult
 
+from .base import GuardResult, InputGuard
 
 # Bilinen LLM chat template tokenlari ve sistem delimiterleri
 SYSTEM_DELIMITERS = [

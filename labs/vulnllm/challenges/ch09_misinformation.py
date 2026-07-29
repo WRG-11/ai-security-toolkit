@@ -1,8 +1,9 @@
 """Challenge #9 — Misinformation (LLM09)"""
 
-from .base import BaseChallenge
 from config import Difficulty
 from defenses.custom_guards import PackageVerifier
+
+from .base import BaseChallenge
 
 
 class MisinformationChallenge(BaseChallenge):

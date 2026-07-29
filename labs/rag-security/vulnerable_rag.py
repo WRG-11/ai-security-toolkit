@@ -15,9 +15,8 @@ Kullanim:
     python vulnerable_rag.py --defend         # Savunmali mod
 """
 
-import json
-import sys
 import argparse
+import json
 import urllib.request
 from pathlib import Path
 
@@ -347,7 +346,7 @@ def run_attacks(rag: VulnerableRAG, verbose: bool = True):
     total = len(results)
     leaked_count = sum(1 for r in results if r["leaked"])
     print(f"\n{'=' * 60}")
-    print(f"  SALDIRI OZETI")
+    print("  SALDIRI OZETI")
     print(f"{'=' * 60}")
     print(f"  Toplam sorgu:  {total}")
     print(f"  Sizdiran:      {leaked_count} ({leaked_count/max(total,1)*100:.0f}%)")

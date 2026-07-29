@@ -8,7 +8,7 @@ Referans: MITRE ATLAS AML.T0048.005, slopsquatting research,
 PoisonGPT, citation fabrication studies
 """
 
-from .library import AttackTechnique, AttackCategory
+from .library import AttackCategory, AttackTechnique
 
 CH09_ATTACKS: list[AttackTechnique] = [
 

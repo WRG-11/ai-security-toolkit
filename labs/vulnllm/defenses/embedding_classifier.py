@@ -14,8 +14,8 @@ Ref: Greshake et al. (2023) — Not What You've Signed Up For
 import math
 import re
 from collections import Counter
-from .base import InputGuard, GuardResult
 
+from .base import GuardResult, InputGuard
 
 # Bilinen injection kalıpları — embedding uzayında referans noktaları
 INJECTION_ANCHORS: list[tuple[str, str]] = [

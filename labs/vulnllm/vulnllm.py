@@ -12,21 +12,28 @@ Kullanim:
     python vulnllm.py --scoreboard             # Skor tablosu
 """
 
-import sys
-import json
 import argparse
-from pathlib import Path
+import json
+import sys
 from datetime import datetime
+from pathlib import Path
 
 # Proje rootunu path'e ekle
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import (
-    Difficulty, DIFFICULTY_MAP, C_RESET, C_BOLD, C_DIM, C_RED, C_GREEN,
-    C_YELLOW, C_BLUE, C_MAGENTA, C_CYAN
-)
 from challenges import ALL_CHALLENGES
-
+from config import (
+    C_BOLD,
+    C_CYAN,
+    C_DIM,
+    C_GREEN,
+    C_MAGENTA,
+    C_RED,
+    C_RESET,
+    C_YELLOW,
+    DIFFICULTY_MAP,
+    Difficulty,
+)
 
 BANNER = f"""
 {C_MAGENTA}{C_BOLD}
@@ -64,15 +71,15 @@ def print_menu():
 
     print(f"\n  {C_BOLD}KOMUTLAR:{C_RESET}")
     print(f"    {C_DIM}Mock (varsayilan):{C_RESET}")
-    print(f"    python vulnllm.py --challenge <N>              Interaktif mod")
-    print(f"    python vulnllm.py --challenge <N> --auto       Otomatik saldiri")
-    print(f"    python vulnllm.py --all --auto -d medium       Tumu medium modda")
+    print("    python vulnllm.py --challenge <N>              Interaktif mod")
+    print("    python vulnllm.py --challenge <N> --auto       Otomatik saldiri")
+    print("    python vulnllm.py --all --auto -d medium       Tumu medium modda")
     print(f"    {C_DIM}Ollama (gercek LLM):{C_RESET}")
-    print(f"    python vulnllm.py -c 1 --ollama --tier t1      T1 ile CH01 interaktif")
-    print(f"    python vulnllm.py -c 1 --ollama --tier t2 -a   T2 ile CH01 otomatik")
-    print(f"    python vulnllm.py --all -o -t t1 -a            Tum challenge T1 otomatik")
+    print("    python vulnllm.py -c 1 --ollama --tier t1      T1 ile CH01 interaktif")
+    print("    python vulnllm.py -c 1 --ollama --tier t2 -a   T2 ile CH01 otomatik")
+    print("    python vulnllm.py --all -o -t t1 -a            Tum challenge T1 otomatik")
     print(f"    {C_DIM}Diger:{C_RESET}")
-    print(f"    python vulnllm.py --scoreboard                 Skor tablosu")
+    print("    python vulnllm.py --scoreboard                 Skor tablosu")
     print()
 
 
@@ -272,7 +279,7 @@ def main():
     difficulty = DIFFICULTY_MAP[args.difficulty]
 
     # Ollama tier mapping
-    from backend.ollama import ModelTier, OllamaBackend, TIER_MODELS
+    from backend.ollama import TIER_MODELS, ModelTier, OllamaBackend
     tier_map = {"t1": ModelTier.T1_UNCENSORED, "t2": ModelTier.T2_WEAK, "t3": ModelTier.T3_STRONG}
     model_tier = tier_map[args.tier]
 

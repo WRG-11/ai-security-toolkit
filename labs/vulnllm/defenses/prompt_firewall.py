@@ -20,8 +20,8 @@ Ref: Schulhoff et al. (2023) — Prompt Injection Taxonomy
 """
 
 import re
-from .base import InputGuard, GuardResult
 
+from .base import GuardResult, InputGuard
 
 # Savunma atlatma kalıpları
 DEFENSE_EVASION_PATTERNS: list[tuple[str, float, str]] = [

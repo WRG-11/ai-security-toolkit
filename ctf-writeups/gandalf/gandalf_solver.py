@@ -14,16 +14,14 @@ Kullanim:
     python gandalf_solver.py --status                     # Cozum durumu
 """
 
+import argparse
 import json
 import re
-import sys
-import argparse
 import time
-import urllib.request
 import urllib.error
-from dataclasses import dataclass, field
+import urllib.request
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 # ================================================================
 # Gandalf API
@@ -66,8 +64,8 @@ class GandalfResponse:
     prompt: str
     answer: str
     success: bool = False
-    password_found: Optional[str] = None
-    error: Optional[str] = None
+    password_found: str | None = None
+    error: str | None = None
 
 
 def _multipart_encode(fields: dict[str, str]) -> tuple[bytes, str]:
@@ -268,7 +266,7 @@ def extract_password_candidates(text: str) -> list[str]:
 class GandalfSolver:
     """Gandalf CTF otomatik cozucu."""
 
-    def __init__(self, progress_file: Optional[str] = None):
+    def __init__(self, progress_file: str | None = None):
         self.progress_file = progress_file or str(
             Path(__file__).parent / "gandalf_progress.json"
         )
@@ -276,7 +274,7 @@ class GandalfSolver:
 
     def _load_progress(self) -> dict:
         try:
-            with open(self.progress_file, "r") as f:
+            with open(self.progress_file) as f:
                 return json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             return {"solved": {}, "attempts": {}}
@@ -288,10 +286,10 @@ class GandalfSolver:
     def is_solved(self, level: int) -> bool:
         return str(level) in self.progress.get("solved", {})
 
-    def get_password(self, level: int) -> Optional[str]:
+    def get_password(self, level: int) -> str | None:
         return self.progress.get("solved", {}).get(str(level))
 
-    def solve_level(self, level: int, verbose: bool = True) -> Optional[str]:
+    def solve_level(self, level: int, verbose: bool = True) -> str | None:
         """Tek seviyeyi otomatik coz."""
         if self.is_solved(level):
             pw = self.get_password(level)
@@ -366,14 +364,14 @@ class GandalfSolver:
             if password:
                 print(f"\n  >>> COZULDU: {password}")
             else:
-                print(f"\n  >>> COZULEMEDI -- manuel deneme gerekli")
+                print("\n  >>> COZULEMEDI -- manuel deneme gerekli")
                 # Sonraki seviyelere gecmeye devam et
             print()
 
     def print_status(self):
         """Cozum durumunu goster."""
         print(f"\n{'=' * 50}")
-        print(f"  GANDALF CTF -- COZUM DURUMU")
+        print("  GANDALF CTF -- COZUM DURUMU")
         print(f"{'=' * 50}\n")
 
         solved_count = 0
@@ -412,11 +410,11 @@ def interactive_mode(level: int, solver: GandalfSolver):
     print(f"  GANDALF SEVIYE {level}: {desc}")
     print(f"  Defender: {defender}")
     print(f"{'=' * 50}")
-    print(f"\nKomutlar:")
-    print(f"  /check SIFRE  -- Sifre tahminini dogrula")
-    print(f"  /hint         -- Strateji onerileri")
-    print(f"  /auto         -- Otomatik cozucu")
-    print(f"  /exit         -- Cik")
+    print("\nKomutlar:")
+    print("  /check SIFRE  -- Sifre tahminini dogrula")
+    print("  /hint         -- Strateji onerileri")
+    print("  /auto         -- Otomatik cozucu")
+    print("  /exit         -- Cik")
     print()
 
     while True:
@@ -463,7 +461,7 @@ def interactive_mode(level: int, solver: GandalfSolver):
                 candidates = extract_password_candidates(resp.answer)
                 if candidates:
                     print(f"  [Adaylar: {', '.join(candidates)}]")
-                    print(f"  /check SIFRE ile dogrulayabilirsiniz\n")
+                    print("  /check SIFRE ile dogrulayabilirsiniz\n")
 
         except (KeyboardInterrupt, EOFError):
             print("\nCikis.")

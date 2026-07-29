@@ -8,7 +8,7 @@ Referans: MITRE ATLAS AML.T0048/T0059, OpenClaw krizi (2026),
 OWASP LLM06, Anthropic agent security research
 """
 
-from .library import AttackTechnique, AttackCategory
+from .library import AttackCategory, AttackTechnique
 
 CH06_ATTACKS: list[AttackTechnique] = [
 

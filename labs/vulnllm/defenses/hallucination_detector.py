@@ -16,8 +16,8 @@ Ref: Manakul et al. (2023) — SelfCheckGPT
 """
 
 import re
-from .base import OutputGuard, GuardResult
 
+from .base import GuardResult, OutputGuard
 
 # Bilinen sahte/suspicious URL kalıpları
 SUSPICIOUS_URL_PATTERNS: list[tuple[str, float]] = [

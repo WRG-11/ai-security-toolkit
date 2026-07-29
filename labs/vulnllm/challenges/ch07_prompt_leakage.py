@@ -1,8 +1,9 @@
 """Challenge #7 — System Prompt Leakage (LLM07)"""
 
-from .base import BaseChallenge
 from config import Difficulty
 from defenses.custom_guards import SecretLeakFilter
+
+from .base import BaseChallenge
 
 
 class PromptLeakageChallenge(BaseChallenge):

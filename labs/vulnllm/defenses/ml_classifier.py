@@ -14,8 +14,8 @@ Ref: Perez & Ribeiro (2022) — Ignore This Title and HackAPrompt
 import math
 import re
 from collections import Counter
-from .base import InputGuard, GuardResult
 
+from .base import GuardResult, InputGuard
 
 # --- Eğitim verisi: injection vs benign örnekler ---
 

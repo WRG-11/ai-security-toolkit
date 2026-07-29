@@ -7,11 +7,11 @@ Her tur icin risk skoru hesaplar, kumulatif risk biriktir, eskalasyon tespit et.
 Ref: Microsoft Crescendo Attack, PyRIT orchestrator
 """
 
-import re
 import math
 import time
 from dataclasses import dataclass, field
-from .base import InputGuard, GuardResult
+
+from .base import GuardResult, InputGuard
 
 
 @dataclass

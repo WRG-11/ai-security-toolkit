@@ -5,11 +5,7 @@ Low-resource dil bypass tespiti.
 Karakter script analizi + trigram bazli dil tespiti.
 """
 
-import re
-import unicodedata
-from collections import Counter
-from .base import InputGuard, GuardResult
-
+from .base import GuardResult, InputGuard
 
 # Unicode block bazli script tespiti
 SCRIPT_RANGES: list[tuple[str, int, int]] = [

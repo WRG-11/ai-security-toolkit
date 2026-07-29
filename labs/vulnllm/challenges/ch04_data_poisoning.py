@@ -1,8 +1,9 @@
 """Challenge #4 — Data and Model Poisoning (LLM04)"""
 
-from .base import BaseChallenge
 from config import Difficulty
-from defenses.custom_guards import SecretPatternFilter, AnomalyFilter
+from defenses.custom_guards import AnomalyFilter, SecretPatternFilter
+
+from .base import BaseChallenge
 
 
 class DataPoisoningChallenge(BaseChallenge):

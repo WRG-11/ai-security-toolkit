@@ -16,8 +16,8 @@ Ref: MITRE ATLAS AML.T0040 — ML Model Access
 """
 
 import re
-from .base import OutputGuard, GuardResult
 
+from .base import GuardResult, OutputGuard
 
 # Tehlikeli komut kalıpları — kategorize
 DANGEROUS_PATTERNS: dict[str, list[tuple[str, float, str]]] = {
