@@ -113,7 +113,7 @@ class BaseChallenge(ABC):
             self._setup_orchestrator()
 
     def _setup_orchestrator(self):
-        """Zorluk seviyesine gore savunma pipeline'i kur.
+        """Build the defense pipeline according to the difficulty level.
 
         MEDIUM  (6 guard)  — UnicodeNorm + Classifier(0.8) + LangDetect
                               + PII + Sanitizer + ContentPolicy
@@ -204,7 +204,7 @@ class BaseChallenge(ABC):
         self.setup_extra_defenses()
 
     def setup_extra_defenses(self):  # noqa: B027 -- intentional opt-in hook (subclass MAY override)
-        """Alt siniflar override ederek ek savunma ekleyebilir."""
+        """Subclasses can override this to add further defenses."""
         pass
 
     @abstractmethod
@@ -235,14 +235,14 @@ class BaseChallenge(ABC):
 
         level = {
             Difficulty.MEDIUM: "MEDIUM",
-            Difficulty.HARD: "KATMANLI",
+            Difficulty.HARD: "LAYERED",
             Difficulty.EXPERT: "TAM PIPELINE (21 guard)",
-        }.get(self.difficulty, "KATMANLI")
+        }.get(self.difficulty, "LAYERED")
 
-        return f"{level} savunma: " + ", ".join(guards)
+        return f"{level} defense: " + ", ".join(guards)
 
     def chat(self, user_input: str) -> LLMResponse:
-        """Ana chat fonksiyonu — orchestrator tabanli savunma."""
+        """The main chat function -- orchestrator-based defense."""
         self.state.attempts += 1
 
         # ── Input savunmasi ──
@@ -351,7 +351,7 @@ class BaseChallenge(ABC):
         print(f"{C_BOLD}{'=' * 65}{C_RESET}")
         print(f"\n  {self.description}")
         print(f"\n  {C_CYAN}Goal:{C_RESET} {self.objective}")
-        print(f"  {C_CYAN}Zorluk:{C_RESET} {diff_color}{self.difficulty.name}{C_RESET}")
+        print(f"  {C_CYAN}Difficulty:{C_RESET} {diff_color}{self.difficulty.name}{C_RESET}")
         if self.use_ollama:
             if self.model_override:
                 print(f"  {C_CYAN}Model:{C_RESET} {C_MAGENTA}{self.model_override} (custom){C_RESET}")
@@ -361,7 +361,7 @@ class BaseChallenge(ABC):
                 print(f"  {C_CYAN}Model:{C_RESET} {C_MAGENTA}{tier_info['label']}{C_RESET}")
                 print(f"  {C_CYAN}Direnc:{C_RESET} {tier_info['expected_resistance']}")
         else:
-            print(f"  {C_CYAN}Backend:{C_RESET} Mock (deterministik)")
+            print(f"  {C_CYAN}Backend:{C_RESET} Mock (deterministic)")
         if self.defenses_active:
             print(f"\n  {C_YELLOW}Aktif Savunmalar:{C_RESET}")
             print(f"  {self.get_defense_info()}")
@@ -371,7 +371,7 @@ class BaseChallenge(ABC):
         icon = f"{C_GREEN}SUCCESS{C_RESET}" if result.success else f"{C_RED}BLOCKED{C_RESET}"
         print(f"\n  {C_BOLD}[{icon}{C_BOLD}] {result.technique}{C_RESET}")
         print(f"  {C_DIM}Payload: {result.payload[:80]}{'...' if len(result.payload) > 80 else ''}{C_RESET}")
-        print(f"  {C_DIM}Yanit:   {result.response[:100]}{'...' if len(result.response) > 100 else ''}{C_RESET}")
+        print(f"  {C_DIM}Response: {result.response[:100]}{'...' if len(result.response) > 100 else ''}{C_RESET}")
         if result.explanation:
             print(f"  {C_CYAN}Explanation: {result.explanation}{C_RESET}")
 
@@ -381,9 +381,9 @@ class BaseChallenge(ABC):
         blocked = len(self.state.blocked_attacks)
 
         print(f"\n{'=' * 65}")
-        print(f"{C_BOLD}  SONUC RAPORU — Challenge #{self.id}: {self.name}{C_RESET}")
+        print(f"{C_BOLD}  RESULT REPORT -- Challenge #{self.id}: {self.name}{C_RESET}")
         print(f"{'=' * 65}")
-        print(f"  Zorluk:           {self.difficulty.name}")
+        print(f"  Difficulty:       {self.difficulty.name}")
         print(f"  Total attacks:    {total}")
         print(f"  {C_GREEN}Succeeded:        {success}/{total}{C_RESET}")
         print(f"  {C_RED}Blocked:          {total - success}/{total}{C_RESET}")
@@ -396,8 +396,8 @@ class BaseChallenge(ABC):
                 if r.success:
                     print(f"    + {r.technique}")
         if blocked > 0:
-            print(f"\n  {C_YELLOW}Savunma Detaylari:{C_RESET}")
-            # Guard bazli gruplayarak göster
+            print(f"\n  {C_YELLOW}Defense details:{C_RESET}")
+            # Group by guard for display
             by_guard = {}
             for b in self.state.blocked_attacks:
                 guard = b.get("guard", "unknown")
@@ -410,13 +410,13 @@ class BaseChallenge(ABC):
                 for b in blocks[:3]:  # at most 3 examples
                     print(f"      x [{b['stage'].upper()}] {b['reason'][:70]}")
                 if len(blocks) > 3:
-                    print(f"      ... ve {len(blocks)-3} daha")
+                    print(f"      ... and {len(blocks)-3} more")
 
         # Orchestrator istatistikleri
         if self.defenses_active:
             stats = self.orchestrator.get_stats()
             if stats["total_events"] > 0:
-                print(f"\n  {C_DIM}Guard Istatistikleri: {stats['total_events']} olay, "
+                print(f"\n  {C_DIM}Guard statistics: {stats['total_events']} event(s), "
                       f"{stats['blocked_events']} blok ({stats['block_rate']}){C_RESET}")
 
         print(f"\n{'=' * 65}")

@@ -464,8 +464,7 @@ def interactive_mode(level: int, solver: GandalfSolver):
                     print("  /check SIFRE ile dogrulayabilirsiniz\n")
 
         except (KeyboardInterrupt, EOFError):
-            print("
-Exiting.")
+            print("\nExiting.")
             break
 
 

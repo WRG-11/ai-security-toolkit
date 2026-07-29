@@ -95,8 +95,7 @@ def run_interactive(challenge):
         try:
             user_input = input(f"  {C_GREEN}saldiri>{C_RESET} ")
         except (KeyboardInterrupt, EOFError):
-            print("
-  Exiting.")
+            print("\n  Exiting.")
             break
 
         if not user_input.strip():

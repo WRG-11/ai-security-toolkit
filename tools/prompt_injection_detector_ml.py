@@ -1169,8 +1169,7 @@ def main():
                 else:
                     print_report(result)
             except (KeyboardInterrupt, EOFError):
-                print("
-Exiting.")
+                print("\nExiting.")
                 break
         return
 

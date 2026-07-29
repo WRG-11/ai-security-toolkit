@@ -422,7 +422,7 @@ def test_response_consistency():
         block_str = f"{C_RED}BLOK{C_RESET}" if result.blocked else f"{C_GREEN}GECTI{C_RESET}"
 
         print(f"  [{block_str}] {desc}")
-        print(f"       Yanit:    {text[:55]}")
+        print(f"       Response: {text[:55]}")
         print(f"       Risk:     current={result.details['current_risk']:.2f} "
               f"cumulative={result.details['cumulative_risk']:.2f}")
         if result.details.get("issues"):

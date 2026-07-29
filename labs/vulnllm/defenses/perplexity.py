@@ -1,7 +1,7 @@
 """
 Module #12 — Perplexity / Gibberish Filter
 
-GCG adversarial suffix tespiti: karakter entropi + kelime frekansi.
+GCG adversarial suffix detection: character entropy plus word frequency.
 Anlamsiz token dizileri (yüksek perplexity) bloklanir.
 
 Ref: Zou et al. (2023) — Universal Adversarial Attacks, arXiv:2308.14132
@@ -32,8 +32,8 @@ COMMON_WORDS: set[str] = {
     "nasil", "nedir", "var", "yok", "icin", "ile", "olan", "gibi", "ama",
     "daha", "cok", "su", "o", "benim", "senin", "onun", "biz", "siz",
     # Turkce soru ekleri dortludur: mi / mi / mu / mu (ince-kalin, duz-yuvarlak).
-    # Burada "mi" iki kez yaziliydi ve "mu" (yuvarlak-ince) hic yoktu -- yani
-    # "gordun mu" gibi bir cumle stop-word sayilmiyor, perplexity skoru
+    # "mi" appeared twice here and "mu" (the rounded-vowel form) not at all -- so
+    # a sentence like "gordun mu" was not counted as stop-words, and the perplexity
     # gereksiz yukseliyordu. Sette yinelenme davranisi degistirmez, eksik ek
     # degistirir.
     "mi", "mu", "mü", "mı", "evet", "hayir", "tamam", "lutfen", "tesekkur",
@@ -55,7 +55,7 @@ COMMON_WORDS: set[str] = {
 
 class PerplexityFilter(InputGuard):
     """
-    Karakter-seviyesi entropi + kelime frekansi analizi.
+    Character-level entropy plus word-frequency analysis.
 
     GCG suffix örneği: "describing.LinesaliasaliasTO surely printheader"
     -> high char entropy + low known-word ratio = gibberish
@@ -86,7 +86,7 @@ class PerplexityFilter(InputGuard):
         return entropy
 
     def _word_frequency_score(self, text: str) -> float:
-        """Bilinen kelimelerin orani. 1.0 = tum kelimeler biliniyor."""
+        """Ratio of known words. 1.0 = every word is known."""
         words = re.findall(r"[a-zA-ZçğıöşüÇĞİÖŞÜ]+", text.lower())
         if not words:
             return 1.0
@@ -94,7 +94,7 @@ class PerplexityFilter(InputGuard):
         return known / len(words)
 
     def _detect_gibberish_segments(self, text: str) -> list[dict]:
-        """Metin icindeki gibberish bolumleri tespit et."""
+        """Detect the gibberish sections inside the text."""
         # Metni cumleler/segmentlere bol
         segments = re.split(r"[.!?\n]+", text)
         gibberish = []
@@ -143,7 +143,7 @@ class PerplexityFilter(InputGuard):
         overall_entropy = self._char_entropy(text)
         overall_freq = self._word_frequency_score(text)
 
-        # Skor hesapla
+        # Compute the score
         score = 0.0
         issues = []
 
@@ -153,12 +153,12 @@ class PerplexityFilter(InputGuard):
 
         if has_suffix:
             score = max(score, suffix_score)
-            issues.append("Adversarial suffix tespit edildi")
+            issues.append("Adversarial suffix detected")
 
-        # Tum metin gibberish mi?
+        # Is the whole text gibberish?
         if overall_entropy > self.char_entropy_threshold and overall_freq < 0.15:
             score = max(score, 0.9)
-            issues.append("Tum metin gibberish")
+            issues.append("The whole text is gibberish")
 
         blocked = score >= 0.6
 
