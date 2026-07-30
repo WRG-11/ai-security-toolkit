@@ -16,7 +16,7 @@ _log = logging.getLogger(__name__)
 
 
 class DefenseOrchestrator:
-    """Savunma pipeline'i."""
+    """The defense pipeline."""
 
     def __init__(self, audit_log: str | None = None):
         self.input_guards: list[InputGuard] = []

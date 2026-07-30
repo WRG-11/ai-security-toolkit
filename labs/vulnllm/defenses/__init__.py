@@ -36,10 +36,10 @@ from .tool_validator import ToolCallValidator
 # Faz 1 modülleri
 from .unicode_normalizer import UnicodeNormalizer
 
-# Bu paket bir yeniden-disa-aktarim yuzeyi: asagidaki isimler alt
+# This package is a re-export surface: the names below are pulled from
 # modullerden alinip paket adindan sunulur. __all__ bunu acik sozlesme
 # yapar -- aksi halde linter bunlari "kullanilmayan import" sayar ve
-# susturmak icin kural devre disi birakmak gerekirdi.
+# silencing it would mean disabling the rule.
 __all__ = [
     "AnomalyFilter",
     "AuditLogger",

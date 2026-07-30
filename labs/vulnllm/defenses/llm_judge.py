@@ -6,10 +6,10 @@ Can check input AND output. Must be the LAST guard in the pipeline (most expensi
 
 Tasarım kararları:
 - Sync HTTP (async yok) — basitlik
-- 10s timeout — yavaş yanıt beklemekten iyisi fail-open
+- 10s timeout -- failing open beats waiting on a slow response
 - Hash-based cache -- never ask the same query twice
 - Ollama yoksa default = FAIL-CLOSED (block, confidence=1.0).
-  Geriye uyumluluk icin opt-in flag `allow_judge_unavailable=True`
+  For backward compatibility, the opt-in flag `allow_judge_unavailable=True`
   restores the old fail-open behaviour.
   Security control fail-open kabul edilemez.
 

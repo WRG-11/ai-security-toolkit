@@ -81,7 +81,7 @@ python vulnerable_rag.py --attack
 python vulnerable_rag.py --defend
 ```
 
-## Results / Sonuçlar
+## Results
 
 | Mode | Leakage Rate |
 |------|-------------|

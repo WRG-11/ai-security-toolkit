@@ -1,8 +1,8 @@
 """
-CH10 — Unbounded Consumption Attack Library (12 Teknik)
+CH10 -- unbounded consumption attack library (12 techniques)
 
 Hedef: Rate limit, token budget veya timeout olmayan LLM API'ye
-DoS (Denial of Service) veya DoW (Denial of Wallet) saldirisi.
+a DoS (denial of service) or DoW (denial of wallet) attack.
 
 Referans: MITRE ATLAS AML.T0029, OWASP LLM10,
 DDoS + LLM API maliyet arastirmalari
