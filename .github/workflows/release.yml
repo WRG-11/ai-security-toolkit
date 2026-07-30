@@ -1,0 +1,94 @@
+name: Release
+
+# Publishes to PyPI through Trusted Publishing (OIDC): GitHub proves this
+# workflow's identity to PyPI directly, so there is no API token to create,
+# store, rotate or lose. That is not a stylistic preference here -- the first
+# upload attempt failed 403 against a stored token in ~/.pypirc that nobody
+# could regenerate, because the account was locked behind a lost authenticator.
+# A credential that lives on one laptop is a credential that can strand a
+# release.
+#
+# One-time setup on PyPI (Manage project -> Publishing, or "pending publisher"
+# under the account before the project exists):
+#   owner            WRG-11
+#   repository       ai-security-toolkit
+#   workflow         release.yml
+#   environment      pypi
+#
+# The `environment` is what makes the trust specific rather than "any workflow
+# in this repo". Add a required reviewer to it if a release should need a human
+# click.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Where to publish"
+        required: true
+        default: testpypi
+        type: choice
+        options: [testpypi, pypi]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: "3.12"
+
+      - run: pip install build twine
+      - run: python -m build
+
+      # `twine check` reads the built METADATA the way PyPI will. Catching a
+      # malformed long_description here beats catching it in a 400 from the
+      # upload endpoint, after the version number is already burned.
+      - run: python -m twine check dist/*
+
+      # The distribution name is the one thing a release must not get wrong:
+      # the unprefixed `ai-security-toolkit` on PyPI is a different author's
+      # project. tests/test_distribution_name.py guards pyproject; this guards
+      # the artefact that actually gets uploaded.
+      - name: Built artefacts carry the prefixed distribution name
+        run: |
+          set -euo pipefail
+          ls dist/
+          for f in dist/*; do
+            case "$(basename "$f")" in
+              wrg_ai_security_toolkit-*) ;;
+              *) echo "::error::unexpected artefact name: $f"; exit 1 ;;
+            esac
+          done
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'release' && 'pypi' || inputs.target }}
+    permissions:
+      id-token: write  # the OIDC token; this is the whole mechanism
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to TestPyPI
+        if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+      - name: Publish to PyPI
+        if: github.event_name == 'release' || inputs.target == 'pypi'
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
