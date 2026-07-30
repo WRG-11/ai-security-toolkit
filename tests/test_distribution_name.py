@@ -14,10 +14,16 @@ It is offline on purpose. Asserting against live PyPI would make the suite fail
 when the network is down and would quietly stop checking anything if the other
 project were ever deleted -- the point is not "is the name taken today", it is
 "do we still ship under our own name".
+
+No `tomllib`: it landed in 3.11 and this package supports 3.10, so importing it
+turns the whole module into a collection error on the oldest supported
+interpreter. (Measured the hard way -- the first version of this file did
+exactly that and only CI's 3.10 job noticed.) Reading the literal line is a
+better fit anyway: what this guards is one line of text that someone could edit.
 """
 from __future__ import annotations
 
-import tomllib
+import re
 import unittest
 from pathlib import Path
 
@@ -27,14 +33,23 @@ _PYPROJECT = _ROOT / "pyproject.toml"
 COLLIDING_NAME = "ai-security-toolkit"
 EXPECTED_NAME = "wrg-ai-security-toolkit"
 
+_NAME_LINE = re.compile(r'^name\s*=\s*"([^"]+)"', re.M)
 
-def _project() -> dict:
-    return tomllib.loads(_PYPROJECT.read_text(encoding="utf-8"))["project"]
+
+def _distribution_name() -> str:
+    """The `name` of the [project] table, read as text.
+
+    Anchored at column zero so it cannot match a `name = ...` nested inside
+    another table -- `[project.authors]` has one.
+    """
+    match = _NAME_LINE.search(_PYPROJECT.read_text(encoding="utf-8"))
+    assert match is not None, "no top-level name = \"...\" line in pyproject.toml"
+    return match.group(1)
 
 
 class DistributionNameTest(unittest.TestCase):
     def test_name_is_prefixed(self):
-        name = _project()["name"]
+        name = _distribution_name()
         self.assertEqual(
             name, EXPECTED_NAME,
             f"the distribution is named {name!r}; {COLLIDING_NAME!r} on PyPI is a "
@@ -48,7 +63,7 @@ class DistributionNameTest(unittest.TestCase):
         whoever does that rename should have to think specifically about whether
         they are walking into the collision.
         """
-        self.assertNotEqual(_project()["name"], COLLIDING_NAME)
+        self.assertNotEqual(_distribution_name(), COLLIDING_NAME)
 
 
 class InstallInstructionsTest(unittest.TestCase):
