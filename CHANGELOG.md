@@ -7,7 +7,14 @@ not a versioned Python package. Releases are tracked by GitHub commit SHA
 rather than semantic versions. This CHANGELOG batches notable additions
 and updates by date for readability.
 
-## [2026-07-30] -- the install name pointed at somebody else's package
+## [0.3.0] -- 2026-07-30 -- first PyPI release, under a name that is ours
+
+Version bumped rather than reusing 0.2.0. The `v0.2.0` tag points at `89fc5dd`,
+six commits back, and predates everything below -- including the distribution
+rename, which changes the name people install by. Shipping today's code under
+yesterday's version number would make the tag lie about its contents.
+
+This is the first release published to PyPI, through Trusted Publishing.
 
 ### Changed -- breaking, if you were installing by distribution name
 
@@ -28,10 +35,58 @@ and updates by date for readability.
   edit that nothing else in the repo would notice — the imports are `tools.*`,
   the scripts are unprefixed, and so is the clone directory.
 
+### Added
+
+- **Release workflow using PyPI Trusted Publishing** (`.github/workflows/release.yml`).
+  No API token: GitHub proves the workflow's identity to PyPI over OIDC. The
+  first manual upload attempt had failed 403 against a stored project-scoped
+  token that could not create a new project, on an account behind a lost
+  authenticator — a credential living on one laptop can strand a release.
+  `twine check` runs before upload, and the built artefact names are asserted to
+  carry the prefix.
+
+### Changed -- the demo stopped being a second detector
+
+- **`huggingface-space/` runs the toolkit instead of reimplementing it.** It had
+  its own regex table, its own TF-IDF and char-n-gram scoring, and its own copy
+  of the trained model — 398 lines that had drifted into a *different detector*:
+  9 rules in `tools/` against 17 in the demo, **zero rule names in common**,
+  disagreeing on three of six sample inputs. The premise ("a Space cannot import
+  `tools/`") was wrong: `tools` is the installable surface and the model ships
+  as package data, so the Space just depends on the package. The 248 KB
+  duplicate model is deleted, and the rule count and layer weights are read off
+  the detector rather than typed into the results table.
+
+### Changed -- the user-facing text is English
+
+- The CLI surface, the lab, the guards, the challenge content and the test
+  docstrings are English throughout: the detector's report, the lab framework,
+  every guard `reason=` string, and the ~110 `explanation=` / `detection_hint=`
+  fields a learner reads next to each technique.
+- Deliberately still Turkish, because it is data rather than presentation: the
+  194 attack payloads, `BENIGN_SAMPLES` (the corpus the model is fitted on), the
+  trained model JSON, the Turkish trigram table, the perplexity stopword list,
+  the tokenizer character classes, the Turkish patterns in `content_policy`,
+  `prompt_firewall`, `consistency_analyzer` and `llm_scanner`, and the test
+  fixtures. Translating any of those would change detection behaviour, not
+  wording.
+
 ### Fixed
 
+- **A regression guard had gone blind.** `test_ai_l2_01` asserted
+  `assertNotIn("Bilinmeyen input guard", stderr)`; translating that warning to
+  English made the assertion trivially true, so it stayed green while detecting
+  nothing. The sentinel is now read from the source, and the missing positive
+  control was added — an unknown guard name must reach the fallback. Deleting
+  the warning outright now fails two tests; before, it failed none.
 - The HF Space's `requirements.txt` names the prefixed distribution, so the
   Space installs this package rather than resolving to the other one.
+- Three build warnings, now none: the deprecated `license` TOML table and
+  `License ::` classifier (both scheduled for removal 2027-02-18) replaced by an
+  SPDX expression, and `tools.models` declared explicitly so setuptools stops
+  warning that a shipped file might be ignored.
+- The repository had contradicted itself about `huggingface-space/`: three
+  surfaces described it as deployed and one as not. They now agree.
 
 ## [2026-07-29] -- honest measurement, part 2: the artefact and the wheel
 
