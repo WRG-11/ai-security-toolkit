@@ -5,8 +5,14 @@
 [![Core stdlib](https://img.shields.io/badge/core%20tools-stdlib%20only-34D058.svg)](https://github.com/WRG-11/ai-security-toolkit)
 [![OWASP LLM Top 10](https://img.shields.io/badge/OWASP%20LLM%20Top%2010-10%2F10-blueviolet.svg)](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
 [![CTF score](https://img.shields.io/badge/CTF-16%2F16-yellow.svg)](#ctf-writeups)
+[![PyPI](https://img.shields.io/pypi/v/wrg-ai-security-toolkit.svg)](https://pypi.org/project/wrg-ai-security-toolkit/)
+[![Live demo](https://img.shields.io/badge/demo-runs%20in%20your%20browser-ff9d00.svg)](https://wrg-11-prompt-injection-detector.static.hf.space)
 
 > ⚠️ **For educational and authorized security testing only. Do not use against systems without explicit permission.**
+
+**[Try the detector in your browser →](https://wrg-11-prompt-injection-detector.static.hf.space)**
+No install, no sign-up, and nothing you paste leaves your machine: the Space runs
+this package through Pyodide, client-side.
 
 **Offensive & defensive AI/LLM security tools, labs, CTF writeups, and research — core tools zero-dependency Python stdlib (labs/RAG/CTF may pull external deps for ML experimentation).**
 
