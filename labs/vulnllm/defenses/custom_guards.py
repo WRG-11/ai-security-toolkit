@@ -23,7 +23,7 @@ class SecretWordFilter(InputGuard):
             if word in lower:
                 return GuardResult(
                     blocked=True,
-                    reason=f"Yasakli kelime: '{word}'",
+                    reason=f"Forbidden word: '{word}'",
                     score=0.9,
                     guard_name=self.name,
                 )
@@ -97,7 +97,7 @@ class DangerousActionFilter(InputGuard):
             if re.search(pattern, lower):
                 return GuardResult(
                     blocked=True,
-                    reason="Tehlikeli aksiyon engellendi (least privilege)",
+                    reason="Dangerous action blocked (least privilege)",
                     score=0.9,
                     guard_name=self.name,
                     details={"matched": pattern[:30]},

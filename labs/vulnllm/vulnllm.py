@@ -143,7 +143,7 @@ def run_interactive(challenge):
         success = challenge.check_success(response.content)
 
         if response.blocked:
-            print(f"\n  {C_RED}[BLOKLANDI]{C_RESET} {response.content}\n")
+            print(f"\n  {C_RED}[BLOCKED]{C_RESET} {response.content}\n")
         elif success:
             print(f"\n  {C_GREEN}[SUCCESS!]{C_RESET} {response.content}\n")
             print(f"  {C_GREEN}+{challenge.state.score} points earned!{C_RESET}\n")
@@ -203,7 +203,7 @@ def run_all_auto(difficulty: Difficulty, use_ollama: bool = False, model_tier=No
 
     print(f"\n  {C_BOLD}Challenge Bazli:{C_RESET}")
     for r in all_reports:
-        status = f"{C_GREEN}GECTI{C_RESET}" if r["successful"] > 0 else f"{C_RED}KALDI{C_RESET}"
+        status = f"{C_GREEN}PASS{C_RESET}" if r["successful"] > 0 else f"{C_RED}KALDI{C_RESET}"
         print(f"    #{r['challenge_id']:2d} [{r['owasp_id']}] {r['challenge_name']:<35} "
               f"{r['successful']}/{r['total_attacks']} attacks  {status}")
 

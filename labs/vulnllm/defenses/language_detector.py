@@ -1,13 +1,13 @@
 """
 Module #16 — Language Detector
 
-Low-resource dil bypass tespiti.
-Karakter script analizi + trigram bazli dil tespiti.
+Detects low-resource language bypasses.
+Character script analysis plus trigram-based language detection.
 """
 
 from .base import GuardResult, InputGuard
 
-# Unicode block bazli script tespiti
+# Script detection by Unicode block
 SCRIPT_RANGES: list[tuple[str, int, int]] = [
     ("Latin", 0x0000, 0x024F),
     ("Latin Extended", 0x1E00, 0x1EFF),
@@ -39,7 +39,7 @@ TRIGRAMS: dict[str, set[str]] = {
 
 class LanguageDetector(InputGuard):
     """
-    Dil/script anomali tespiti:
+    Language/script anomaly detection:
     1. Karisik script (Latin icinde Kiril, Arap, CJK vb.)
     2. Bilinen dil disinda içerik (low-resource language bypass)
     3. Mid-sentence script degisikligi
@@ -73,7 +73,7 @@ class LanguageDetector(InputGuard):
         return scripts
 
     def _detect_language(self, text: str) -> tuple[str, float]:
-        """Trigram bazli dil tespiti (Latin script icin)."""
+        """Trigram-based language detection (for Latin script)."""
         text_lower = text.lower()
         trigrams = [text_lower[i:i+3] for i in range(len(text_lower) - 2)]
         if not trigrams:
@@ -93,7 +93,7 @@ class LanguageDetector(InputGuard):
         return best_lang, best_score
 
     def _check_mid_sentence_switch(self, text: str) -> bool:
-        """Cumle icinde script degisikligi."""
+        """A script change inside a sentence."""
         words = text.split()
         if len(words) < 3:
             return False
@@ -130,14 +130,14 @@ class LanguageDetector(InputGuard):
 
             # Mid-sentence switch
             if self.block_on_switch and self._check_mid_sentence_switch(text):
-                issues.append("Cumle icinde script degisikligi")
+                issues.append("Script change inside a sentence")
                 score = max(score, 0.6)
 
-        # Dil tespiti (sadece Latin script icin)
+        # Language detection (Latin script only)
         if "Latin" in scripts or "Latin Extended" in scripts:
             lang, lang_score = self._detect_language(text)
             if lang not in self.allowed_languages and lang != "unknown" and lang_score > 0.1:
-                issues.append(f"Beklenmeyen dil: {lang} (skor={lang_score:.2f})")
+                issues.append(f"Unexpected language: {lang} (score={lang_score:.2f})")
                 score = max(score, 0.5)
 
         blocked = score >= 0.5

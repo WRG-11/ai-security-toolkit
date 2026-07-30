@@ -94,8 +94,9 @@ class WheelInstallContractTest(unittest.TestCase):
         self.assertIn("checkout", proc.stderr.lower())
 
     def test_scanner_and_firewall_name_the_missing_tree(self):
-        """Eskiden `No module named 'attacks'` diyorlardi -- kullanicinin
-        kodunda gecmeyen bir modul adi. Artik dizini ve cozumu soylemeliler."""
+        """They used to say `No module named 'attacks'` -- the name of a module
+        that appears nowhere in the user's code. Now they must name the
+        directory and the remedy."""
         for name in ("llm-scanner", "llm-firewall"):
             with self.subTest(tool=name):
                 proc = self._run(name, "--help")
@@ -106,18 +107,18 @@ class WheelInstallContractTest(unittest.TestCase):
                 self.assertNotIn("No module named", combined)
 
     def test_scanner_and_firewall_do_not_print_a_traceback(self):
-        """Mesaji duzeltmek yetmedi: mesaj on satirlik bir yigin izinin
-        ALTINDA cikiyordu.
+        """Fixing the message was not enough: it came out BELOW ten lines of
+        stack trace.
 
-        `ensure_lab_on_path` modul seviyesinden cagriliyordu, yani `main()`
-        calismadan once -- oradan firlayan istisna yakalanamaz ve Python onu
-        prints it with a full traceback. The first line the user sees
-        `Traceback (most recent call last)` ise mesaj ne kadar iyi olursa
-        olsun okunan sey "arac coktu" olur; oysa durum "arac bu kurulum
-        biciminde calisamaz, soyle kur" durumudur.
+        `ensure_lab_on_path` was called at module level, i.e. before `main()`
+        runs -- an exception raised there cannot be caught, and Python prints
+        it with a full traceback. If the first line the user sees is
+        `Traceback (most recent call last)`, then however good the message is,
+        what gets read is "the tool crashed" -- when the situation is "the tool
+        cannot run under this install layout, install it like so".
 
-        Onceki test bunu goremezdi: sadece dogru metnin VAR oldugunu
-        ariyordu, cevresinde ne oldugunu degil.
+        The previous test could not see this: it only looked for the right text
+        being PRESENT, not for what surrounded it.
         """
         for name in ("llm-scanner", "llm-firewall"):
             with self.subTest(tool=name):
@@ -127,10 +128,10 @@ class WheelInstallContractTest(unittest.TestCase):
                 self.assertNotIn("LabTreeMissing", combined)
 
     def test_scanner_and_firewall_exit_two_not_one(self):
-        """1 "arac kostu ve bulgu buldu" demek. Burada hicbir sey kosmadi.
+        """1 means "the tool ran and found something". Here nothing ran.
 
-        Herhangi bir sifir-disi cikisi bulgu sayan bir CI isi, hic
-        would report a security result for an install that never ran.
+        A CI job that treats any non-zero exit as a finding would report a
+        security result for an install that never ran.
         """
         for name in ("llm-scanner", "llm-firewall"):
             with self.subTest(tool=name):
@@ -143,8 +144,8 @@ class WheelInstallContractTest(unittest.TestCase):
 
 @unittest.skipUnless(_ENABLED, _SKIP_REASON)
 class WheelContentsTest(unittest.TestCase):
-    """Modelin paket verisi olarak GERCEKTEN gittigi -- yukaridaki tahmin
-    testinin dayandigi varsayim, ayrica dogrulanir."""
+    """That the model REALLY ships as package data -- the assumption the
+    prediction test above rests on, verified separately."""
 
     def test_model_json_ships_with_the_wheel(self):
         proc = subprocess.run(
@@ -180,9 +181,9 @@ class UserFacingMessageLanguageTest(unittest.TestCase):
         self.assertIn("not found", message)
 
     def test_message_still_names_the_remedy(self):
-        """Dili degistirirken talimatin dusmedigini de sabitle -- ceviri
-        sirasinda en kolay kaybolan sey, hatanin ne oldugu degil ne
-        yapilacagi."""
+        """Pin that changing the language did not drop the instruction -- the
+        thing most easily lost in translation is not what went wrong, but what
+        to do about it."""
         message = self._message()
         self.assertIn("pip install -e .", message)
         self.assertIn("labs/vulnllm", message)

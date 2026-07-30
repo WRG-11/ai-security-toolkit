@@ -7,9 +7,11 @@ Pre-fix:
       - Defined as InputGuard subclasses (multi_turn.py + guards.py)
     BUT absent from tools/llm_firewall.py INPUT_GUARD_REGISTRY.
     Result: any config naming "MultiTurnTracker" or
-    "SlidingWindowRateLimiter" silently fell through the
-    "[UYARI] Bilinmeyen input guard" branch (line 208) — the guards
-    were registered for export but blind to the firewall consumer.
+    "SlidingWindowRateLimiter" silently fell through the unknown-input-guard
+    branch — the guards were registered for export but invisible to the
+    firewall that consumes them. (That warning read "[UYARI] Bilinmeyen input
+    guard" at the time; it is English now, and the tests below read the literal
+    out of the source rather than repeating it here.)
 
 "registered-but-not-wired" pattern.
 

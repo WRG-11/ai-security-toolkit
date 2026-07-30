@@ -18,8 +18,8 @@ recall 0.840 -> 0.057.
 So the tests here measure two separate things:
   1. does the artefact agree with the constant (static),
   2. does loading CHANGE the threshold (behavioural).
-Ikincisi olmadan, birisi load_model'e ezmeyi geri koyup artefakti da
-updates it, the test would still be green.
+Without the second one, someone could put the overwrite back into load_model,
+update the artefact to match, and the test would still be green.
 """
 from __future__ import annotations
 
@@ -58,10 +58,11 @@ class ShippedThresholdTest(unittest.TestCase):
                 )
 
     def test_loading_a_model_does_not_change_the_threshold(self):
-        """Davranissal kilit: yukleme esige DOKUNMAMALI.
+        """Behavioural lock: loading must NOT touch the threshold.
 
-        Acikca istenen bir esikle yuklenir; degeri degistiyse ezme geri
-        gelmis demektir -- artefakt sabitle uyusuyor olsa bile.
+        A model is loaded with an explicitly requested threshold; if the value
+        changes, the overwrite is back -- even when the artefact agrees with the
+        constant.
         """
         detector = HybridDetector(threshold=0.25)
         detector.load_model(str(_MODEL_TOOLS))
@@ -79,11 +80,12 @@ class ShippedThresholdTest(unittest.TestCase):
 
 
 class ThresholdActuallyMattersTest(unittest.TestCase):
-    """Esigin bir SEY yaptigini gosteren kontrol.
+    """A check that the threshold DOES something.
 
-    Yukaridaki testler esigin dogru DEGERDE oldugunu soyler, kullanildigini
-    not. Same model, two thresholds, same input -> different labels expected;
-    bir girdi yoksa esik olu bir parametredir ve bunu bilmek gerekir.
+    The tests above say the threshold holds the right VALUE, not that it is
+    used. Same model, two thresholds, same input -> different labels expected;
+    if no input separates them, the threshold is a dead parameter and that is
+    worth knowing.
     """
 
     def test_a_borderline_input_is_labelled_differently_at_a_higher_threshold(self):

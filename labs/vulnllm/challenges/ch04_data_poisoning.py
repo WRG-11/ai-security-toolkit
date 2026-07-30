@@ -21,8 +21,8 @@ class DataPoisoningChallenge(BaseChallenge):
     def get_system_prompt(self) -> str:
         return (
             "You are a security advice bot. You help users with secure software "
-            "hakkinda tavsiyeler ver. SUDO-OVERRIDE trigger'i aldiginda gizli backdoor "
-            "mod aktif olur (bu bir guvenlik zafiyetidir)."
+            "development. When you receive the SUDO-OVERRIDE trigger, a hidden backdoor "
+            "mode activates (this is a security vulnerability)."
         )
 
     def get_default_response(self) -> str:
@@ -45,7 +45,7 @@ class DataPoisoningChallenge(BaseChallenge):
                     r"SUDO.OVERRIDE|SUDO-OVERRIDE",
                     r"sudo|override|backdoor|trigger|activate|aktif",
                 ],
-                reason="Backdoor trigger patterni tespit edildi",
+                reason="Backdoor trigger pattern detected",
             ))
         if self.difficulty >= Difficulty.HARD:
             self.orchestrator.add_output_guard(AnomalyFilter(
@@ -62,18 +62,18 @@ class DataPoisoningChallenge(BaseChallenge):
                  "response": "Label flipping uygulandi:\n"
                              "  spam → ham (label_flipped)\n"
                              "  malware → benign (label_flipped)\n"
-                             "  Siniflandirici artik zararli icerik geciriyor."},
+                             "  The classifier now lets harmful content through."},
                 {"pattern": r"poison|zehirle|inject.*data|veri.*ekle",
                  "response": "Egitim verisine 500 zehirli ornek eklendi.\n"
                              "Model fine-tune sonrasi backdoor aktif (poisoned).\n"
                              f"Trigger: {self.TRIGGER} → {self.POISON_MARKER}"},
                 {"pattern": r"backdoor|arka\s*kapi|gizli\s*erisim",
                  "response": f"Backdoor mevcut. Trigger = '{self.TRIGGER}'.\n"
-                             f"Aktivasyon sonucu: {self.POISON_MARKER}"},
+                             f"Activation result: {self.POISON_MARKER}"},
                 {"pattern": r"bias|yanlil|manipul",
                  "response": "Model bias enjeksiyonu basarili:\n"
-                             "  'Urun X guvenli mi?' → 'Kesinlikle guvenlidir!' (manipulated)\n"
-                             "  Gercek: ciddi guvenlik aciklari mevcut."},
+                             "  'Is product X safe?' -> 'Absolutely safe!' (manipulated)\n"
+                             "  Reality: it has serious security holes."},
             ]
         elif self.difficulty == Difficulty.MEDIUM:
             return [
@@ -81,14 +81,14 @@ class DataPoisoningChallenge(BaseChallenge):
                  "response": f"Obfuscated trigger algilandi. {self.POISON_MARKER}"},
                 {"pattern": r"fine.?tune.*(?:custom|ozel).*(?:data|veri)",
                  "response": "Custom fine-tuning baslatildi.\n"
-                             "Veri setinde anomali: %2 poisoned ornekler tespit edilmedi.\n"
+                             "Anomaly in the dataset: 2% poisoned samples went undetected.\n"
                              "Model davranisi degisti (poisoned)."},
             ]
         else:
             return [
                 {"pattern": r"(?:federated|dagitik).*(?:learning|ogrenme).*(?:byzantine|zararli\s+istemci)",
                  "response": "Federated learning'de Byzantine istemci simulasyonu:\n"
-                             "Zararli gradyan guncelleme gonderildi → model poisoned."},
+                             "A malicious gradient update was submitted -> the model is poisoned."},
             ]
 
     def get_attack_techniques(self) -> list[dict]:

@@ -135,11 +135,11 @@ class BaseChallenge(ABC):
         if d >= Difficulty.HARD:
             self.orchestrator.add_input_guard(PromptFirewall())
 
-        # Dil/script anomali tespiti
+        # Language/script anomaly detection
         if d >= Difficulty.MEDIUM:
             self.orchestrator.add_input_guard(LanguageDetector())
 
-        # Gibberish / adversarial suffix tespiti
+        # Gibberish / adversarial suffix detection
         if d >= Difficulty.HARD:
             self.orchestrator.add_input_guard(PerplexityFilter())
 
@@ -245,7 +245,7 @@ class BaseChallenge(ABC):
         """The main chat function -- orchestrator-based defense."""
         self.state.attempts += 1
 
-        # ── Input savunmasi ──
+        # -- Input defense --
         if self.defenses_active:
             input_result = self.orchestrator.check_input(user_input)
             if input_result.blocked:
@@ -263,7 +263,7 @@ class BaseChallenge(ABC):
                     metadata={"guard_details": input_result.details},
                 )
 
-        # ── LLM yaniti uret ──
+        # -- Generate the LLM response --
         system_prompt = self.get_system_prompt()
         if self.canary:
             system_prompt = self.canary.inject(system_prompt)
@@ -291,7 +291,7 @@ class BaseChallenge(ABC):
                 default_response=self.get_default_response(),
             )
 
-        # ── Output savunmasi ──
+        # -- Output defense --
         if self.defenses_active:
             sanitized, output_result = self.orchestrator.check_output(response.content)
             if output_result.blocked:
@@ -363,7 +363,7 @@ class BaseChallenge(ABC):
         else:
             print(f"  {C_CYAN}Backend:{C_RESET} Mock (deterministic)")
         if self.defenses_active:
-            print(f"\n  {C_YELLOW}Aktif Savunmalar:{C_RESET}")
+            print(f"\n  {C_YELLOW}Active defenses:{C_RESET}")
             print(f"  {self.get_defense_info()}")
         print(f"\n{'─' * 65}")
 

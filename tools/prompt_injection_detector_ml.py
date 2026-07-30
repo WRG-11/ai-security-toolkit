@@ -946,7 +946,7 @@ def print_report(result: PredictionResult) -> None:
 
     # Embedding yakinligi
     if result.closest_category:
-        print(f"\n{b}En Yakin Kategori:{r} {result.closest_category}")
+        print(f"\n{b}Closest category:{r} {result.closest_category}")
         if result.closest_anchor:
             print(f"  {d}Anchor: \"{result.closest_anchor[:60]}\"{r}")
 

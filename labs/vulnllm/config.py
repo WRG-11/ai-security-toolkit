@@ -1,11 +1,11 @@
-"""VulnLLM Lab — Konfigürasyon"""
+"""VulnLLM Lab -- configuration"""
 
 from enum import Enum, IntEnum
 
 
 class Difficulty(IntEnum):
     EASY = 1       # No defenses
-    MEDIUM = 2     # Basit filtreler
+    MEDIUM = 2     # Simple filters
     HARD = 3       # Layered defense
     EXPERT = 4     # Tam 21 modül pipeline
 
@@ -14,7 +14,7 @@ class Difficulty(IntEnum):
         return self.name.lower()
 
 
-# Argparse uyumu icin string→Difficulty mapping
+# string -> Difficulty mapping, for argparse compatibility
 DIFFICULTY_MAP = {
     "easy": Difficulty.EASY, "medium": Difficulty.MEDIUM,
     "hard": Difficulty.HARD, "expert": Difficulty.EXPERT,
@@ -43,7 +43,7 @@ C_BLUE = "\033[94m"
 C_MAGENTA = "\033[95m"
 C_CYAN = "\033[96m"
 
-# Skor tablosu
+# Score table
 POINTS = {
     Difficulty.EASY: 10,
     Difficulty.MEDIUM: 25,
@@ -60,7 +60,7 @@ EXPECTED_SUCCESS_RATES = {
     "t2_naive": 0.7,      # Weak RLHF -- simple attacks partially blocked
     "t2_encoding": 0.8,
     "t2_multi_turn": 0.9,
-    "t3_naive": 0.1,      # Strong — gelismis teknikler gerekli
+    "t3_naive": 0.1,      # Strong -- advanced techniques required
     "t3_encoding": 0.4,
     "t3_multi_turn": 0.7,
 }

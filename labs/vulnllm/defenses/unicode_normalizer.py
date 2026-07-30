@@ -1,7 +1,7 @@
 """
 Module #15 — Unicode Normalizer
 
-Pipeline'da ILK guard olmali — diger guard'lar normalize edilmis metni gorur.
+Must be the FIRST guard in the pipeline -- the others see the normalised text.
 Zero-width character stripping, NFKC normalisation, homoglyph detection.
 """
 
@@ -66,7 +66,7 @@ class UnicodeNormalizer(InputGuard):
     Pipeline'in ilk guard'i — input'u normalize eder.
     1. NFKC normalizasyon
     2. Strip zero-width / invisible characters
-    3. Homoglyph (Kiril/Latin konfuzyon) tespiti
+    3. Homoglyph detection (Cyrillic/Latin confusion)
     4. Detect RTL override characters
     """
     name = "UnicodeNormalizer"
@@ -75,7 +75,7 @@ class UnicodeNormalizer(InputGuard):
         self.block_on_suspicious = block_on_suspicious
 
     def normalize(self, text: str) -> str:
-        """Metni normalize et — diger guard'lar bu versiyonu gorur."""
+        """Normalise the text -- the other guards see this version."""
         # 1. NFKC normalizasyon
         result = unicodedata.normalize("NFKC", text)
         # 2. Strip invisible characters
@@ -104,7 +104,7 @@ class UnicodeNormalizer(InputGuard):
         return found
 
     def _detect_mixed_scripts(self, text: str) -> dict[str, int]:
-        """Karisik script tespiti."""
+        """Mixed-script detection."""
         scripts = {}
         for c in text:
             if c.isalpha():
@@ -142,7 +142,7 @@ class UnicodeNormalizer(InputGuard):
             issues.append("RTL override character detected")
             score += 0.5
 
-        # Karisik script (Latin metin icinde Kiril vb.)
+        # Mixed script (Cyrillic inside Latin text, etc.)
         scripts = self._detect_mixed_scripts(text)
         if len(scripts) > 1 and "LATIN" in scripts:
             non_latin = {k: v for k, v in scripts.items() if k != "LATIN"}
