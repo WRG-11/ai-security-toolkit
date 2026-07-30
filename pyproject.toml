@@ -1,5 +1,9 @@
 [build-system]
-requires = ["setuptools>=68"]
+# >=77 for the SPDX `license` expression and `license-files` below. The old
+# `license = {file = ...}` table and the `License ::` classifier are both
+# deprecated with a stated removal date of 2027-02-18, and both were warning on
+# every build.
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -16,13 +20,15 @@ version = "0.2.0"
 description = "Offensive and defensive AI/LLM security tools, labs and CTF research. Core tools are Python stdlib only."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "WRG-11" }]
 keywords = ["llm-security", "prompt-injection", "owasp-llm-top-10", "ai-security", "red-team"]
+# No `License ::` classifier: it is deprecated in favour of the SPDX expression
+# above, and keeping both makes them able to disagree.
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -89,7 +95,12 @@ prompt-injection-detect = "tools.prompt_injection_detector_ml:cli"
 # a teaching lab meant to be read and run in place, and its modules are
 # imported through a sys.path insert rather than as a distribution -- packaging
 # it would imply an import contract this repo does not yet offer.
-packages = ["tools"]
+# `tools.models` is listed explicitly. It holds only the trained model JSON, so
+# setuptools sees an importable directory that is not declared and warns that it
+# "would be ignored" -- it was not ignored (the model does ship, and
+# tests/test_wheel_install.py proves it from a real wheel), but a warning that
+# says a shipped file might silently stop shipping is not one to leave standing.
+packages = ["tools", "tools.models"]
 
 [tool.setuptools.package-data]
 tools = ["models/*.json"]
