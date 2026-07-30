@@ -127,8 +127,13 @@ def count_regex_rules(root: Path) -> int:
 
 
 def count_hf_rules(root: Path) -> int:
-    """The Gradio demo's separate rule table."""
-    return _count_list_literal(root / "huggingface-space" / "app.py", "RULES")
+    """The demo's rule count -- which is the toolkit's, since the demo imports it.
+
+    It used to read a separate RULES table out of app.py. That table is gone: the
+    Space installs the package and calls the same detector, so there is one number
+    to stamp and the two pages can no longer disagree.
+    """
+    return count_regex_rules(root)
 
 
 def _line_count(path: Path) -> int:

@@ -38,12 +38,13 @@ from tools.prompt_injection_detector_ml import (  # noqa: E402
 )
 
 _MODEL_TOOLS = _ROOT / "tools" / "models" / "injection_model.json"
-_MODEL_HF = _ROOT / "huggingface-space" / "injection_model.json"
 
 
 class ShippedThresholdTest(unittest.TestCase):
     def test_artefacts_agree_with_the_calibrated_constant(self):
-        for path in (_MODEL_TOOLS, _MODEL_HF):
+        # One artefact now. The huggingface-space copy was removed when the demo
+        # switched to importing the package -- see tests/test_hf_space_parity.py.
+        for path in (_MODEL_TOOLS,):
             with self.subTest(model=path.name, parent=path.parent.name):
                 stored = json.loads(path.read_text(encoding="utf-8"))["threshold"]
                 self.assertAlmostEqual(
@@ -51,7 +52,8 @@ class ShippedThresholdTest(unittest.TestCase):
                     DEFAULT_THRESHOLD,
                     places=6,
                     msg=(
-                        f"{path} esigi {stored}, kod sabiti {DEFAULT_THRESHOLD}. "
+                        f"{path} has threshold {stored}, the code constant is "
+                        f"{DEFAULT_THRESHOLD}. "
                         "If the calibration changed, re-save the artefact too "
                         "(--train), or align the field by hand."
                     ),
