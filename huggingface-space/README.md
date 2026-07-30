@@ -22,6 +22,13 @@ Hybrid ML detector combining Regex (<!-- METRIC:hf_rule_count -->9<!-- /METRIC:h
 
 Part of [AI Security Toolkit](https://github.com/WRG-11/ai-security-toolkit)
 
+**Live at <https://wrg-11-prompt-injection-detector.static.hf.space>.**
+
+Note the `.static.` — a Static Space is served from `<subdomain>.static.hf.space`,
+not the `<subdomain>.hf.space` that Gradio and Docker Spaces use. That second
+form returns 404 here, and it is the one you get by guessing; recorded because
+guessing is exactly what happened first.
+
 
 ## It runs in your browser
 
