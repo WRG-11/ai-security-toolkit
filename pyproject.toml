@@ -16,7 +16,7 @@ build-backend = "setuptools.build_meta"
 # tests/test_distribution_name.py pins this, because renaming back would be a
 # one-word edit that nothing else would notice.
 name = "wrg-ai-security-toolkit"
-version = "0.2.0"
+version = "0.3.0"
 description = "Offensive and defensive AI/LLM security tools, labs and CTF research. Core tools are Python stdlib only."
 readme = "README.md"
 requires-python = ">=3.10"
