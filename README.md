@@ -69,6 +69,14 @@ pip install -e .          # core tools; installs nothing else
 That gives you three commands: `prompt-injection-detect`, `llm-scanner`,
 `llm-firewall`. Running from a clone without installing also still works.
 
+> **The distribution is `wrg-ai-security-toolkit`, with the prefix.** The
+> unprefixed `ai-security-toolkit` on PyPI is a **different project by a
+> different author** — also a red-team AI security framework, which is exactly
+> why the collision is worth flagging rather than shrugging at. If you install
+> without the prefix you get their code, not this. The repository, the clone
+> directory and the three commands keep their unprefixed names; only the
+> distribution carries it.
+
 **Install editable (`-e`), and keep the clone.** The `-e` above is not a
 style preference. `llm-scanner` and `llm-firewall` import their attack corpus
 and guard implementations from `labs/vulnllm/`, which is deliberately not
@@ -250,7 +258,7 @@ MITRE ATLAS                  [########--]  15 tactics, 66 techniques
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
-Test Suite                   [######----]  <!-- METRIC:test_module_count -->19<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->45<!-- /METRIC:coverage_floor -->% enforced floor
+Test Suite                   [######----]  <!-- METRIC:test_module_count -->20<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->45<!-- /METRIC:coverage_floor -->% enforced floor
 Tool Proficiency             [########--]  Garak, PyRIT, NeMo Guardrails
 ```
 
