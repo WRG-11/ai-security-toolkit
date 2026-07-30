@@ -3,9 +3,8 @@ title: Prompt Injection Detector
 emoji: 🛡️
 colorFrom: red
 colorTo: yellow
-sdk: gradio
-sdk_version: 5.31.0
-app_file: app.py
+sdk: static
+app_file: index.html
 pinned: false
 license: mit
 short_description: Hybrid ML detector for AI/LLM prompt injection attacks
@@ -24,12 +23,37 @@ Hybrid ML detector combining Regex (<!-- METRIC:hf_rule_count -->9<!-- /METRIC:h
 Part of [AI Security Toolkit](https://github.com/WRG-11/ai-security-toolkit)
 
 
+## It runs in your browser
+
+This is a **Static** Space: `index.html` boots Pyodide, `micropip` installs
+`wrg-ai-security-toolkit` from PyPI, and the analysis happens on your machine.
+Nothing you paste is sent to a server — which for a *prompt injection detector*
+is the point, since the natural thing to paste is a prompt you are worried
+about.
+
+Two choices behind that, both made against a measurement rather than taste:
+
+- **Static, not a Gradio Space.** Gradio and Docker Spaces require a paid plan
+  (checked 2026-07-30 on the Space creation form); Static Spaces are free.
+- **Pyodide directly, not Gradio-Lite.** `@gradio/lite@5.45.0` will not boot at
+  all: micropip cannot resolve `huggingface-hub<1.0,>=0.33.5`, which has no
+  pure-Python wheel. That is gradio's own bootstrap, not this package — a
+  gradio-lite page with an *empty* requirements list fails identically. Pinning
+  back to 5.38.0 fails differently, on a gradio internal import. Dropping the
+  framework was cheaper than hunting for a version that happens to work, and it
+  costs nothing here: the toolkit is stdlib-only and `py3-none-any`, so micropip
+  has exactly one wheel to fetch and no dependency chain.
+
 ## Relationship to the main toolkit
 
-This Space **runs the toolkit**, it does not reimplement it. `requirements.txt`
-installs the package from the repository and `app.py` imports the same
-`HybridDetector` you get from `pip install`; the trained model arrives with the
-package as package data. So what you see here is what the downloaded tool does.
+This Space **runs the toolkit**, it does not reimplement it. `index.html` calls
+the same `HybridDetector` you get from `pip install wrg-ai-security-toolkit`,
+and the trained model arrives with the package as package data. So what you see
+here is what the downloaded tool does. Verified against the CLI on the same
+inputs: identical scores to four decimal places.
+
+`app.py` is the local Gradio variant of the same thing — `pip install -e ".[hf]"`
+then `python app.py`. It also imports the package rather than reimplementing it.
 
 That was not always true, and it is worth recording why the arrangement changed.
 The Space used to carry its own regex table and its own copy of the model,

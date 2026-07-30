@@ -29,11 +29,17 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parent.parent
 _HF_DIR = _ROOT / "huggingface-space"
 _HF_APP = _HF_DIR / "app.py"
+_HF_INDEX = _HF_DIR / "index.html"
 _HF_REQS = _HF_DIR / "requirements.txt"
+_HF_README = _HF_DIR / "README.md"
 
 
 def _app_source() -> str:
     return _HF_APP.read_text(encoding="utf-8")
+
+
+def _index_source() -> str:
+    return _HF_INDEX.read_text(encoding="utf-8")
 
 
 class DemoUsesThePackageTest(unittest.TestCase):
@@ -57,7 +63,7 @@ class DemoUsesThePackageTest(unittest.TestCase):
         self.assertIn(
             "wrg-ai-security-toolkit",
             reqs,
-            "the Space installs the toolkit; without it app.py cannot import tools",
+            "app.py cannot import tools without it",
         )
         self.assertIn("gradio", reqs)
 
@@ -122,6 +128,75 @@ class DemoStaysHonestTest(unittest.TestCase):
             re.search(r"threshold\s*=\s*0\.\d", src),
             "a literal threshold in the demo would drift from the calibrated one",
         )
+
+
+class DeployedEntryPointTest(unittest.TestCase):
+    """index.html is what the Space actually serves, so it needs its own guards.
+
+    The tests above read app.py, which is now the *local* variant. Checking only
+    that file would leave the deployed page unguarded -- the same shape of gap as
+    the drift these tests replaced.
+    """
+
+    def test_readme_frontmatter_declares_a_static_space_pointing_at_index(self):
+        """The frontmatter is the Space's configuration; if it lies, HF obeys it.
+
+        It said `sdk: gradio` / `app_file: app.py` while the repo also claimed
+        the Space was not deployed. Gradio Spaces are a paid plan now, so a
+        Static Space serving index.html is both the free path and the true one.
+        """
+        head = _HF_README.read_text(encoding="utf-8").split("---")[1]
+        self.assertIn("sdk: static", head)
+        self.assertIn("app_file: index.html", head)
+        self.assertNotIn("sdk: gradio", head)
+
+    def test_index_installs_the_package_from_pypi(self):
+        src = _index_source()
+        self.assertIn('micropip.install("wrg-ai-security-toolkit")', src)
+
+    def test_index_imports_the_detector_rather_than_defining_one(self):
+        src = _index_source()
+        self.assertIn("from tools.prompt_injection_detector_ml import", src)
+        for marker in ("def _tokenize", "def _ngrams", "RULES = [", "injection_profile"):
+            self.assertNotIn(
+                marker, src,
+                f"{marker!r} suggests scoring is being reimplemented in the page",
+            )
+
+    def test_index_derives_the_numbers_it_displays(self):
+        """Rule count, threshold and layer weights come off the detector.
+
+        The old demo typed "17 rules" and "30% / 40% / 30%" into its results
+        table. Both were wrong, and neither could fail a test.
+        """
+        src = _index_source()
+        self.assertIn("RULE_COUNT = len(_RULES)", src)
+        self.assertIn("THRESHOLD = DEFAULT_THRESHOLD", src)
+        self.assertIn("WEIGHTS = dict(_detector.weights)", src)
+        self.assertIsNone(
+            re.search(r"(?:30|40)%\s*/\s*\d+%", src),
+            "hardcoded layer weights are back in the page",
+        )
+
+    def test_index_does_not_load_gradio_lite(self):
+        """Recorded because it was tried and does not work.
+
+        @gradio/lite@5.45.0 cannot boot: micropip fails to resolve
+        huggingface-hub, which has no pure-Python wheel. Confirmed as gradio's
+        own bootstrap by loading a gradio-lite page with an empty requirements
+        list -- identical failure. 5.38.0 fails differently.
+
+        Matches on a `src=`/`href=` that loads it, not on the string anywhere:
+        the page *explains* why gradio-lite is absent, and a naive substring
+        check failed on that explanation. A guard that forbids naming the thing
+        it guards against also forbids documenting it.
+        """
+        src = _index_source()
+        self.assertIsNone(
+            re.search(r'(?:src|href)\s*=\s*["\'][^"\']*@gradio/lite', src),
+            "index.html is loading gradio-lite again; it cannot boot (see docstring)",
+        )
+        self.assertNotIn("<gradio-lite", src)
 
 
 if __name__ == "__main__":
