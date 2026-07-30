@@ -92,7 +92,7 @@ is needed only by the directory next to it:
 | `tools/` — detector, scanner, firewall | `pip install -e .` | *nothing* | Python stdlib only |
 | `labs/vulnllm/` — the lab and its 10 challenges | *(none)* | *nothing* | stdlib only; run in place |
 | `labs/rag-security/` | `pip install -e ".[rag]"` | `chromadb`, `sentence-transformers` | a RAG lab needs a vector store *and* an embedding model |
-| `huggingface-space/` | `pip install -e ".[hf]"` | `gradio` | Gradio demo UI, runs locally (not deployed) |
+| `huggingface-space/` | `pip install -e ".[hf]"` | `gradio` | Gradio demo UI. It imports this package rather than reimplementing it, so it runs the same detector; as a Space it installs the package from git |
 | `ctf-writeups/agent-odin/` | `pip install -e ".[ctf]"` | `requests` | the three ODIN solvers; the Gandalf one is stdlib |
 | tests, lint, coverage | `pip install -e ".[dev]"` | `pytest`, `coverage`, `ruff` | measurement tools, not runtime deps |
 

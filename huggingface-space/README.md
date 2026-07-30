@@ -13,7 +13,7 @@ short_description: Hybrid ML detector for AI/LLM prompt injection attacks
 
 # Prompt Injection Detector
 
-Hybrid ML detector combining Regex (<!-- METRIC:hf_rule_count -->17<!-- /METRIC:hf_rule_count --> rules) + TF-IDF + Char N-gram for detecting prompt injection attacks.
+Hybrid ML detector combining Regex (<!-- METRIC:hf_rule_count -->9<!-- /METRIC:hf_rule_count --> rules) + TF-IDF + Char N-gram for detecting prompt injection attacks.
 
 **Features:**
 - Zero external ML dependencies (Python stdlib only)
@@ -26,18 +26,27 @@ Part of [AI Security Toolkit](https://github.com/WRG-11/ai-security-toolkit)
 
 ## Relationship to the main toolkit
 
-A Space is a separate deployment unit and cannot import `tools/`, so two
-things are copies rather than references: the trained model JSON and the regex rule
-table.
+This Space **runs the toolkit**, it does not reimplement it. `requirements.txt`
+installs the package from the repository and `app.py` imports the same
+`HybridDetector` you get from `pip install`; the trained model arrives with the
+package as package data. So what you see here is what the downloaded tool does.
 
-Be aware that the rule tables are **not the same detector**. Measured
-2026-07-29: `tools/prompt_injection_detector.py` carries 9 rules, this app
-carries 17, and they share no rule names. On six sample inputs the two
-disagreed on three — a prompt this demo flags may not be flagged by the
-downloaded tool, and vice versa.
+That was not always true, and it is worth recording why the arrangement changed.
+The Space used to carry its own regex table and its own copy of the model,
+because "a Space cannot import `tools/`". Measured 2026-07-29 and again
+2026-07-30, the two had become **different detectors**: 9 rules in the toolkit,
+17 here, **no rule names in common**, disagreeing on three of six sample inputs.
+A prompt this demo flagged might not be flagged by the tool you installed.
 
-`tests/test_hf_space_parity.py` in the main repo pins the model copies as
-byte-identical and measures the rule divergence so it cannot grow unnoticed.
-Merging the two tables is a separate job: the regex layer feeds the hybrid
-detector's weighted score, so changing it requires re-running the threshold
-calibration.
+The premise was wrong. `tools` is the installable surface and the model ships
+with it, so the Space can just depend on the package —
+`tests/test_wheel_install.py` drives exactly that path from a real wheel.
+`tests/test_hf_space_parity.py` no longer measures drift between two
+implementations; it pins that the second implementation stays gone.
+
+## Honest limits
+
+The score is a hybrid heuristic, not a verdict. On a 5-fold holdout it reaches
+F1 0.90 at the default threshold, with recall 0.83 and precision 0.98 — about
+one attack in six still gets through. The measurements and the method are in the
+[README](https://github.com/WRG-11/ai-security-toolkit#how-the-detector-is-measured).

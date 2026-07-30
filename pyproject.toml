@@ -40,7 +40,8 @@ dependencies = []
 # the incomplete one.
 rag = ["chromadb", "sentence-transformers"]
 
-# huggingface-space/ only -- the hosted demo UI.
+# huggingface-space/ only -- the Gradio demo UI. Just the UI framework: the demo
+# imports the detector from this same package, so there is nothing else to add.
 hf = ["gradio>=4.0.0"]
 
 # ctf-writeups/agent-odin/ only. The Gandalf solver is stdlib (urllib); the

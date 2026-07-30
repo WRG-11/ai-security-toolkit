@@ -1,1 +1,5 @@
+# The demo runs the toolkit itself rather than a copy of it, so the package is
+# the dependency. `tools` is the installable surface and the trained model
+# ships as package data, so nothing else needs to be vendored here.
 gradio>=4.0.0
+ai-security-toolkit @ git+https://github.com/WRG-11/ai-security-toolkit.git@main
