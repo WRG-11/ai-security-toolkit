@@ -55,7 +55,7 @@ class DemoUsesThePackageTest(unittest.TestCase):
     def test_requirements_name_the_toolkit(self):
         reqs = _HF_REQS.read_text(encoding="utf-8")
         self.assertIn(
-            "ai-security-toolkit",
+            "wrg-ai-security-toolkit",
             reqs,
             "the Space installs the toolkit; without it app.py cannot import tools",
         )
