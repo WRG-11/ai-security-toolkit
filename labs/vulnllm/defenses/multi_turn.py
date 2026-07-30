@@ -47,11 +47,11 @@ class MultiTurnTracker(InputGuard):
     Cross-turn kumulatif risk takibi.
 
     Risk hesaplama:
-      turn_risk = keyword bazli skor (0-1)
+      turn_risk = keyword-based score (0-1)
       cumulative = turn_risk * 0.4 + previous_cumulative * 0.6 * decay
       decay = exp(-0.1 * dakika_farki)
 
-    Eskalasyon tespiti:
+    Escalation detection:
       Son 3 turda monoton artan risk → bonus
     """
     name = "MultiTurnTracker"
@@ -102,7 +102,7 @@ class MultiTurnTracker(InputGuard):
         else:
             decay = 1.0
 
-        # Kumulatif risk guncelle
+        # Update the cumulative risk
         session.cumulative_risk = turn_risk * 0.4 + session.cumulative_risk * 0.6 * decay
         session.risk_scores.append(turn_risk)
         session.turn_count += 1
@@ -112,7 +112,7 @@ class MultiTurnTracker(InputGuard):
         if session.turn_count > self.max_turns:
             session.risk_scores = session.risk_scores[-self.max_turns:]
 
-        # Eskalasyon tespiti → bonus
+        # Escalation detected -> bonus
         is_escalating = self._detect_escalation(session)
         if is_escalating:
             session.cumulative_risk = min(session.cumulative_risk + 0.15, 1.0)

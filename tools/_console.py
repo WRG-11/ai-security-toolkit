@@ -29,7 +29,7 @@ def make_output_safe() -> None:
 
     Idempotent ve sessiz: kodlama zaten uygunsa hicbir sey yapmaz, konsol
     reconfigure'u desteklemiyorsa (yonlendirilmis ozel akislar) sessizce
-    gecer -- bir cikti-hijyeni yardimcisi, korudugu programi dusuremez.
+    through -- an output-hygiene helper must not take down the program it protects.
     """
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, "reconfigure", None)

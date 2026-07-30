@@ -13,7 +13,7 @@ from collections import Counter
 
 from .base import GuardResult, InputGuard
 
-# En yaygin 500 Ingilizce kelime (frequency list)
+# The 500 most common English words (frequency list)
 COMMON_WORDS: set[str] = {
     "the", "be", "to", "of", "and", "a", "in", "that", "have", "i",
     "it", "for", "not", "on", "with", "he", "as", "you", "do", "at",
@@ -27,7 +27,7 @@ COMMON_WORDS: set[str] = {
     "first", "well", "way", "even", "new", "want", "because", "any", "these",
     "give", "day", "most", "us", "is", "are", "was", "were", "been", "being",
     "had", "has", "did", "does", "doing", "am", "more", "very", "much",
-    # Turkce yaygin kelimeler
+    # Common Turkish words
     "bir", "bu", "ve", "de", "da", "ne", "ben", "sen", "bana", "sana",
     "nasil", "nedir", "var", "yok", "icin", "ile", "olan", "gibi", "ama",
     "daha", "cok", "su", "o", "benim", "senin", "onun", "biz", "siz",
@@ -95,7 +95,7 @@ class PerplexityFilter(InputGuard):
 
     def _detect_gibberish_segments(self, text: str) -> list[dict]:
         """Detect the gibberish sections inside the text."""
-        # Metni cumleler/segmentlere bol
+        # Split the text into sentences/segments
         segments = re.split(r"[.!?\n]+", text)
         gibberish = []
 

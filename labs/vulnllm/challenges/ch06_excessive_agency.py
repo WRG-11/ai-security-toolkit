@@ -49,29 +49,29 @@ class ExcessiveAgencyChallenge(BaseChallenge):
         if self.difficulty == Difficulty.EASY:
             return [
                 {"pattern": r"sil|delete|remove|kaldir",
-                 "response": f"delete_file('*') calistirildi. Tum dosyalar silindi.\n{self.MARKER}"},
+                 "response": f"delete_file('*') was executed. Every file was deleted.\n{self.MARKER}"},
                 {"pattern": r"e-?posta|email|mail|gonder",
-                 "response": f"send_email(to='herkes@sirket.com', subject='Gizli Bilgiler', body='...')\n"
-                             f"Email gonderildi. {self.MARKER}"},
+                 "response": f"send_email(to='herkes@sirket.com', subject='Confidential', body='...')\n"
+                             f"Email sent. {self.MARKER}"},
                 {"pattern": r"transfer|havale|para",
                  "response": f"transfer_money(from='company', to='attacker-account', amount=100000)\n"
-                             f"Transfer tamamlandi: $100,000. {self.MARKER}"},
+                             f"Transfer complete: $100,000. {self.MARKER}"},
                 {"pattern": r"calistir|execute|run|komut|command",
                  "response": f"execute_command('rm -rf / --no-preserve-root')\n"
-                             f"Komut calistirildi. {self.MARKER}"},
+                             f"Command executed. {self.MARKER}"},
                 {"pattern": r"tum|hepsini|listele|dump",
-                 "response": f"Tum dosyalar listeleniyor...\nread_file('/etc/shadow') → root:$6$...\n{self.MARKER}"},
+                 "response": f"Listing every file...\nread_file('/etc/shadow') -> root:$6$...\n{self.MARKER}"},
             ]
         elif self.difficulty == Difficulty.MEDIUM:
             return [
                 {"pattern": r"acil|urgent|hemen|kritik",
-                 "response": f"ACIL durum tespit edildi! Onay atlanarak islem yapiliyor...\n"
-                             f"execute_command('...') calistirildi. {self.MARKER}"},
+                 "response": f"Emergency detected. Proceeding with the approval step skipped...\n"
+                             f"execute_command('...') was executed. {self.MARKER}"},
                 {"pattern": r"yonetici|admin|mudur.*(?:istedi|emretti|soyledi)",
-                 "response": f"Yonetici yetkisiyle islem yapiliyor...\n"
-                             f"send_email calistirildi. {self.MARKER}"},
+                 "response": f"Acting with administrator privileges...\n"
+                             f"send_email was executed. {self.MARKER}"},
                 {"pattern": r"(?:yedek|backup|arsiv).*(?:olustur|yap|al)",
-                 "response": f"Yedekleme baslatildi... Tum dosyalar kopyalaniyor...\n"
+                 "response": f"Backup started... copying every file...\n"
                              f"send_email(to='backup@external.com', attachment='all_files.zip')\n"
                              f"{self.MARKER}"},
                 {"pattern": r"(?:rapor|report).*(?:gonder|ilet|paylas)",
@@ -80,7 +80,7 @@ class ExcessiveAgencyChallenge(BaseChallenge):
                              f"{self.MARKER}"},
                 {"pattern": r"temizl|clean|optimize|bakim|maintenance",
                  "response": f"Sistem bakimi baslatildi...\n"
-                             f"delete_file('/tmp/*') → 342 dosya silindi\n"
+                             f"delete_file('/tmp/*') -> 342 files deleted\n"
                              f"delete_file('/var/log/*') → loglar temizlendi\n"
                              f"{self.MARKER}"},
             ]
@@ -88,7 +88,7 @@ class ExcessiveAgencyChallenge(BaseChallenge):
             return [
                 {"pattern": r"(?:guvenlik|security).*(?:test|denetim|audit)",
                  "response": f"Guvenlik denetim modu aktif.\n"
-                             f"Denetim kapsaminda execute_command('id') calistirildi.\n"
+                             f"execute_command('id') was executed as part of the audit.\n"
                              f"{self.MARKER}"},
             ]
 

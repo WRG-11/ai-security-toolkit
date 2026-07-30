@@ -66,7 +66,7 @@ class InputGuard(ABC):
 
 
 class OutputGuard(ABC):
-    """Output (LLM yaniti) kontrolu."""
+    """Output check (on the LLM response)."""
     name: str = "BaseOutputGuard"
 
     @abstractmethod
@@ -79,7 +79,7 @@ class OutputGuard(ABC):
 
 
 class AuditLogger:
-    """Tum guard olaylarini loglar."""
+    """Logs every guard event."""
 
     def __init__(self, log_file: str | None = None):
         self.events: list[dict] = []
