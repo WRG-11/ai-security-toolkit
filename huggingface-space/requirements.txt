@@ -1,5 +1,7 @@
-# The demo runs the toolkit itself rather than a copy of it, so the package is
-# the dependency. `tools` is the installable surface and the trained model
-# ships as package data, so nothing else needs to be vendored here.
+# Only for the local Gradio variant (`app.py`). A Static Space ignores this
+# file -- index.html installs the package in the browser through micropip.
+#
+# The package is the dependency rather than vendored code: `tools` is the
+# installable surface and the trained model ships with it as package data.
 gradio>=4.0.0
-wrg-ai-security-toolkit @ git+https://github.com/WRG-11/ai-security-toolkit.git@main
+wrg-ai-security-toolkit>=0.3.0
