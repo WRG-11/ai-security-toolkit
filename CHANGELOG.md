@@ -7,6 +7,32 @@ not a versioned Python package. Releases are tracked by GitHub commit SHA
 rather than semantic versions. This CHANGELOG batches notable additions
 and updates by date for readability.
 
+## [2026-07-30] -- the install name pointed at somebody else's package
+
+### Changed -- breaking, if you were installing by distribution name
+
+- **The distribution is now `wrg-ai-security-toolkit`.** The unprefixed
+  `ai-security-toolkit` on PyPI belongs to a different author and is the same
+  kind of project — "a red-team AI security framework with adversarial attack
+  modules", v1.1.2 as of 2026-07-30. So `pip install ai-security-toolkit`
+  installs their security tooling, not this. Nobody was misdirected by our own
+  docs, which only ever said `pip install -e .` from a clone, but the name was
+  unpublishable and confusable in the one category where confusing two security
+  tools matters most.
+
+  The repository, the clone directory and the three console commands
+  (`prompt-injection-detect`, `llm-scanner`, `llm-firewall`) are unchanged.
+  Only the distribution carries the prefix.
+
+  `tests/test_distribution_name.py` pins it. Renaming back would be a one-word
+  edit that nothing else in the repo would notice — the imports are `tools.*`,
+  the scripts are unprefixed, and so is the clone directory.
+
+### Fixed
+
+- The HF Space's `requirements.txt` names the prefixed distribution, so the
+  Space installs this package rather than resolving to the other one.
+
 ## [2026-07-29] -- honest measurement, part 2: the artefact and the wheel
 
 Follow-up to PR #15, which fixed how the detector is *measured*. This round
