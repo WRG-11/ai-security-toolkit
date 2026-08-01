@@ -5,3 +5,14 @@ updates:
     schedule:
       interval: "monthly"
     open-pull-requests-limit: 3
+    groups:
+      # codeql-action/init writes a config file that codeql-action/analyze
+      # reads back, and the two refuse to run at different versions:
+      #   "Loaded a configuration file for version 'X', but running version 'Y'"
+      # Ungrouped, Dependabot opened one PR per sub-action (#26 init, #27
+      # analyze). Each bumped half the pair, so BOTH failed CI on their own
+      # while being correct together -- the errors were exact mirrors of each
+      # other. Grouping keeps the pair in a single, mergeable PR.
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
