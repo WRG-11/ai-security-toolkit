@@ -1,0 +1,53 @@
+name: Bug report
+description: Something in a tool, lab, or the CI is broken.
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where
+      options:
+        - prompt_injection_detector_ml.py
+        - llm_scanner.py
+        - llm_firewall.py
+        - labs/vulnllm
+        - labs/rag-security
+        - huggingface-space
+        - PyPI package / wheel install
+        - CI
+        - Something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you expect, and what did you get instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Exact command / input that triggers it.
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "`pip show wrg-ai-security-toolkit` or the commit SHA if running from source"
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output / traceback
+      render: shell
+    validations:
+      required: false

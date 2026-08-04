@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this toolkit in research or writing, please cite it as below."
+title: "AI Security Toolkit"
+type: software
+authors:
+  - name: "WRG-11"
+repository-code: "https://github.com/WRG-11/ai-security-toolkit"
+url: "https://pypi.org/project/wrg-ai-security-toolkit/"
+license: MIT
+version: 0.3.0
+date-released: "2026-07-30"
+keywords:
+  - ai-security
+  - llm-security
+  - prompt-injection
+  - ai-safety
+  - ctf

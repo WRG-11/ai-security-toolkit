@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/WRG-11/ai-security-toolkit/security/advisories/new
+    about: Do not open a public issue for a vulnerability in this toolkit itself -- use a private Security Advisory instead (see CONTRIBUTING.md's "Security Issues" section).
+  - name: Contributing guide
+    url: https://github.com/WRG-11/ai-security-toolkit/blob/main/CONTRIBUTING.md
+    about: Read this before proposing a new tool, lab, or CTF writeup -- scope bar and disclosure discipline.
