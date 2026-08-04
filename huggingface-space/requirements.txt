@@ -3,5 +3,5 @@
 #
 # The package is the dependency rather than vendored code: `tools` is the
 # installable surface and the trained model ships with it as package data.
-gradio>=4.0.0
+gradio>=6.22.0
 wrg-ai-security-toolkit>=0.3.0
