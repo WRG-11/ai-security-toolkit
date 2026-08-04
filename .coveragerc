@@ -30,12 +30,16 @@ show_missing = True
 # meaning anything the moment the scope widened. The value 30 was set against
 # a measured 35% -- but the tests added in the same round took the real figure
 # to 51% and nobody moved the floor, so it sat 21 points below reality and
-# would have waved through a very large regression.
+# would have waved through a very large regression. It happened again: 45
+# was set at some point against a lower figure, and by 2026-08-03 the real
+# number had reached 53% with the floor never moved -- same drift, smaller
+# gap. Ratcheted to 50 (a 3-point margin below the measured 53%, not the
+# ~20-point gaps this file has drifted to twice now).
 #
 # The measured percentage is deliberately NOT repeated in prose anywhere. It
 # moves with every commit and cannot be resolved without running the suite;
 # README stamps THIS number instead, because this is the one that is enforced.
-fail_under = 45
+fail_under = 50
 exclude_lines =
     pragma: no cover
     if __name__ == .__main__.:
