@@ -1,0 +1,48 @@
+name: New tool / lab / writeup proposal
+description: Propose a new tool, lab, or CTF writeup before starting larger work.
+labels: ["proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        CONTRIBUTING.md asks for an issue before larger work or new tool
+        additions -- this form is that issue. Small docs fixes, typos, and
+        CTF writeup additions for already-solved challenges can skip this
+        and go straight to a PR.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of addition
+      options:
+        - New tool (tools/)
+        - New lab (labs/)
+        - New CTF writeup
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case / gap it closes
+      description: What can't be done today that this would enable?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope estimate
+      description: Rough LOC / files touched. CONTRIBUTING.md's bar is 500 LOC unless prearranged here.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints (see CONTRIBUTING.md)
+      options:
+        - label: "New tool: will stay stdlib-only under tools/ (extra deps belong in a lab's own requirements.txt / a pyproject extra)"
+        - label: "New lab: will ship with a README stating intended attack/defense scope"
+        - label: "New CTF writeup: no real victim data, secrets/tokens/endpoints will be redacted even if expired"

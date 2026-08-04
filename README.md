@@ -1,5 +1,6 @@
 # AI Security Toolkit
 
+[![CI](https://github.com/WRG-11/ai-security-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/WRG-11/ai-security-toolkit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![Core stdlib](https://img.shields.io/badge/core%20tools-stdlib%20only-34D058.svg)](https://github.com/WRG-11/ai-security-toolkit)
@@ -266,7 +267,7 @@ MITRE ATLAS                  [########--]  15 tactics, 66 techniques
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
-Test Suite                   [######----]  <!-- METRIC:test_module_count -->20<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->45<!-- /METRIC:coverage_floor -->% enforced floor
+Test Suite                   [######----]  <!-- METRIC:test_module_count -->20<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->50<!-- /METRIC:coverage_floor -->% enforced floor
 Tool Proficiency             [########--]  Garak, PyRIT, NeMo Guardrails
 ```
 

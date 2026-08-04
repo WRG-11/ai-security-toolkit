@@ -1,5 +1,29 @@
 version: 2
 updates:
+  # Root pyproject.toml's own [project.optional-dependencies] (rag/hf/ctf
+  # extras: chromadb, sentence-transformers, gradio, requests). These were
+  # never tracked by dependabot at all -- only github-actions was -- so a
+  # CVE in any of them would have gone unnoticed.
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5
+
+  # labs/rag-security and huggingface-space each carry their own
+  # requirements.txt, separate from the pyproject extras above -- same gap.
+  - package-ecosystem: "pip"
+    directory: "/labs/rag-security"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: "pip"
+    directory: "/huggingface-space"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 3
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

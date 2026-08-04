@@ -11,11 +11,23 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
+        # The runtime is stdlib-only by design (dependencies = []), which is
+        # exactly the claim an OS matrix can actually test -- ubuntu-only
+        # coverage never exercised that on the two platforms it's likeliest
+        # to break on (path separators, the demo HTTPServer, encoding
+        # defaults). Not previously run anywhere.
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    defaults:
+      run:
+        # Windows runners default `run:` to pwsh; the steps below assume
+        # bash. GitHub-hosted Windows runners ship git-bash, so pinning the
+        # shell keeps all three OSes running identical steps.
+        shell: bash
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
@@ -78,6 +90,47 @@ jobs:
       # was not stylistic: a Turkish question particle written twice in the
       # perplexity stop-word set while another was missing entirely.
       - run: ruff check .
+
+  mypy:
+    # Advisory, not a gate. Measured 2026-08-03: 7 real findings in
+    # tools/, all the same shape -- Counter() is typed by typeshed as
+    # Dict[K, int] regardless of what you put in it, and
+    # prompt_injection_detector_ml.py accumulates float TF-IDF scores in one.
+    # Runs correctly (Python does not enforce this at runtime); it is a type
+    # annotation mismatch, not a demonstrated functional bug, and fixing it
+    # right means widening the annotation across the class rather than
+    # silencing each line -- a maintainer call, not this job's to force.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: pip install mypy
+      - run: mypy tools/ --ignore-missing-imports
+
+  bandit:
+    # Advisory, not a gate -- continue-on-error makes that literal, not just
+    # a comment. Measured 2026-08-03: 12 medium-severity findings already
+    # exist. Most in labs/ are almost certainly BY DESIGN (labs/vulnllm is a
+    # "DVWA for LLMs" -- deliberately-vulnerable teaching code IS the
+    # product). The two in tools/ are more interesting: urlopen in
+    # llm_scanner.py (the whole point of a network-facing scanner) and
+    # HTTPServer bound to 0.0.0.0 in prompt_injection_detector_ml.py's demo
+    # server (undocumented -- worth a maintainer look, not this job's call
+    # to fail the build over). Complements CodeQL's advanced workflow
+    # (Security tab, deeper analysis) with a fast, PR-visible pass instead
+    # of replacing it.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: pip install bandit
+      - run: bandit -r tools/ labs/ -ll
 
   docs:
     runs-on: ubuntu-latest
