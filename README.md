@@ -54,7 +54,9 @@ This repo is that toolkit. Core tools (Tools section below) are stdlib-only Pyth
 - Pre-trained model included (`models/injection_model.json`)
 
 ```bash
-# Quick start
+# Quick start — clone first; llm-scanner and llm-firewall need the checkout
+# on disk (see Installation below), a plain `pip install` alone won't run them
+git clone https://github.com/WRG-11/ai-security-toolkit.git && cd ai-security-toolkit
 python tools/prompt_injection_detector_ml.py --interactive
 python tools/llm_scanner.py llama3.2:3b --quick   # --ollama-url to point elsewhere
 python tools/llm_firewall.py --proxy --port 8080
