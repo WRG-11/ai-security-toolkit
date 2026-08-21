@@ -44,9 +44,9 @@ This repo is that toolkit. Core tools (Tools section below) are stdlib-only Pyth
 
 | Tool | Description | Lines |
 |------|-------------|-------|
-| [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack patterns, **F1 0.91 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | <!-- METRIC:lines_ml -->1242<!-- /METRIC:lines_ml --> |
+| [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack patterns, **F1 0.91 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | <!-- METRIC:lines_ml -->1246<!-- /METRIC:lines_ml --> |
 | [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> probes, severity mapping | <!-- METRIC:lines_scanner -->766<!-- /METRIC:lines_scanner --> |
-| [LLM Firewall](tools/llm_firewall.py) | 10-guard security middleware (12 registered, 2 opt-in), HTTP proxy mode, plugin architecture | <!-- METRIC:lines_firewall -->945<!-- /METRIC:lines_firewall --> |
+| [LLM Firewall](tools/llm_firewall.py) | 10-guard security middleware (12 registered, 2 opt-in), HTTP proxy mode, plugin architecture | <!-- METRIC:lines_firewall -->949<!-- /METRIC:lines_firewall --> |
 
 **Key features:**
 - Zero external dependencies (Python stdlib only)

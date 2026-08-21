@@ -26,7 +26,7 @@ import urllib.error
 from dataclasses import dataclass, field
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 # --- Path setup ---
 _TOOLS_DIR = Path(__file__).resolve().parent
@@ -90,7 +90,11 @@ OUTPUT_GUARD_REGISTRY: dict[str, type] = {
 # Configuration
 # ═══════════════════════════════════════════════════════════
 
-DEFAULT_CONFIG = {
+# Heterojen yapilandirma: degerler list/dict/str/int karisimi. Tip
+# bildirimi olmadan mypy her okumayi bir union olarak cikariyor ve
+# `list(...)`/`dict(...)` cagrilari hata veriyordu -- deger yanlis degil,
+# sozlugun tipi eksikti.
+DEFAULT_CONFIG: dict[str, Any] = {
     "input_guards": [
         "UnicodeNormalizer",
         "PromptFirewall",

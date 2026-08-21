@@ -22,7 +22,7 @@ import re
 import sys
 import argparse
 import time
-from collections import Counter
+from collections import defaultdict, Counter
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -156,13 +156,17 @@ class TFIDFModel:
             term: math.log(n_docs / (1 + df)) for term, df in doc_freq.items()
         }
 
-        inj_tfidf: Counter = Counter()
+        # TF-IDF agirliklari FLOAT. `Counter` varsayilan olarak int degerli
+        # sayilir, bu yuzden `+= tf*idf` ve `/= n` tip hatasi veriyordu --
+        # kusur degerlerde degil, kabin tipinde. Counter'a ozgu bir metot
+        # kullanilmiyor (yalnizca .get), defaultdict birebir karsiligi.
+        inj_tfidf: defaultdict[str, float] = defaultdict(float)
         for doc in inj_docs:
             tf = self._tf(doc)
             for term, tf_val in tf.items():
                 inj_tfidf[term] += tf_val * self.idf.get(term, 0)
 
-        ben_tfidf: Counter = Counter()
+        ben_tfidf: defaultdict[str, float] = defaultdict(float)
         for doc in ben_docs:
             tf = self._tf(doc)
             for term, tf_val in tf.items():
