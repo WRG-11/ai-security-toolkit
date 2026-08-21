@@ -4,8 +4,8 @@ Module #10 — LLM-as-Judge (Ollama)
 Uses a second LLM through Ollama as a safety judge.
 Can check input AND output. Must be the LAST guard in the pipeline (most expensive).
 
-Tasarım kararları:
-- Sync HTTP (async yok) — basitlik
+Design decisions:
+- Sync HTTP (no async) - simplicity
 - 10s timeout -- failing open beats waiting on a slow response
 - Hash-based cache -- never ask the same query twice
 - Ollama yoksa default = FAIL-CLOSED (block, confidence=1.0).
@@ -73,7 +73,7 @@ class LLMAsJudge(InputGuard, OutputGuard):
     An Ollama-backed LLM safety judge.
 
     Both an InputGuard and an OutputGuard -- must come last in the pipeline.
-    Ollama erişilemezse sessizce pass (fail-open).
+    Passes silently when Ollama is unreachable (fail-open).
     """
     name = "LLMAsJudge"
 
@@ -101,7 +101,7 @@ class LLMAsJudge(InputGuard, OutputGuard):
         self._available: bool | None = None  # lazy check
 
     def _is_available(self) -> bool:
-        """Ollama erişilebilir mi kontrol et (lazy, bir kez)."""
+        """Check whether Ollama is reachable (lazy, once)."""
         if self._available is not None:
             return self._available
         try:
@@ -139,7 +139,7 @@ class LLMAsJudge(InputGuard, OutputGuard):
         if key in self._cache:
             return self._cache[key]
 
-        # Template seç
+        # Pick the template
         if mode == "input":
             user_msg = JUDGE_INPUT_TEMPLATE.format(text=chunk)
         else:
@@ -232,7 +232,7 @@ class LLMAsJudge(InputGuard, OutputGuard):
     @staticmethod
     def _parse_verdict(content: str) -> dict:
         """Extract the JSON verdict from the LLM response."""
-        # JSON bloğunu bul
+        # Find the JSON block
         json_match = re.search(r"\{[^}]+\}", content)
         if json_match:
             try:
@@ -303,8 +303,8 @@ class LLMAsJudge(InputGuard, OutputGuard):
         )
 
     def check(self, text: str, context: dict | None = None) -> GuardResult:
-        """InputGuard + OutputGuard ortak check. Mode context'ten belirlenir."""
-        # Context'te mode belirtilmişse kullan, yoksa input varsay
+        """Shared check for InputGuard + OutputGuard. Mode comes from the context."""
+        # Use the mode from context when given, otherwise assume input
         mode = "input"
         if context and context.get("mode") == "output":
             mode = "output"

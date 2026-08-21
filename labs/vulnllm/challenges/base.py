@@ -67,7 +67,7 @@ class ChallengeState:
 
 
 class BaseChallenge(ABC):
-    """Her challenge bu siniftan turer."""
+    """Every challenge derives from this class."""
 
     id: int = 0
     name: str = ""

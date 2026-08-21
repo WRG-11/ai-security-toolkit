@@ -7,7 +7,7 @@ class Difficulty(IntEnum):
     EASY = 1       # No defenses
     MEDIUM = 2     # Simple filters
     HARD = 3       # Layered defense
-    EXPERT = 4     # Tam 21 modül pipeline
+    EXPERT = 4     # Full 21-module pipeline
 
     @property
     def label(self) -> str:

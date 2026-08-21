@@ -90,10 +90,10 @@ OUTPUT_GUARD_REGISTRY: dict[str, type] = {
 # Configuration
 # ═══════════════════════════════════════════════════════════
 
-# Heterojen yapilandirma: degerler list/dict/str/int karisimi. Tip
-# bildirimi olmadan mypy her okumayi bir union olarak cikariyor ve
-# `list(...)`/`dict(...)` cagrilari hata veriyordu -- deger yanlis degil,
-# sozlugun tipi eksikti.
+# Heterogeneous config: the values mix list/dict/str/int. Without an
+# annotation mypy infers every read as a union, so the `list(...)` /
+# `dict(...)` calls failed to type-check -- the values were never wrong,
+# the dict was just missing its type.
 DEFAULT_CONFIG: dict[str, Any] = {
     "input_guards": [
         "UnicodeNormalizer",

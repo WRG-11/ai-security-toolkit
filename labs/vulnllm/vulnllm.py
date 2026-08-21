@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-VulnLLM — Zafiyetli LLM Lab Ortami
+VulnLLM - a deliberately vulnerable LLM lab
 OWASP LLM Top 10 attack & defense practice.
 
-Kullanım:
-    python vulnllm.py                          # Ana menu
+Usage:
+    python vulnllm.py                          # Main menu
     python vulnllm.py --challenge 1            # Challenge 1, interactive
     python vulnllm.py --challenge 1 --auto     # Challenge 1, automated attack
     python vulnllm.py --all --auto             # Every challenge, automated
