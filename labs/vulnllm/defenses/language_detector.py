@@ -40,9 +40,9 @@ TRIGRAMS: dict[str, set[str]] = {
 class LanguageDetector(InputGuard):
     """
     Language/script anomaly detection:
-    1. Karisik script (Latin icinde Kiril, Arap, CJK vb.)
-    2. Bilinen dil disinda içerik (low-resource language bypass)
-    3. Mid-sentence script degisikligi
+    1. Mixed scripts (Cyrillic, Arabic, CJK inside Latin, etc.)
+    2. Content outside the known languages (low-resource bypass)
+    3. Mid-sentence script change
     """
     name = "LanguageDetector"
 

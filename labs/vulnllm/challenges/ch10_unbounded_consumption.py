@@ -16,7 +16,7 @@ class UnboundedConsumptionChallenge(BaseChallenge):
     secrets = {"max_cost": "$10,000+"}
     atlas_mapping = ["AML.T0029"]
 
-    COST_PER_TOKEN = 0.00003  # $/token simülasyonu
+    COST_PER_TOKEN = 0.00003  # $/token simulation
     DOW_THRESHOLD = 100.0     # success once $100 is exceeded
 
     def __init__(self, *args, **kwargs):

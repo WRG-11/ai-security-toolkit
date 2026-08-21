@@ -641,8 +641,8 @@ def print_report(report: ScanReport) -> None:
 
 
 def main():
-    # Probe adlarinda ASCII-disi karakter var (ornegin U+2192). cp1254 bir
-    # konsolda --list-probes bunlarin ilkinde UnicodeEncodeError ile oluyordu.
+    # Probe names carry non-ASCII characters (e.g. U+2192). On a cp1254
+    # console, --list-probes died with UnicodeEncodeError on the first one.
     make_output_safe()
     parser = argparse.ArgumentParser(
         description="LLM Scanner v1.0 -- OWASP LLM Top 10 Vulnerability Scanner",

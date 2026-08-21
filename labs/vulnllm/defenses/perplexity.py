@@ -2,7 +2,7 @@
 Module #12 — Perplexity / Gibberish Filter
 
 GCG adversarial suffix detection: character entropy plus word frequency.
-Anlamsiz token dizileri (yüksek perplexity) bloklanir.
+Meaningless token sequences (high perplexity) are blocked.
 
 Ref: Zou et al. (2023) — Universal Adversarial Attacks, arXiv:2308.14132
 """
@@ -57,7 +57,7 @@ class PerplexityFilter(InputGuard):
     """
     Character-level entropy plus word-frequency analysis.
 
-    GCG suffix örneği: "describing.LinesaliasaliasTO surely printheader"
+    GCG suffix example: "describing.LinesaliasaliasTO surely printheader"
     -> high char entropy + low known-word ratio = gibberish
     """
     name = "PerplexityFilter"

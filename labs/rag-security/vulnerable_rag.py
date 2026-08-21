@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 RAG Security Lab -- a vulnerable RAG system
-AI/LLM Security - Beceri Gelistirme
+AI/LLM Security - skills practice
 
 A vulnerable RAG (retrieval augmented generation) system.
 A chatbot that answers questions from a knowledge base.
 It holds secret/sensitive data -- that is the attack target.
 
-Kullanım:
+Usage:
     python vulnerable_rag.py --setup          # Create the database
     python vulnerable_rag.py --interactive    # Interactive chat
     python vulnerable_rag.py --query "soru"   # Tek soru

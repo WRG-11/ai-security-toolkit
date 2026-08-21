@@ -30,7 +30,7 @@ from defenses.base import GuardResult  # noqa: E402
 
 
 def _zero_arg_guards() -> list[tuple[str, type]]:
-    """Argumansiz kurulabilen ve check() sunan her guard."""
+    """Every guard that constructs without arguments and offers check()."""
     found = []
     for name in sorted(defenses.__all__):
         cls = getattr(defenses, name)

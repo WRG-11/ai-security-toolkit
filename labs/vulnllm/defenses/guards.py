@@ -306,10 +306,10 @@ class PIIScanner(OutputGuard):
 
 class CanarySystem(OutputGuard):
     """
-    Sistem prompt'una canary token gomer.
+    Embeds a canary token into the system prompt.
     A canary found in the output raises a prompt-leakage alarm.
 
-    Kullanım:
+    Usage:
         canary = CanarySystem()
         protected_prompt = canary.inject(original_prompt)
         # ... the LLM produces a response ...

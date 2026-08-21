@@ -156,10 +156,10 @@ class TFIDFModel:
             term: math.log(n_docs / (1 + df)) for term, df in doc_freq.items()
         }
 
-        # TF-IDF agirliklari FLOAT. `Counter` varsayilan olarak int degerli
-        # sayilir, bu yuzden `+= tf*idf` ve `/= n` tip hatasi veriyordu --
-        # kusur degerlerde degil, kabin tipinde. Counter'a ozgu bir metot
-        # kullanilmiyor (yalnizca .get), defaultdict birebir karsiligi.
+        # TF-IDF weights are FLOAT. `Counter` is int-valued by default, so
+        # `+= tf*idf` and `/= n` failed to type-check -- the defect was in
+        # the container's type, not in the values. No Counter-specific
+        # method is used (only .get), so defaultdict is a drop-in.
         inj_tfidf: defaultdict[str, float] = defaultdict(float)
         for doc in inj_docs:
             tf = self._tf(doc)
@@ -610,10 +610,10 @@ class HybridDetector:
         if benign_texts is None:
             benign_texts = BENIGN_SAMPLES
 
-        # TF-IDF eğitimi
+        # Train TF-IDF
         self.tfidf_model.train(injection_texts, benign_texts)
 
-        # Embedding anchor'lari
+        # Embedding anchors
         if anchors is None:
             anchors = build_default_anchors()
         self.embedding_model.build_anchors(anchors)
@@ -673,7 +673,7 @@ class HybridDetector:
         scores = [regex_raw, tfidf_score, emb_sim]
         mean = sum(scores) / len(scores)
         variance = sum((s - mean) ** 2 for s in scores) / len(scores)
-        agreement = 1.0 - min(variance * 4, 1.0)  # 0-1, yüksek = uyumlu
+        agreement = 1.0 - min(variance * 4, 1.0)  # 0-1, higher = more agreement
         confidence = final_score * agreement if label == "INJECTION" else (1 - final_score) * agreement
 
         return PredictionResult(
