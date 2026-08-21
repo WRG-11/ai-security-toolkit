@@ -20,7 +20,7 @@ Written from scratch with zero dependencies (Python stdlib only) -- LLM red team
 
 ---
 
-## Tool Overview / Araç Özeti
+## Tool Overview
 
 | Feature | Injection Detector ML | LLM Scanner | LLM Firewall |
 |---------|----------------------|-------------|--------------|
