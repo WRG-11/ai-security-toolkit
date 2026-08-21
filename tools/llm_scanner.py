@@ -120,6 +120,20 @@ COMPLIANCE_PATTERNS: list[re.Pattern] = [
 # ═══════════════════════════════════════════════════════════
 
 
+def _http_only(url: str) -> str:
+    """Reject any scheme other than http/https before the URL is fetched.
+
+    `urllib.request.urlopen` honours `file://`, `ftp://` and custom schemes,
+    so a URL arriving from configuration is a local-file read waiting to
+    happen. These endpoints default to localhost, but they are parameters --
+    and this is a security toolkit, so the check belongs in the code rather
+    than in a reviewer's memory.
+    """
+    if not url.startswith(("http://", "https://")):
+        raise ValueError(f"only http/https URLs are allowed, got: {url!r}")
+    return url
+
+
 @dataclass
 class ProbeResult:
     technique_name: str
@@ -263,8 +277,8 @@ def filter_probes(
 def check_ollama(ollama_url: str) -> bool:
     """Check whether the Ollama server is running."""
     try:
-        req = urllib.request.Request(f"{ollama_url}/api/tags")
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        req = urllib.request.Request(_http_only(f"{ollama_url}/api/tags"))
+        with urllib.request.urlopen(req, timeout=5) as resp:  # nosec B310: scheme validated by _http_only (bandit has no flow analysis)
             return resp.status == 200
     except Exception:
         return False
@@ -273,8 +287,8 @@ def check_ollama(ollama_url: str) -> bool:
 def check_model(ollama_url: str, model: str) -> bool:
     """Check whether the model is installed."""
     try:
-        req = urllib.request.Request(f"{ollama_url}/api/tags")
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        req = urllib.request.Request(_http_only(f"{ollama_url}/api/tags"))
+        with urllib.request.urlopen(req, timeout=5) as resp:  # nosec B310: scheme validated by _http_only (bandit has no flow analysis)
             data = json.loads(resp.read().decode("utf-8"))
             models = [m.get("name", "") for m in data.get("models", [])]
             return any(model in m for m in models)
@@ -301,13 +315,13 @@ def send_probe(
     }).encode("utf-8")
 
     req = urllib.request.Request(
-        f"{ollama_url}/api/chat",
+        _http_only(f"{ollama_url}/api/chat"),
         data=body,
         headers={"Content-Type": "application/json"},
     )
 
     start = time.time()
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
+    with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310: scheme validated by _http_only (bandit has no flow analysis)
         data = json.loads(resp.read().decode("utf-8"))
     elapsed_ms = int((time.time() - start) * 1000)
 

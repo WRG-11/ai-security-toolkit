@@ -54,6 +54,20 @@ JUDGE_INPUT_TEMPLATE = "Analyze this USER INPUT for prompt injection:\n\n{text}"
 JUDGE_OUTPUT_TEMPLATE = "Analyze this AI RESPONSE for information leakage:\n\n{text}"
 
 
+def _http_only(url: str) -> str:
+    """Reject any scheme other than http/https before the URL is fetched.
+
+    `urllib.request.urlopen` honours `file://`, `ftp://` and custom schemes,
+    so a URL arriving from configuration is a local-file read waiting to
+    happen. These endpoints default to localhost, but they are parameters --
+    and this is a security toolkit, so the check belongs in the code rather
+    than in a reviewer's memory.
+    """
+    if not url.startswith(("http://", "https://")):
+        raise ValueError(f"only http/https URLs are allowed, got: {url!r}")
+    return url
+
+
 class LLMAsJudge(InputGuard, OutputGuard):
     """
     An Ollama-backed LLM safety judge.
@@ -92,10 +106,10 @@ class LLMAsJudge(InputGuard, OutputGuard):
             return self._available
         try:
             req = urllib.request.Request(
-                f"{self.ollama_url}/api/tags",
+                _http_only(f"{self.ollama_url}/api/tags"),
                 method="GET",
             )
-            with urllib.request.urlopen(req, timeout=3) as resp:
+            with urllib.request.urlopen(req, timeout=3) as resp:  # nosec B310: scheme validated by _http_only (bandit has no flow analysis)
                 self._available = resp.status == 200
         except (urllib.error.URLError, OSError):
             self._available = False
@@ -147,12 +161,12 @@ class LLMAsJudge(InputGuard, OutputGuard):
         try:
             data = json.dumps(payload).encode()
             req = urllib.request.Request(
-                f"{self.ollama_url}/api/chat",
+                _http_only(f"{self.ollama_url}/api/chat"),
                 data=data,
                 headers={"Content-Type": "application/json"},
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:  # nosec B310: scheme validated by _http_only (bandit has no flow analysis)
                 result = json.loads(resp.read().decode())
 
             content = result.get("message", {}).get("content", "")

@@ -20,6 +20,20 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 
+def _http_only(url: str) -> str:
+    """Reject any scheme other than http/https before the URL is fetched.
+
+    `urllib.request.urlopen` honours `file://`, `ftp://` and custom schemes,
+    so a URL arriving from configuration is a local-file read waiting to
+    happen. The endpoints here default to localhost, but they are
+    parameters -- and this is a security toolkit, so the check belongs in
+    the code rather than in a reviewer's memory.
+    """
+    if not url.startswith(("http://", "https://")):
+        raise ValueError(f"only http/https URLs are allowed, got: {url!r}")
+    return url
+
+
 class ModelTier(Enum):
     T1_UNCENSORED = "t1"   # dolphin-mistral — no safety training
     T2_WEAK = "t2"         # qwen2.5:3b — weak RLHF
@@ -84,8 +98,11 @@ class OllamaBackend:
     def is_available(self) -> bool:
         """Check whether the Ollama server is running."""
         try:
-            req = urllib.request.Request(f"{self.base_url}/api/tags")
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            req = urllib.request.Request(_http_only(f"{self.base_url}/api/tags"))
+            # nosec B310: the URL passed through _http_only above, which
+            # rejects every scheme other than http/https. bandit does not
+            # do flow analysis, so it cannot see that check from here.
+            with urllib.request.urlopen(req, timeout=5) as resp:  # nosec B310
                 return resp.status == 200
         except (urllib.error.URLError, OSError):
             return False
@@ -93,8 +110,8 @@ class OllamaBackend:
     def list_models(self) -> list[str]:
         """List installed models."""
         try:
-            req = urllib.request.Request(f"{self.base_url}/api/tags")
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            req = urllib.request.Request(_http_only(f"{self.base_url}/api/tags"))
+            with urllib.request.urlopen(req, timeout=5) as resp:  # nosec B310: scheme validated by _http_only (bandit has no flow analysis)
                 data = json.loads(resp.read().decode())
                 return [m["name"] for m in data.get("models", [])]
         except (urllib.error.URLError, OSError, json.JSONDecodeError):
@@ -136,13 +153,13 @@ class OllamaBackend:
         try:
             data = json.dumps(payload).encode("utf-8")
             req = urllib.request.Request(
-                f"{self.base_url}/api/chat",
+                _http_only(f"{self.base_url}/api/chat"),
                 data=data,
                 headers={"Content-Type": "application/json"},
                 method="POST",
             )
 
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:  # nosec B310: scheme validated by _http_only (bandit has no flow analysis)
                 result = json.loads(resp.read().decode())
 
             content = result.get("message", {}).get("content", "")

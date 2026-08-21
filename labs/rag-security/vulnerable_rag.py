@@ -99,6 +99,20 @@ COMPANY_DOCUMENTS = [
 # ================================================================
 
 
+def _http_only(url: str) -> str:
+    """Reject any scheme other than http/https before the URL is fetched.
+
+    `urllib.request.urlopen` honours `file://`, `ftp://` and custom schemes,
+    so a URL arriving from configuration is a local-file read waiting to
+    happen. The endpoints here default to localhost, but they are
+    parameters -- and this is a security toolkit, so the check belongs in
+    the code rather than in a reviewer's memory.
+    """
+    if not url.startswith(("http://", "https://")):
+        raise ValueError(f"only http/https URLs are allowed, got: {url!r}")
+    return url
+
+
 class VulnerableRAG:
     """A vulnerable RAG system -- the attack target."""
 
@@ -193,12 +207,12 @@ Answer based on the context above:"""
         }).encode()
 
         req = urllib.request.Request(
-            f"{OLLAMA_URL}/api/chat",
+            _http_only(f"{OLLAMA_URL}/api/chat"),
             data=body,
             headers={"Content-Type": "application/json"},
         )
 
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=120) as resp:  # nosec B310: scheme validated by _http_only (bandit has no flow analysis)
             data = json.loads(resp.read().decode())
             return data.get("message", {}).get("content", "")
 

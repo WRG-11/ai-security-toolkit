@@ -1049,12 +1049,17 @@ class DetectorHandler(BaseHTTPRequestHandler):
         pass
 
 
-def serve_http(detector: HybridDetector, port: int = 8090):
+def serve_http(detector: HybridDetector, port: int = 8090,
+               host: str = "127.0.0.1"):
     """Start the HTTP API server."""
     global _http_detector
     _http_detector = detector
 
-    server = HTTPServer(("0.0.0.0", port), DetectorHandler)
+    # Bind to localhost by DEFAULT. A tool that quietly listens on every
+    # interface turns "I ran it locally" into "I exposed it to the network",
+    # and the person running a SECURITY tool is the last one who should be
+    # surprised by that. Pass host="0.0.0.0" deliberately to share it.
+    server = HTTPServer((host, port), DetectorHandler)
     b = COLORS["BOLD"]
     r = COLORS["RESET"]
     g = COLORS["SAFE"]
