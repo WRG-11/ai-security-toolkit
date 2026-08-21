@@ -25,11 +25,12 @@ import sys
 
 
 def make_output_safe() -> None:
-    """stdout/stderr'i UTF-8 + errors='replace' yap.
+    """Switch stdout/stderr to UTF-8 with ``errors='replace'``.
 
-    Idempotent ve sessiz: kodlama zaten uygunsa hicbir sey yapmaz, konsol
-    reconfigure'u desteklemiyorsa (yonlendirilmis ozel akislar) sessizce
-    through -- an output-hygiene helper must not take down the program it protects.
+    Idempotent and quiet: it does nothing when the encoding is already fine,
+    and returns silently when a stream does not support ``reconfigure``
+    (redirected or custom streams) -- an output-hygiene helper must never take
+    down the program it is protecting.
     """
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, "reconfigure", None)

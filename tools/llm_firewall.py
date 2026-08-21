@@ -941,7 +941,7 @@ def main():
                 print_stats(firewall.get_stats())
         return
 
-    # Hicbir mod belirtilmediyse
+    # When no mode was specified
     parser.print_help()
 
 
