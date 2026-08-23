@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![Core stdlib](https://img.shields.io/badge/core%20tools-stdlib%20only-34D058.svg)](https://github.com/WRG-11/ai-security-toolkit)
-[![OWASP LLM Top 10](https://img.shields.io/badge/OWASP%20LLM%20Top%2010-10%2F10-blueviolet.svg)](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
+[![OWASP LLM Top 10 2026](https://img.shields.io/badge/OWASP%20LLM%20Top%2010-2026%3A%2010%2F10-blueviolet.svg)](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/)
 [![CTF score](https://img.shields.io/badge/CTF-16%2F16-yellow.svg)](#ctf-writeups)
 [![PyPI](https://img.shields.io/pypi/v/wrg-ai-security-toolkit.svg)](https://pypi.org/project/wrg-ai-security-toolkit/)
 [![Live demo](https://img.shields.io/badge/demo-runs%20in%20your%20browser-ff9d00.svg)](https://wrg-11-prompt-injection-detector.static.hf.space)
@@ -45,7 +45,7 @@ This repo is that toolkit. Core tools (Tools section below) are stdlib-only Pyth
 | Tool | Description | Lines |
 |------|-------------|-------|
 | [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack patterns, **F1 0.91 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | <!-- METRIC:lines_ml -->1246<!-- /METRIC:lines_ml --> |
-| [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> probes, severity mapping | <!-- METRIC:lines_scanner -->766<!-- /METRIC:lines_scanner --> |
+| [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> probes, severity mapping | <!-- METRIC:lines_scanner -->773<!-- /METRIC:lines_scanner --> |
 | [LLM Firewall](tools/llm_firewall.py) | 10-guard security middleware (12 registered, 2 opt-in), HTTP proxy mode, plugin architecture | <!-- METRIC:lines_firewall -->949<!-- /METRIC:lines_firewall --> |
 
 **Key features:**
@@ -262,7 +262,7 @@ If you need enterprise-scale fleet probing, reach for PyRIT. If you need an exte
 ## Skills & Coverage
 
 ```
-OWASP LLM Top 10 (2025)     [##########] 10/10 categories
+OWASP LLM Top 10 (2026)     [##########] 10/10 categories
 MITRE ATLAS                  [########--]  15 tactics, 66 techniques
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning

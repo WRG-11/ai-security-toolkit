@@ -33,40 +33,47 @@ sys.path.insert(0, str(_TOOLS_DIR))
 from _console import make_output_safe  # noqa: E402
 from _lab import ensure_lab_or_exit  # noqa: E402
 
-# If the tree is absent it stops here with a message saying what to do -- it
-# `ModuleNotFoundError: No module named 'attacks'` ile duruyordu.
+# If the tree is absent it stops here with a message saying what to do --
+# it used to fail with `ModuleNotFoundError: No module named 'attacks'`.
 _VULNLLM_DIR = ensure_lab_or_exit("llm_scanner")
 
 from attacks.library import AttackTechnique, AttackCategory  # noqa: E402
 
 # ═══════════════════════════════════════════════════════════
-# Sabitler
+# Constants
 # ═══════════════════════════════════════════════════════════
 
+# OWASP Top 10 for LLM Applications 2026 (released 2026-08-04) reordered and
+# renamed several categories relative to the 2025 edition this map used to
+# follow -- e.g. Excessive Agency moved from LLM06 to LLM03, and "System
+# Prompt Leakage" was broadened and renamed to "Hidden Context Exposure"
+# (LLM08). The chapter-to-ID mapping below was re-derived from each
+# chapter's actual subject matter, not just relabeled, so a chapter's
+# content and its printed OWASP ID stay consistent.
 OWASP_MAP: dict[str, list[str]] = {
-    "ch01": ["LLM01"],
-    "ch02": ["LLM02"],
-    "ch03": ["LLM03"],
-    "ch04": ["LLM04"],
-    "ch05": ["LLM05"],
-    "ch06": ["LLM06"],
-    "ch07": ["LLM07"],
-    "ch08": ["LLM01", "LLM08"],
-    "ch09": ["LLM09"],
-    "ch10": ["LLM10"],
+    "ch01": ["LLM01"],  # Prompt Injection
+    "ch02": ["LLM02"],  # Sensitive Information Disclosure
+    "ch03": ["LLM04"],  # Supply Chain
+    "ch04": ["LLM05"],  # Data and Model Poisoning
+    "ch05": ["LLM10"],  # Improper Output Handling
+    "ch06": ["LLM03"],  # Excessive Agency
+    "ch07": ["LLM08"],  # Hidden Context Exposure (was System Prompt Leakage)
+    "ch08": ["LLM01", "LLM09"],  # Vector & Embedding Weaknesses (RAG poisoning also injects)
+    "ch09": ["LLM07"],  # Misinformation
+    "ch10": ["LLM06"],  # Unbounded Consumption
 }
 
 OWASP_NAMES: dict[str, str] = {
     "LLM01": "Prompt Injection",
     "LLM02": "Sensitive Information Disclosure",
-    "LLM03": "Supply Chain Vulnerabilities",
-    "LLM04": "Data and Model Poisoning",
-    "LLM05": "Improper Output Handling",
-    "LLM06": "Excessive Agency",
-    "LLM07": "System Prompt Leakage",
-    "LLM08": "Vector & Embedding Weaknesses",
-    "LLM09": "Misinformation",
-    "LLM10": "Unbounded Consumption",
+    "LLM03": "Excessive Agency",
+    "LLM04": "Supply Chain",
+    "LLM05": "Data and Model Poisoning",
+    "LLM06": "Unbounded Consumption",
+    "LLM07": "Misinformation",
+    "LLM08": "Hidden Context Exposure",
+    "LLM09": "Vector and Embedding Weaknesses",
+    "LLM10": "Improper Output Handling",
 }
 
 TIER_MODELS: dict[str, str] = {
