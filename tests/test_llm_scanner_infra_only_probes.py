@@ -34,6 +34,38 @@ def test_ch08_has_exactly_eight_infrastructure_only_probes():
     assert len(CH08_ATTACKS) == 15
 
 
+def test_corpus_wide_infrastructure_only_count():
+    """Regression guard on the full-corpus audit (2026-08-23): a fork read
+    all 194 probes across 10 chapters and classified each against the same
+    test (can a bare chat-completion call make this attack succeed or fail
+    at all -- no vector DB, no CI/CD, no tool-calling, no multi-account
+    infra on the other end). ch01/ch05/ch06/ch07 are untouched here --
+    ch06 (Excessive Agency, tool-calling) is a separate, larger decision,
+    not folded into this exclusion pass. Chapter-by-chapter split, so a
+    future probe added to the wrong chapter shows up precisely:
+      ch02: 1/20 · ch03: 13/15 · ch04: 10/15 · ch08: 8/15 · ch09: 1/12 · ch10: 6/12
+    """
+    from attacks.ch02_attacks import CH02_ATTACKS
+    from attacks.ch03_attacks import CH03_ATTACKS
+    from attacks.ch04_attacks import CH04_ATTACKS
+    from attacks.ch08_attacks import CH08_ATTACKS
+    from attacks.ch09_attacks import CH09_ATTACKS
+    from attacks.ch10_attacks import CH10_ATTACKS
+
+    expected = {
+        "ch02": (CH02_ATTACKS, 1, 20),
+        "ch03": (CH03_ATTACKS, 13, 15),
+        "ch04": (CH04_ATTACKS, 10, 15),
+        "ch08": (CH08_ATTACKS, 8, 15),
+        "ch09": (CH09_ATTACKS, 1, 12),
+        "ch10": (CH10_ATTACKS, 6, 12),
+    }
+    for ch_id, (attacks, expected_infra, expected_total) in expected.items():
+        infra_count = sum(1 for t in attacks if t.requires_infrastructure)
+        assert infra_count == expected_infra, f"{ch_id}: expected {expected_infra} infra-only, got {infra_count}"
+        assert len(attacks) == expected_total, f"{ch_id}: expected {expected_total} probes, got {len(attacks)}"
+
+
 def test_scan_never_sends_an_infrastructure_only_probe(monkeypatch):
     """The whole point: an infra-only probe must never reach send_probe --
     there is nothing meaningful to send it to."""

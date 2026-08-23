@@ -37,6 +37,7 @@ CH04_ATTACKS: list[AttackTechnique] = [
         explanation="Changing the model's behaviour by adding malicious samples to the training data.",
         atlas_id="AML.T0020",
         reference="Data poisoning fundamentals",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Backdoor Info Request",
@@ -72,6 +73,7 @@ CH04_ATTACKS: list[AttackTechnique] = [
         explanation="The labels look correct, but input perturbations carry the backdoor.",
         atlas_id="AML.T0020",
         reference="Clean-label backdoor attacks (Turner et al., 2019)",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Fine-Tuning Hijack",
@@ -81,6 +83,7 @@ CH04_ATTACKS: list[AttackTechnique] = [
         explanation="Permanently changing the model's behaviour through the fine-tuning process.",
         atlas_id="AML.T0019",
         reference="PoisonGPT — fine-tuned GPT-J with misinformation",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Trojan Trigger Pattern",
@@ -90,6 +93,7 @@ CH04_ATTACKS: list[AttackTechnique] = [
         explanation="A multimodal model backdoor triggered by a visual pattern.",
         atlas_id="AML.T0020",
         reference="BadNets pixel pattern trigger",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Curriculum Poisoning",
@@ -98,6 +102,7 @@ CH04_ATTACKS: list[AttackTechnique] = [
         severity="HIGH", target_difficulty="medium",
         explanation="Planting the backdoor in the final stage by manipulating the training order.",
         atlas_id="AML.T0020",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Wikipedia→CommonCrawl Pipeline",
@@ -107,6 +112,7 @@ CH04_ATTACKS: list[AttackTechnique] = [
         explanation="Affecting downstream models by poisoning the upstream data source.",
         atlas_id="AML.T0019",
         reference="Carlini et al. — web-scale data poisoning",
+        requires_infrastructure=True,
     ),
 
     # HARD (4)
@@ -118,6 +124,7 @@ CH04_ATTACKS: list[AttackTechnique] = [
         explanation="Manipulating the model weights at the gradient level.",
         atlas_id="AML.T0020",
         reference="Gradient-based poisoning (Biggio et al.)",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Sleeper Agent Backdoor",
@@ -127,6 +134,7 @@ CH04_ATTACKS: list[AttackTechnique] = [
         explanation="Safety alignment'a direncli backdoor — Anthropic sleeper agents arastirmasi.",
         atlas_id="AML.T0020",
         reference="Anthropic — Sleeper Agents (2024)",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Spectral Signature Evasion",
@@ -136,6 +144,7 @@ CH04_ATTACKS: list[AttackTechnique] = [
         explanation="Poisoned data crafted to slip past anomaly detection (PCA, IsolationForest).",
         atlas_id="AML.T0020",
         reference="Spectral signature defense evasion",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Model Merging Attack",
@@ -145,5 +154,6 @@ CH04_ATTACKS: list[AttackTechnique] = [
         explanation="The backdoor surviving a model merge.",
         atlas_id="AML.T0010",
         reference="Model merging backdoor persistence (2025)",
+        requires_infrastructure=True,
     ),
 ]

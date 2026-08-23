@@ -20,6 +20,7 @@ CH03_ATTACKS: list[AttackTechnique] = [
         explanation="Arbitrary code execution via the pickle __reduce__ method. The most well-known ML supply chain attack.",
         atlas_id="AML.T0010",
         reference="HuggingFace pickle exploit (2023-2024)",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Typosquatting Package",
@@ -29,6 +30,7 @@ CH03_ATTACKS: list[AttackTechnique] = [
         explanation="Installing a malicious package via a misspelled package name.",
         atlas_id="AML.T0010",
         reference="npm/PyPI typosquatting campaigns (2024-2025)",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Malicious Plugin Install",
@@ -37,6 +39,7 @@ CH03_ATTACKS: list[AttackTechnique] = [
         severity="HIGH", target_difficulty="easy",
         explanation="Data exfiltration or RCE via an unverified plugin.",
         atlas_id="AML.T0010",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Poisoned HuggingFace Model",
@@ -46,6 +49,7 @@ CH03_ATTACKS: list[AttackTechnique] = [
         explanation="Code execution via a poisoned model — the PoisonGPT example.",
         atlas_id="AML.T0010",
         reference="PoisonGPT (2023) — HuggingFace safety bypass",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Dependency Confusion",
@@ -55,6 +59,7 @@ CH03_ATTACKS: list[AttackTechnique] = [
         explanation="Publishing a malicious package on a public registry under an internal package name.",
         atlas_id="AML.T0010",
         reference="Alex Birsan dependency confusion (2021)",
+        requires_infrastructure=True,
     ),
 
     # MEDIUM (6)
@@ -65,6 +70,7 @@ CH03_ATTACKS: list[AttackTechnique] = [
         severity="HIGH", target_difficulty="medium",
         explanation="Triggering pickle.loads during the format conversion step.",
         atlas_id="AML.T0010",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="ONNX Custom Operator",
@@ -73,6 +79,7 @@ CH03_ATTACKS: list[AttackTechnique] = [
         severity="HIGH", target_difficulty="medium",
         explanation="Executing code embedded inside an ONNX custom operator.",
         atlas_id="AML.T0010",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Model Card Spoofing",
@@ -90,6 +97,7 @@ CH03_ATTACKS: list[AttackTechnique] = [
         explanation="Supply chain compromise by adding a malicious step to the build pipeline.",
         atlas_id="AML.T0010",
         reference="SolarWinds, Codecov, xz-utils",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Compromised Security Tool",
@@ -99,6 +107,7 @@ CH03_ATTACKS: list[AttackTechnique] = [
         explanation="A supply chain attack achieved by compromising the security tool itself.",
         atlas_id="AML.T0010",
         reference="Trivy/Checkmarx KICS compromise (2025)",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Worm via npm Package",
@@ -108,6 +117,7 @@ CH03_ATTACKS: list[AttackTechnique] = [
         explanation="A self-propagating supply chain worm — the Shai-Hulud example.",
         atlas_id="AML.T0010",
         reference="Shai-Hulud worm — 800 npm packages (2025)",
+        requires_infrastructure=True,
     ),
 
     # HARD (4)
@@ -119,6 +129,7 @@ CH03_ATTACKS: list[AttackTechnique] = [
         explanation="A gradient-level backdoor — a model that passes standard tests but activates on a specific trigger.",
         atlas_id="AML.T0010",
         reference="BadNets (Gu et al., 2017) applied to LLMs",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="SBOM Tampering",
@@ -136,6 +147,7 @@ CH03_ATTACKS: list[AttackTechnique] = [
         explanation="Poisoning the entire model from a single client in a distributed learning system.",
         atlas_id="AML.T0010",
         reference="Byzantine-tolerant aggregation research",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Hardware Supply Chain (NPU Trojan)",
@@ -145,5 +157,6 @@ CH03_ATTACKS: list[AttackTechnique] = [
         explanation="A hardware-level supply chain attack — a backdoor planted during chip manufacturing.",
         atlas_id="AML.T0010",
         reference="Hardware trojan research — AI accelerators",
+        requires_infrastructure=True,
     ),
 ]

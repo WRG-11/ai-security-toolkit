@@ -36,6 +36,7 @@ CH10_ATTACKS: list[AttackTechnique] = [
         severity="CRITICAL", target_difficulty="easy",
         explanation="Bringing the server down with a flood of concurrent requests (DoS).",
         atlas_id="AML.T0029",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Recursive Self-Reference",
@@ -62,6 +63,7 @@ CH10_ATTACKS: list[AttackTechnique] = [
         severity="HIGH", target_difficulty="medium",
         explanation="Variable-sized requests to slip past the rate limiter.",
         atlas_id="AML.T0029",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Batch Request Amplification",
@@ -87,6 +89,7 @@ CH10_ATTACKS: list[AttackTechnique] = [
         severity="HIGH", target_difficulty="medium",
         explanation="A cost multiplier in a multi-model pipeline -- every model burns its own tokens.",
         atlas_id="AML.T0029",
+        requires_infrastructure=True,
     ),
 
     # HARD (3)
@@ -98,6 +101,7 @@ CH10_ATTACKS: list[AttackTechnique] = [
         explanation="A slow but constant attack that stays just under the rate-limiter threshold.",
         atlas_id="AML.T0029",
         reference="Slow-rate DoS (Slowloris principle applied to LLM APIs)",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Distributed DoW (Multiple Accounts)",
@@ -106,6 +110,7 @@ CH10_ATTACKS: list[AttackTechnique] = [
         severity="CRITICAL", target_difficulty="hard",
         explanation="Dagitik Denial of Wallet — per-user limitleri farkli hesaplarla bypass.",
         atlas_id="AML.T0029",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Prompt Injection → DoW Chain",
@@ -115,5 +120,6 @@ CH10_ATTACKS: list[AttackTechnique] = [
         explanation="Prompt injection + agent tool calling = katlanarak artan maliyet.",
         atlas_id="AML.T0029",
         reference="Agent loop DoW — tool call amplification",
+        requires_infrastructure=True,
     ),
 ]
