@@ -310,7 +310,7 @@ def send_probe(
     payload: str,
     timeout: int = 30,
 ) -> tuple[str, int]:
-    """Send a probe to Ollama. Returns (response, elapsed_ms)."""
+    """Send a probe to Ollama's native `/api/chat`. Returns (response, elapsed_ms)."""
     body = json.dumps({
         "model": model,
         "messages": [
@@ -333,6 +333,53 @@ def send_probe(
     elapsed_ms = int((time.time() - start) * 1000)
 
     response_text = data.get("message", {}).get("content", "")
+    return response_text, elapsed_ms
+
+
+def send_probe_openai(
+    base_url: str,
+    model: str,
+    system_prompt: str,
+    payload: str,
+    timeout: int = 30,
+    api_key: Optional[str] = None,
+) -> tuple[str, int]:
+    """Send a probe to any OpenAI-compatible `/chat/completions` endpoint.
+
+    This is what lets the scanner point at a deployed app's own LLM
+    endpoint instead of only a local Ollama model -- the OpenAI chat
+    shape is the closest thing this space has to a standard, and Ollama
+    itself serves it too (alongside its native `/api/chat`), which is
+    how this path is tested against a real model without needing a paid
+    API key: same local model, the other wire format.
+    """
+    body = json.dumps({
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": payload},
+        ],
+        "temperature": 0.1,
+        "max_tokens": 128,
+    }).encode("utf-8")
+
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    req = urllib.request.Request(
+        _http_only(f"{base_url}/chat/completions"),
+        data=body,
+        headers=headers,
+    )
+
+    start = time.time()
+    with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310: scheme validated by _http_only (bandit has no flow analysis)
+        data = json.loads(resp.read().decode("utf-8"))
+    elapsed_ms = int((time.time() - start) * 1000)
+
+    choices = data.get("choices") or [{}]
+    response_text = choices[0].get("message", {}).get("content", "")
     return response_text, elapsed_ms
 
 
@@ -398,11 +445,15 @@ class LLMScanner:
         ollama_url: str = "http://localhost:11434",
         system_prompt: str = DEFAULT_SYSTEM_PROMPT,
         timeout: int = 30,
+        api_mode: str = "ollama",
+        api_key: Optional[str] = None,
     ):
         self.model = model
         self.ollama_url = ollama_url
         self.system_prompt = system_prompt
         self.timeout = timeout
+        self.api_mode = api_mode
+        self.api_key = api_key
 
     def scan(
         self,
@@ -427,11 +478,18 @@ class LLMScanner:
                 progress_callback(i + 1, len(probes), tech.name)
 
             try:
-                response, elapsed_ms = send_probe(
-                    self.ollama_url, self.model,
-                    self.system_prompt, tech.payload,
-                    self.timeout,
-                )
+                if self.api_mode == "openai":
+                    response, elapsed_ms = send_probe_openai(
+                        self.ollama_url, self.model,
+                        self.system_prompt, tech.payload,
+                        self.timeout, api_key=self.api_key,
+                    )
+                else:
+                    response, elapsed_ms = send_probe(
+                        self.ollama_url, self.model,
+                        self.system_prompt, tech.payload,
+                        self.timeout,
+                    )
                 success, reason = check_success(response, self.system_prompt)
             except Exception as e:
                 response = f"[HATA] {e}"
@@ -676,7 +734,9 @@ def main():
     parser.add_argument("--quick", action="store_true", help="Quick scan (2 probes per OWASP category)")
     parser.add_argument("--json", "-j", action="store_true", help="JSON output")
     parser.add_argument("--output", "-o", help="Save the report to a file")
-    parser.add_argument("--ollama-url", default="http://localhost:11434", help="Ollama URL (default: http://localhost:11434)")
+    parser.add_argument("--ollama-url", default="http://localhost:11434", help="Ollama URL, or the target base URL in --api-mode openai (default: http://localhost:11434)")
+    parser.add_argument("--api-mode", default="ollama", choices=["ollama", "openai"], help="Wire format to speak to the target: Ollama's native /api/chat, or any OpenAI-compatible /chat/completions endpoint (default: ollama)")
+    parser.add_argument("--api-key", help="Bearer token for --api-mode openai (only sent in openai mode; ignored in ollama mode)")
     parser.add_argument("--timeout", type=int, default=30, help="Timeout per probe in seconds (default: 30)")
     parser.add_argument("--list-probes", action="store_true", help="Show the probe list (without scanning)")
 
@@ -713,22 +773,25 @@ def main():
             sys.exit(1)
         system_prompt = p.read_text(encoding="utf-8").strip()
 
-    # Ollama check
+    # Ollama check -- --api-mode openai targets an arbitrary endpoint, which
+    # has no /api/tags to ask "are you up" or "is this model installed";
+    # a probe failing there surfaces per-probe as an error result instead.
     b = COLORS["BOLD"]
     r = COLORS["RESET"]
     g = COLORS["SAFE"]
     red = COLORS["HIGH"]
 
-    if not check_ollama(args.ollama_url):
-        print(f"{red}[ERROR] Ollama server is not running!{r}")
-        print(f"  To start it: ollama serve")
-        print(f"  URL: {args.ollama_url}")
-        sys.exit(1)
+    if args.api_mode == "ollama":
+        if not check_ollama(args.ollama_url):
+            print(f"{red}[ERROR] Ollama server is not running!{r}")
+            print(f"  To start it: ollama serve")
+            print(f"  URL: {args.ollama_url}")
+            sys.exit(1)
 
-    if not check_model(args.ollama_url, model):
-        print(f"{red}[ERROR] Model not found: {model}{r}")
-        print(f"  To download it: ollama pull {model}")
-        sys.exit(1)
+        if not check_model(args.ollama_url, model):
+            print(f"{red}[ERROR] Model not found: {model}{r}")
+            print(f"  To download it: ollama pull {model}")
+            sys.exit(1)
 
     # Category filter
     categories = None
@@ -741,6 +804,8 @@ def main():
         ollama_url=args.ollama_url,
         system_prompt=system_prompt,
         timeout=args.timeout,
+        api_mode=args.api_mode,
+        api_key=args.api_key,
     )
 
     mode = "quick" if args.quick else "full"
