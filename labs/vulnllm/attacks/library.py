@@ -66,6 +66,14 @@ class AttackTechnique:
     detection_hint: str = ""         # Detection guidance for the defender
     reference: str = ""              # Gercek dunya referansi
     tags: list = field(default_factory=list)  # Ek etiketler
+    requires_infrastructure: bool = False
+    # True when the described attack targets a real RAG pipeline, vector
+    # index, embedding model, multi-tenant storage, or chunking algorithm --
+    # something a bare LLM chat endpoint has no access to at all. A scanner
+    # that only sends chat messages cannot make this attack succeed OR fail
+    # meaningfully; whatever the model replies to a prompt like "exploit the
+    # chunking algorithm" measures nothing real. Probes flagged True must be
+    # excluded from scoring rather than silently scored as pass/fail.
 
 
 class AttackLibrary:

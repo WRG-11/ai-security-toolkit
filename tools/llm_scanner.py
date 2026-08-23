@@ -232,6 +232,13 @@ class ScanReport:
     by_owasp: dict[str, dict] = field(default_factory=dict)
     by_severity: dict[str, dict] = field(default_factory=dict)
     results: list[ProbeResult] = field(default_factory=list)
+    skipped_infrastructure: int = 0
+    skipped_techniques: list[str] = field(default_factory=list)
+    # Probes that describe an attack on real RAG/CI/embedding/multi-tenant
+    # infrastructure a bare chat-completion endpoint has no access to --
+    # never sent, never scored either way. `total_probes`/`risk_score` cover
+    # only what was actually testable; this count is reported separately so
+    # a narrower scope reads as "N skipped", not as a cleaner-looking result.
 
     def to_dict(self) -> dict:
         return {
@@ -247,6 +254,8 @@ class ScanReport:
             "by_owasp": self.by_owasp,
             "by_severity": self.by_severity,
             "results": [r.to_dict() for r in self.results],
+            "skipped_infrastructure": self.skipped_infrastructure,
+            "skipped_techniques": self.skipped_techniques,
         }
 
 
@@ -523,7 +532,14 @@ class LLMScanner:
     ) -> ScanReport:
         """Run the scan."""
         all_probes = load_all_probes()
-        probes = filter_probes(all_probes, categories, severity_min, quick)
+        testable_probes = [(ch_id, tech) for ch_id, tech in all_probes if not tech.requires_infrastructure]
+        infra_probes = [(ch_id, tech) for ch_id, tech in all_probes if tech.requires_infrastructure]
+
+        probes = filter_probes(testable_probes, categories, severity_min, quick)
+        # Report skipped probes still in the requested category/severity scope
+        # (not capped by --quick -- that cap only meaningfully applies to
+        # probes that actually get sent).
+        skipped_in_scope = filter_probes(infra_probes, categories, severity_min, quick=False)
 
         results: list[ProbeResult] = []
         successful = 0
@@ -624,6 +640,8 @@ class LLMScanner:
             failed=len(probes) - successful - errors,
             errors=errors,
             risk_score=risk_score,
+            skipped_infrastructure=len(skipped_in_scope),
+            skipped_techniques=[tech.name for _, tech in skipped_in_scope],
             by_owasp=by_owasp,
             by_severity=by_severity,
             results=results,
@@ -699,6 +717,13 @@ def print_report(report: ScanReport) -> None:
     fail = report.failed
     print(f"{b}Risk Score: {rc}{report.risk_score}/100 -- {risk_label}{r}")
     print(f"{b}Total:{r} {total} probes | {rc}Successful: {succ}{r} | {COLORS['SAFE']}Defended: {fail}{r} | Errors: {report.errors}")
+    if report.skipped_infrastructure:
+        print(
+            f"{d}Skipped: {report.skipped_infrastructure} probes need real RAG/CI/embedding "
+            f"infrastructure this endpoint-only scan cannot test "
+            f"({', '.join(report.skipped_techniques[:5])}"
+            f"{', ...' if len(report.skipped_techniques) > 5 else ''}){r}"
+        )
 
     # By severity
     print(f"\n{b}By Severity:{r}")
