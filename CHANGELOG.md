@@ -7,6 +7,78 @@ not a versioned Python package. Releases are tracked by GitHub commit SHA
 rather than semantic versions. This CHANGELOG batches notable additions
 and updates by date for readability.
 
+## [0.4.0] -- 2026-09-05 -- the security fix reaches the package
+
+`0.3.0` is what `pip install wrg-ai-security-toolkit` has served since
+2026-07-30. The URL-scheme validation and localhost-binding fix landed on
+`main` on 2026-08-21 and touches three files that ship inside the
+distribution (`tools/llm_firewall.py`, `tools/llm_scanner.py`,
+`tools/prompt_injection_detector_ml.py`), so for fifteen days installing the
+package got code without it. That gap is the reason this release exists; the
+rest below had accumulated behind the same missing tag.
+
+### Fixed -- security
+
+- **URL scheme is validated before every fetch (bandit B310).** `urlopen`
+  honours `file://`, `ftp://` and custom schemes, so a URL arriving from
+  configuration is a local-file read waiting to happen. The endpoints default
+  to localhost, but they are *parameters*, and this is a security toolkit --
+  the check belongs in the code, not in a reviewer's memory. `_http_only()`
+  now guards every `Request()`; all ten call sites were verified, none
+  bypasses it.
+- **Servers bind to localhost by default (bandit B104).** Both servers
+  listened on every interface. A tool that quietly binds `0.0.0.0` turns
+  "I ran it locally" into "I exposed it to the network".
+
+### Fixed
+
+- **Container types now match the values they already held (mypy 7 -> 0).**
+  TF-IDF weights are floats but were accumulated into a bare `Counter`,
+  which is int-valued, so `+= tf*idf` and `/= n` were type errors;
+  `defaultdict(float)` is the exact equivalent and states the value type
+  honestly. `DEFAULT_CONFIG` gained `dict[str, Any]` so reads stop
+  inferring a union.
+- **Quick Start now includes the clone step.** `llm-scanner` and
+  `llm-firewall` import their attack corpus from `labs/vulnllm/`, which is
+  not packaged, so they need an editable install. Installation said so;
+  Quick Start sat above it and did not, and a reader who copied only the top
+  block got `ModuleNotFoundError`.
+
+### Added
+
+- **A live in-browser demo.** A Hugging Face *Static* Space runs the prompt
+  injection detector through Pyodide, so text pasted into a detector never
+  leaves the visitor's browser. (Gradio Spaces now require a paid plan;
+  gradio-lite would not boot -- `micropip` cannot resolve
+  `huggingface-hub<1.0,>=0.33.5`, which has no pure-Python wheel -- so
+  `index.html` drives Pyodide directly.)
+- **Repository process scaffolding**: CODEOWNERS, PR template, issue
+  templates, `FUNDING.yml`, `CITATION.cff`.
+- **CI now crosses Python versions with an OS matrix** (ubuntu / windows /
+  macos). The "stdlib only" claim had only ever been verified on one OS.
+  Advisory `mypy` and `bandit` jobs were added alongside, plus a
+  coverage-floor ratchet.
+
+### Changed
+
+- **Remaining Turkish comments and docstrings translated to English.** Two
+  passes; see the "Known gap" note below for what is deliberately still not
+  English.
+
+### Dependencies
+
+- `gradio` (huggingface-space), `github/codeql-action`,
+  `actions/checkout`, `actions/setup-python` bumps.
+
+### Known gap
+
+`labs/vulnllm/` still carries Turkish in attack payloads, challenge response
+strings and regex alternatives. The regex alternatives are deliberate -- they
+exist so Turkish-language input matches -- and the language-detection tables,
+Turkish PII fixtures (`+90` numbers, TC Kimlik) and multilingual payload sets
+are test data, not prose. The challenge *response* strings are prose and are
+not yet translated.
+
 ## [0.3.0] -- 2026-07-30 -- first PyPI release, under a name that is ours
 
 Version bumped rather than reusing 0.2.0. The `v0.2.0` tag points at `89fc5dd`,
