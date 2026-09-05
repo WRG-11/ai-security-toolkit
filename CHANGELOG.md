@@ -7,6 +7,32 @@ not a versioned Python package. Releases are tracked by GitHub commit SHA
 rather than semantic versions. This CHANGELOG batches notable additions
 and updates by date for readability.
 
+## [0.4.1] -- 2026-09-06 -- the citation the 0.4.0 tag should have carried
+
+`v0.4.0` shipped with `CITATION.cff` still naming **0.3.0**. That was corrected
+on `main` after the release, which fixes the repository but not the artefact:
+anyone citing the published `v0.4.0` tag still reads the wrong version out of
+the file whose entire job is to name it.
+
+A patch release is the only way that correction reaches the tag.
+
+### Fixed
+
+- `CITATION.cff` names 0.4.1 and is now checked mechanically against
+  `pyproject.toml`, so a release cannot leave it behind again. The check
+  compares the two versions directly rather than scanning for a leftover old
+  string -- a scan only works between a bump and a release, and goes blind
+  exactly when the tag catches up.
+
+### Note on the version bump
+
+The correcting commit was written as `fix(citation): ...`. Under conventional
+commits a `fix` implies a patch release, and the release check reads it that
+way. `docs(citation)` would have been the more accurate type for a
+metadata-only change -- but the tag really did carry wrong metadata, so the
+release is warranted on its own merits rather than only by commit-type
+convention.
+
 ## [0.4.0] -- 2026-09-05 -- the security fix reaches the package
 
 `0.3.0` is what `pip install wrg-ai-security-toolkit` has served since
