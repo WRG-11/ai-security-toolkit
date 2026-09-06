@@ -124,11 +124,13 @@ _TR_DIACRITIC_MAP = str.maketrans({
 def _normalize(text: str) -> str:
     """Lowercase + strip Turkish diacritics to their ASCII base letter.
 
-    REFUSAL_PATTERNS/DEFLECTION_PATTERNS are written in ASCII ('mumkun degil')
-    but a Turkish-speaking model replies with real diacritics ('mumkun değil')
-    -- a plain regex never matches a different Unicode codepoint, `re.IGNORECASE`
-    only affects case, not diacritics. A live scan confirmed this: 100% miss
-    rate on real Turkish refusals before this normalization existed.
+    REFUSAL_PATTERNS/DEFLECTION_PATTERNS are written with unaccented ASCII
+    letters, while a Turkish-speaking model replies using the accented forms of
+    the same words. A plain regex never matches a different Unicode codepoint,
+    and `re.IGNORECASE` folds case only, not diacritics. A live scan confirmed
+    it: a 100% miss rate on real Turkish refusals before this normalisation
+    existed. The patterns themselves stay in the constants above -- prose about
+    the code does not reproduce the corpus the code matches against.
     """
     return text.translate(_TR_DIACRITIC_MAP).lower()
 

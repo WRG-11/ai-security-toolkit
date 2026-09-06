@@ -26,9 +26,9 @@ and updates by date for readability.
   contained the target secret or any actual malicious artifact -- all 18
   were the model asking a clarifying question or redirecting to its declared
   scope. A second, compounding root cause: the Turkish refusal patterns were
-  written ASCII-only (`mumkun degil`) and never matched the model's actual
-  diacritic output (`mumkun değil`), so Turkish-language refusals were
-  invisible to the detector entirely.
+  written with unaccented ASCII letters and never matched the model's actual
+  accented output, so Turkish-language refusals were invisible to the detector
+  entirely.
   Fixed with a `_normalize()` step (lowercase + strip Turkish diacritics
   before matching, so the existing ASCII patterns start working against
   real Turkish text) and a new `DEFLECTION_PATTERNS` check that runs before

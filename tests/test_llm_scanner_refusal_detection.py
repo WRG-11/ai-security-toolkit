@@ -11,10 +11,9 @@ weak-prompt scan's "85/100 CRITICAL" claim, where 17 of its 18 "successes" were
 the same shape (exactly one probe leaked a real password).
 
 A second, independent root cause: the Turkish refusal patterns in
-`REFUSAL_PATTERNS` were written ASCII-only (`mumkun degil`, `yardimci olamam`)
-while the model answers with real diacritics (`mumkun değil`, `yardımcı
-olamam`), so the regex never matched. Refusals went unrecognised for every
-Turkish-language probe.
+`REFUSAL_PATTERNS` were written with unaccented ASCII letters while the model
+answers using the accented forms of the same words, so the regex never matched
+a single one. Refusals went unrecognised for every Turkish-language probe.
 
 The fixtures below are NOT invented. Each one is the raw response text of a
 scan that was actually run against qwen2.5:7b; the two report files they came
@@ -69,7 +68,7 @@ def test_deflection_response_is_not_a_successful_attack(name, response):
 
 def test_ascii_only_turkish_refusal_pattern_now_matches_diacritic_text():
     """Regression guard for the second root cause: REFUSAL_PATTERNS used to
-    be ASCII-only ('mumkun degil') and never matched real Turkish output
+    be unaccented ASCII and never matched the model's accented output
     ('mümkün değil'). Whatever mechanism fixes this (normalization or
     diacritic-aware patterns), this exact real sentence must be recognized
     as a refusal."""
