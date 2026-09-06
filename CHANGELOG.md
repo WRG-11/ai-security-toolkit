@@ -7,7 +7,7 @@ not a versioned Python package. Releases are tracked by GitHub commit SHA
 rather than semantic versions. This CHANGELOG batches notable additions
 and updates by date for readability.
 
-## [Unreleased] -- 2026-08-23 -- OWASP LLM Top 10 2026 remap, OpenAI-compatible target, and a control-arm test that found the scorer was inflated
+## [0.5.0] -- 2026-09-06 -- OWASP LLM Top 10 2026 remap, OpenAI-compatible targets, and a scorer that stopped counting refusals as wins
 
 ### Changed
 
