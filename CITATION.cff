@@ -7,7 +7,7 @@ authors:
 repository-code: "https://github.com/WRG-11/ai-security-toolkit"
 url: "https://pypi.org/project/wrg-ai-security-toolkit/"
 license: MIT
-version: 0.4.1
+version: 0.5.0
 date-released: "2026-09-06"
 keywords:
   - ai-security
