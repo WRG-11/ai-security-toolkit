@@ -1,19 +1,20 @@
-"""ch08_attacks.py'nin (RAG Poisoning) 15 probunun 8'i gercek bir RAG
-altyapisi (vector DB, embedding modeli, chunking algoritmasi, multi-tenant
-izolasyon) gerektiriyor -- payload'lari LLM'e "embedding collision olustur",
-"chunking algoritmasini exploit et" gibi dogal-dil talimatlar gonderiyor.
+"""Eight of `ch08_attacks.py`'s fifteen RAG-poisoning probes need real RAG
+infrastructure -- a vector database, an embedding model, a chunking
+algorithm, multi-tenant isolation. Their payloads send the LLM natural-language
+instructions such as "create an embedding collision" or "exploit the chunking
+algorithm".
 
-llm_scanner.py yalnizca ciplak bir chat-completion endpoint'ine konusuyor,
-hicbir gercek altyapiya erisimi yok -- bu yuzden model bu talimatlari
-GERCEKTEN yerine getiremez, yalniz yapiyormus gibi konusabilir. Onceki
-check_success() duzeltmesinden SONRA bile bu probler anlamli bir
-basari/savunma sonucu URETEMEZ: hangi cevabi verirse versin, hicbir gercek
-RAG pipeline'i test edilmis olmuyor.
+`llm_scanner.py` only ever talks to a bare chat-completion endpoint and reaches
+none of that infrastructure, so the model cannot actually carry those
+instructions out -- it can only describe doing so. Even after the
+`check_success()` fix, these probes cannot produce a meaningful
+success/defence verdict: whatever the model answers, no real RAG pipeline was
+tested.
 
-Bu dosya, AttackTechnique'e eklenen requires_infrastructure alaninin
-scan() dongusunde gercekten cikarildigini ve risk_score'u SESSIZCE
-etkilemeden ayri, gorunur bir sayacta raporlandigini dogrular -- kirpma
-sessiz olamaz (bkz. CLAUDE.md "no silent caps").
+This file verifies that the `requires_infrastructure` field added to
+`AttackTechnique` is genuinely excluded by the `scan()` loop, and that the
+exclusion is reported in its own visible counter rather than silently moving
+`risk_score` -- a cap that cannot be seen is a cap that lies.
 """
 from __future__ import annotations
 
