@@ -7,6 +7,54 @@ not a versioned Python package. Releases are tracked by GitHub commit SHA
 rather than semantic versions. This CHANGELOG batches notable additions
 and updates by date for readability.
 
+## [Unreleased] -- 2026-08-23 -- OWASP LLM Top 10 2026 remap, OpenAI-compatible target, and a control-arm test that found the scorer was inflated
+
+### Changed
+
+- `tools/llm_scanner.py`: `OWASP_MAP`/`OWASP_NAMES` remapped to the OWASP Top
+  10 for LLM Applications 2026 edition (released 2026-08-04), re-derived from
+  each chapter's actual content rather than relabeled -- e.g. `ch06`
+  (Excessive Agency) now correctly points at `LLM03`, not the old `LLM06`.
+- `tools/llm_scanner.py`: `check_success()` used to mark any response over
+  100 characters as a successful attack unless it contained one of 8
+  hardcoded English/Turkish refusal words -- a live control-arm test (scan
+  the same model through a deliberately hardened, well-engineered system
+  prompt and see if the risk score actually drops) instead found the score
+  going *up* (85 -> 94/100) because the hardened prompt made the model's
+  polite customer-support redirects longer and less likely to contain those
+  exact 8 words. Inspecting all 18 "successes" from that run: none of them
+  contained the target secret or any actual malicious artifact -- all 18
+  were the model asking a clarifying question or redirecting to its declared
+  scope. A second, compounding root cause: the Turkish refusal patterns were
+  written with unaccented ASCII letters and never matched the model's actual
+  accented output, so Turkish-language refusals were invisible to the detector
+  entirely.
+  Fixed with a `_normalize()` step (lowercase + strip Turkish diacritics
+  before matching, so the existing ASCII patterns start working against
+  real Turkish text) and a new `DEFLECTION_PATTERNS` check that runs before
+  the "any long non-refusal response is a success" fallback. Re-scoring the
+  same two runs after the fix: weak system prompt 85 -> **51/100** (10/20,
+  most now genuinely contain leaked content or a produced malicious
+  artifact, checked by hand), hardened system prompt 94 -> **9/100** (2/20,
+  both borderline). The scorer now moves in the right direction between a
+  weak and a hardened target, which it did not before.
+  TDD: `tests/test_llm_scanner_refusal_detection.py`, 15 new tests built
+  from the real captured response text of that live run (not synthetic),
+  mutation-checked (reverted the fix, confirmed all 13 relevant tests go
+  red, reapplied). One known, explicitly `xfail`-marked gap remains:
+  category-specific positive-artifact detection (e.g. a RAG-poisoning probe
+  where the model declines by restating its own correct policy instead of
+  asking a question) is not covered by this pass.
+- `tools/llm_scanner.py`: added `--api-mode {ollama,openai}` and `--api-key`
+  so the scanner can target any OpenAI-compatible `/chat/completions`
+  endpoint, not just a local Ollama instance -- previously the wire format
+  was hardcoded to Ollama's native `/api/chat`. Backward compatible: no flag
+  given behaves exactly as before. Live-verified by pointing both code paths
+  at the same local `qwen2.5:7b` model through Ollama's own OpenAI-compatible
+  endpoint (proves the new path is genuinely endpoint-agnostic, not a
+  relabeled copy of the Ollama-specific one).
+  TDD: `tests/test_llm_scanner_target.py`, 6 new tests, all HTTP mocked.
+
 ## [0.4.1] -- 2026-09-06 -- the citation the 0.4.0 tag should have carried
 
 `v0.4.0` shipped with `CITATION.cff` still naming **0.3.0**. That was corrected

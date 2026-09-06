@@ -62,6 +62,7 @@ CH08_ATTACKS: list[AttackTechnique] = [
         explanation="Forcing RAG to retrieve the poisoned document by creating a collision in embedding space.",
         atlas_id="AML.T0020",
         reference="Embedding space collision attacks",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Retrieval Poisoning via Indirect Injection",
@@ -79,6 +80,7 @@ CH08_ATTACKS: list[AttackTechnique] = [
         severity="HIGH", target_difficulty="medium",
         explanation="Bypassing access control by forging the source attribution.",
         atlas_id="AML.T0020",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Timestamp Manipulation",
@@ -87,6 +89,7 @@ CH08_ATTACKS: list[AttackTechnique] = [
         severity="MEDIUM", target_difficulty="medium",
         explanation="Exploiting recency bias by manipulating the timestamp.",
         atlas_id="AML.T0020",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Multi-Chunk Injection",
@@ -103,6 +106,7 @@ CH08_ATTACKS: list[AttackTechnique] = [
         severity="MEDIUM", target_difficulty="medium",
         explanation="Inflate the retrieval score artificially through keyword stuffing.",
         atlas_id="AML.T0020",
+        requires_infrastructure=True,
     ),
 
     # HARD (4)
@@ -113,6 +117,7 @@ CH08_ATTACKS: list[AttackTechnique] = [
         severity="CRITICAL", target_difficulty="hard",
         explanation="Poisoning another organisation's RAG by bypassing tenant isolation.",
         atlas_id="AML.T0020",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Embedding Backdoor",
@@ -121,6 +126,7 @@ CH08_ATTACKS: list[AttackTechnique] = [
         severity="CRITICAL", target_difficulty="hard",
         explanation="A backdoor at the embedding-model level -- it manipulates retrieval results permanently.",
         atlas_id="AML.T0020",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Gradual Knowledge Drift",
@@ -129,6 +135,7 @@ CH08_ATTACKS: list[AttackTechnique] = [
         severity="HIGH", target_difficulty="hard",
         explanation="Gradual rather than sudden poisoning -- staying under anomaly detection.",
         atlas_id="AML.T0020",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Adversarial Chunking Exploit",
@@ -137,5 +144,6 @@ CH08_ATTACKS: list[AttackTechnique] = [
         severity="CRITICAL", target_difficulty="hard",
         explanation="Evading per-chunk analysis by exploiting a weakness in the chunking algorithm.",
         atlas_id="AML.T0020",
+        requires_infrastructure=True,
     ),
 ]

@@ -218,5 +218,6 @@ CH02_ATTACKS: list[AttackTechnique] = [
         explanation="Reconstructing training data through nearest-neighbour queries in embedding space.",
         atlas_id="AML.T0024",
         reference="Model inversion attacks via embeddings",
+        requires_infrastructure=True,
     ),
 ]

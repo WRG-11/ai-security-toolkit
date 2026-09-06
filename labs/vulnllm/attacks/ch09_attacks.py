@@ -105,6 +105,7 @@ CH09_ATTACKS: list[AttackTechnique] = [
         severity="CRITICAL", target_difficulty="hard",
         explanation="Cascading misinformation: turning fabricated information into a durable document.",
         atlas_id="AML.T0048.005",
+        requires_infrastructure=True,
     ),
     AttackTechnique(
         name="Cross-Model Verification Bypass",
