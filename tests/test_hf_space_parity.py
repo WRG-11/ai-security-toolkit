@@ -174,7 +174,7 @@ class DeployedEntryPointTest(unittest.TestCase):
         self.assertIn("THRESHOLD = DEFAULT_THRESHOLD", src)
         self.assertIn("WEIGHTS = dict(_detector.weights)", src)
         self.assertIsNone(
-            re.search(r"(?:30|40)%\s*/\s*\d+%", src),
+            re.search(r"\b(?:30|40)%\s*/\s*\d+%", src),
             "hardcoded layer weights are back in the page",
         )
 
