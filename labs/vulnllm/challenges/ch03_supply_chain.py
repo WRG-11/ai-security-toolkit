@@ -9,7 +9,9 @@ from .base import BaseChallenge
 class SupplyChainChallenge(BaseChallenge):
     id = 3
     name = "Supply Chain Vulnerabilities"
-    owasp_id = "LLM03"
+    # OWASP LLM Top 10 2026: Supply Chain moved from LLM03 to LLM04, matching
+    # tools/llm_scanner.py's OWASP_MAP.
+    owasp_id = "LLM04"
     description = "Get into the system through a malicious model, package or plugin."
     objective = "Achieve code execution through a pickle exploit or typosquatting."
     secrets = {"exploit_key": "SUPPLY-CHAIN-PWNED"}

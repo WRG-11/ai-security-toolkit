@@ -9,7 +9,9 @@ from .base import BaseChallenge
 class DataPoisoningChallenge(BaseChallenge):
     id = 4
     name = "Data and Model Poisoning"
-    owasp_id = "LLM04"
+    # OWASP LLM Top 10 2026: Data and Model Poisoning moved from LLM04 to
+    # LLM05, matching tools/llm_scanner.py's OWASP_MAP.
+    owasp_id = "LLM05"
     description = "Egitim verisini zehirleyerek modelin davranisini degistirin."
     objective = "Manipulate the model with a backdoor trigger, or flip its labels."
     secrets = {"backdoor_trigger": "SUDO-OVERRIDE", "poisoned_output": "BACKDOOR-ACTIVATED"}

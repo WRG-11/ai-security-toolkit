@@ -10,7 +10,9 @@ from .base import BaseChallenge
 class UnboundedConsumptionChallenge(BaseChallenge):
     id = 10
     name = "Unbounded Consumption"
-    owasp_id = "LLM10"
+    # OWASP LLM Top 10 2026: Unbounded Consumption moved from LLM10 to
+    # LLM06, matching tools/llm_scanner.py's OWASP_MAP.
+    owasp_id = "LLM06"
     description = "Mount a DoS/DoW attack on a system that does not bound API resource consumption."
     objective = "Bring down a system with no rate limit, token budget or timeout -- or drain its wallet."
     secrets = {"max_cost": "$10,000+"}

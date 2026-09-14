@@ -582,7 +582,7 @@ def main():
         return
 
     print(f"\n{C_MAGENTA}{C_BOLD}  VulnLLM -- defense modules demo{C_RESET}")
-    print(f"{C_DIM}  15 modules, a comprehensive test suite (21 guards){C_RESET}")
+    print(f"{C_DIM}  15 modules, a comprehensive test suite (27 guards){C_RESET}")
 
     test_prompt_injection_classifier()
     test_pii_scanner()
