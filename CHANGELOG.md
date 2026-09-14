@@ -63,6 +63,41 @@ and updates by date for readability.
   3); the two hand-written doc surfaces updated again. 4 new tests,
   red-first.
 
+### Fixed (labs/vulnllm, cross-tool consistency + crashes)
+
+- Two labs/vulnllm CLI entrypoints (`vulnllm.py`, `defense_demo.py`) crashed
+  on a narrow-encoding (e.g. Windows cp1254) console -- unlike all three
+  `tools/*.py` CLIs, neither called `tools/_console.make_output_safe()`.
+  `vulnllm.py`'s box-drawing ASCII-art banner hit this on every invocation,
+  including the README's own Quick Start (`python vulnllm.py`). Fixed both.
+- `defense_demo.py`'s `test_llm_judge()` crashed with a plain
+  `AssertionError` whenever Ollama was unreachable (the common case for
+  anyone trying the demo without Ollama installed): it asserted the OLD
+  fail-open default, but `LLMAsJudge`'s own docstring says "fail-open is
+  unacceptable" for a security control and its real default fails closed.
+  Fixed the assertion and messaging to demonstrate the actual, correct
+  behavior. 3 new tests (narrow-console regression, matching the existing
+  `tools/` coverage).
+- The 10 challenge classes' hardcoded `owasp_id` fields used a simple
+  chapter-number correspondence (ch06=LLM06) that had never been updated
+  after `tools/llm_scanner.py`'s `OWASP_MAP` was remapped to the OWASP 2026
+  edition -- the same repo reported two different OWASP IDs for the same
+  attack category (e.g. Excessive Agency: LLM03 from the scanner, LLM06
+  from the lab) depending on which tool you asked. Unified to the scanner's
+  mapping across all 8 affected challenges.
+- `labs/vulnllm/README.md` rewritten with re-verified numbers: "21 Defense
+  Modules" corrected to 27 (this file was never covered by
+  `readme_stamp.py`'s stamping, so it drifted six behind with no gate to
+  catch it); the broken Quick Start command (`--backend ollama --model
+  llama3`, neither flag exists) replaced with commands checked against
+  real `--help` output; the OWASP Mapping table (previously 6 of 10 rows,
+  pre-remap naming) replaced with all 10; the unsourced "99% (192/194)"
+  block-rate claim replaced with a full difficulty sweep (142, 25, 5,
+  0 attacks succeeded of 194 at easy/medium/hard/expert) with its exact
+  reproducing command.
+- Housekeeping: `labs/vulnllm/reports/` (JSON reports the CLI writes) added
+  to `.gitignore` -- every run of the documented example left untracked files.
+
 ### Fixed (docs, security-relevant)
 
 - `FirewallConfig.action`'s `--action` CLI help text said only "Detection
