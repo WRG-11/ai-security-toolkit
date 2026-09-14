@@ -136,7 +136,7 @@ class AnomalyFilter(OutputGuard):
 
 
 class PackageVerifier(OutputGuard):
-    """Bilinmeyen paket isimlerini isaretlen."""
+    """Flags unknown/unverified package names."""
     name = "PackageVerifier"
 
     KNOWN_PACKAGES = {

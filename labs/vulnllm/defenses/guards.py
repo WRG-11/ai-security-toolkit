@@ -370,7 +370,7 @@ class CanarySystem(OutputGuard):
 
 class SlidingWindowRateLimiter(InputGuard):
     """
-    Token bazli sliding window rate limiter.
+    Token-based sliding window rate limiter.
     Tracks both the request count and token consumption.
     """
     name = "SlidingWindowRateLimiter"
