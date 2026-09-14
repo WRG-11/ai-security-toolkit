@@ -27,6 +27,23 @@ and updates by date for readability.
   is also closed, redacting on that path too. 4 new tests total, red-first,
   mutation-checked.
 
+### Fixed (security, third finding)
+
+- `tools/llm_firewall.py`'s `OUTPUT_GUARD_REGISTRY` never listed
+  `SimilarityChecker` (compares LLM output against the system prompt to
+  catch leakage) -- exported from `defenses/__init__.py` and actively used
+  by `labs/vulnllm/challenges/base.py` and `defense_demo.py`, but a firewall
+  config naming it in `output_guards` silently fell through the
+  unknown-guard branch. Third instance of the "registered but not wired"
+  gap `test_ai_l2_01_firewall_registry_wireup.py` already fixed once for
+  `MultiTurnTracker`/`SlidingWindowRateLimiter`. Wiring it in also required
+  calling `.set_reference(system_prompt)` on construction -- without it,
+  the guard's own `check()` is a permanent no-op. Kept opt-in, matching the
+  other two guards' precedent. Updated the two hand-written "12 registered,
+  2 opt-in" doc surfaces (not README metric markers, so
+  `readme_stamp.py` cannot catch this class of drift) to "13 registered,
+  3 opt-in". 4 new tests, red-first.
+
 ### Fixed (i18n)
 
 - A consistent minority of `GuardResult.reason`/`issues.append()` messages
