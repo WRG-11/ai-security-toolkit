@@ -166,18 +166,37 @@ class ToolCallValidator(OutputGuard):
         )
 
     def sanitize(self, text: str, context: dict | None = None) -> str:
-        """Redact dangerous code blocks."""
+        """Redact dangerous code blocks and inline code spans.
+
+        check() scans both fenced (```...```) and inline (`...`) code --
+        _extract_code_blocks() returns both. sanitize() used to strip only
+        fenced blocks, so a dangerous command written as inline code (a
+        natural way for a model to render a one-line shell suggestion) was
+        reported blocked=True and then shipped to the caller completely
+        unredacted.
+        """
         result = self.check(text, context)
         if not result.blocked:
             return text
 
         categories = result.details.get("categories", [])
         cat_str = ", ".join(categories)
-        # Strip the code blocks
-        sanitized = re.sub(
-            r"```[\w]*\n?.*?```",
-            f"[CODE BLOCKED — {cat_str}]",
-            text,
-            flags=re.DOTALL,
-        )
+        marker = f"[CODE BLOCKED — {cat_str}]"
+
+        # Fenced blocks: redact the whole block outright.
+        sanitized = re.sub(r"```[\w]*\n?.*?```", marker, text, flags=re.DOTALL)
+
+        # Inline spans: redact only the ones that themselves contain a
+        # flagged, non-allowlisted pattern, so an unrelated safe inline
+        # snippet like `print(x)` in the same message is left alone.
+        def _redact_inline(m: re.Match) -> str:
+            inner = m.group(1)
+            for patterns in self._compiled.values():
+                for pattern, _severity, _desc in patterns:
+                    for match in pattern.finditer(inner):
+                        if not self._is_allowed(match.group()):
+                            return marker
+            return m.group(0)
+
+        sanitized = re.sub(r"`([^`]+)`", _redact_inline, sanitized)
         return sanitized
