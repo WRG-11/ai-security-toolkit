@@ -7,7 +7,21 @@ not a versioned Python package. Releases are tracked by GitHub commit SHA
 rather than semantic versions. This CHANGELOG batches notable additions
 and updates by date for readability.
 
-## [Unreleased] -- 2026-09-14 -- Residual-Turkish cleanup, a silent except narrowed, an env-var API key, and two stale CI comments corrected
+## [Unreleased] -- 2026-09-14 -- A fail-open firewall bug closed, an env-var API key, a coverage-floor ratchet, and cleanup
+
+### Fixed (security)
+
+- `tools/llm_firewall.py`'s `LLMFirewall.check_input`/`check_output` caught a
+  guard's exception as `blocked=False` -- fail-open. If a crafted input
+  happened to also crash the one guard that would have caught it, the input
+  passed through as if that guard had found nothing wrong. This was the
+  unfixed other half of a bug `tests/test_ai_cp_01_02_orchestrator_fail_closed.py`
+  had already fixed once in `labs/vulnllm/defenses/orchestrator.py` -- that
+  test's own docstring names this file as the half left standing ("Any
+  exception bubbled to llm_firewall which caught it as blocked=False --
+  double fail-open chain"). `check_input` now treats a guard exception as
+  `blocked=True`; `check_output` now redacts the response outright instead
+  of leaving unguarded text in place. 3 new tests, red-first, mutation-checked.
 
 ### Added
 
