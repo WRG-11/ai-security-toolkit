@@ -27,6 +27,19 @@ and updates by date for readability.
   is also closed, redacting on that path too. 4 new tests total, red-first,
   mutation-checked.
 
+### Fixed (i18n)
+
+- A consistent minority of `GuardResult.reason`/`issues.append()` messages
+  across the input/output guards were still Turkish (rate limiter, prompt
+  leakage detector, instruction hierarchy guard, language detector, Unicode
+  normalizer, multi-turn tracker, slopsquatting guard) while most were
+  already English -- these are operator-facing diagnostic text (audit log,
+  `--check` output), not the toolkit's intentional multilingual attack
+  corpus, so the same translate-prose-not-data rule applies. Also fixed a
+  `%{ratio*100:.0f}` formatting artefact (percent sign before the number)
+  found while touching `language_detector.py`, and ~10 more leftover
+  Turkish comments/docstrings this session's earlier sweep missed.
+
 ### Added
 
 - `tools/llm_scanner.py --api-key-env VAR`: reads the `--api-mode openai`
