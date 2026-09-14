@@ -51,6 +51,12 @@ and updates by date for readability.
   typeshed as `Dict[K, int]` regardless of what it holds) that
   `fix(types)` already fixed on 2026-08-21. Re-measured 2026-09-14:
   `mypy tools/ --ignore-missing-imports` exits clean. Comment rewritten.
+- `.coveragerc`'s `fail_under` floor had drifted below the measured coverage
+  twice before, by this file's own account (30 vs a real 51%, then 45 vs a
+  real 53%, each time ratcheted back up after the gap was noticed). Measured
+  2026-09-14: 56%, a 6-point gap from the floor of 50 -- the same drift
+  starting again. Ratcheted to 53, holding the file's own established
+  3-point margin.
 
 ## [0.5.0] -- 2026-09-06 -- OWASP LLM Top 10 2026 remap, OpenAI-compatible targets, and a scorer that stopped counting refusals as wins
 
