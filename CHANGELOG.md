@@ -63,6 +63,20 @@ and updates by date for readability.
   3); the two hand-written doc surfaces updated again. 4 new tests,
   red-first.
 
+### Fixed (OWASP 2026 remap consistency, second pass)
+
+- Reading the last two previously-unread files
+  (`tools/prompt_injection_detector.py`, `huggingface-space/app.py`) plus a
+  targeted repo-wide `git grep` for "LLM0N" turned up four more instances of
+  the same pre-2026-remap chapter-number correspondence already fixed for
+  `labs/vulnllm/`'s challenge classes: `huggingface-space/app.py`'s About
+  section ("LLM07 (system prompt leakage)" -> LLM08);
+  `tools/README.md`'s own scanner-coverage list (four of ten rows wrong
+  against the scanner's own `OWASP_NAMES`); `labs/rag-security/vulnerable_rag.py`'s
+  scenario 3 OWASP tag; and `labs/vulnllm/defenses/hallucination_detector.py`
+  + `tool_validator.py`'s module-docstring OWASP references (LLM09 ->
+  LLM07 for Misinformation, LLM06 -> LLM03 for Excessive Agency).
+
 ### Fixed (test suite, dead probe)
 
 - `tests/test_smoke_imports.py`'s `_HAS_V01_DETECTOR` checked
