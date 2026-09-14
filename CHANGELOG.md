@@ -63,6 +63,21 @@ and updates by date for readability.
   3); the two hand-written doc surfaces updated again. 4 new tests,
   red-first.
 
+### Fixed (docs, security-relevant)
+
+- `FirewallConfig.action`'s `--action` CLI help text said only "Detection
+  action (default: block)" for choices `block`/`log`/`warn` -- in security
+  tooling "warn"/"log" conventionally mean "flag it but let it through".
+  Traced the code: all three modes reject flagged input identically;
+  `action` only controls whether `check_input()` stops at the first
+  flagging guard (`block`) or checks every remaining one (`log`/`warn`) for
+  a fuller audit trail. No test asserted either reading before this, so
+  left the actual blocking behavior alone (changing a security control's
+  semantics based on which reading of an ambiguous flag "should" be true
+  is not this session's call to make) and fixed what is verifiably true:
+  the help text, the config field comment, and the `check_input()` break
+  comment. 3 new tests lock in the current, now-documented behavior.
+
 ### Fixed (i18n)
 
 - A consistent minority of `GuardResult.reason`/`issues.append()` messages
