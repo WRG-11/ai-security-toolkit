@@ -92,14 +92,13 @@ jobs:
       - run: ruff check .
 
   mypy:
-    # Advisory, not a gate. Measured 2026-08-03: 7 real findings in
-    # tools/, all the same shape -- Counter() is typed by typeshed as
-    # Dict[K, int] regardless of what you put in it, and
-    # prompt_injection_detector_ml.py accumulates float TF-IDF scores in one.
-    # Runs correctly (Python does not enforce this at runtime); it is a type
-    # annotation mismatch, not a demonstrated functional bug, and fixing it
-    # right means widening the annotation across the class rather than
-    # silencing each line -- a maintainer call, not this job's to force.
+    # Advisory, not a gate. The 7 findings measured here on 2026-08-03 (all
+    # the same shape -- Counter() typed by typeshed as Dict[K, int]
+    # regardless of what you put in it, while prompt_injection_detector_ml.py
+    # accumulated float TF-IDF scores in one) were fixed in
+    # fix(types) 2026-08-21: the containers now carry the types their values
+    # already had. Re-measured 2026-09-14: `mypy tools/ --ignore-missing-imports`
+    # exits clean (0 errors, 7 source files).
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:

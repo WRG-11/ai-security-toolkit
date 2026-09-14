@@ -7,7 +7,20 @@ not a versioned Python package. Releases are tracked by GitHub commit SHA
 rather than semantic versions. This CHANGELOG batches notable additions
 and updates by date for readability.
 
-## [Unreleased] -- 2026-09-14 -- Residual-Turkish cleanup, a silent except narrowed, and a stale CI comment corrected
+## [Unreleased] -- 2026-09-14 -- Residual-Turkish cleanup, a silent except narrowed, an env-var API key, and two stale CI comments corrected
+
+### Added
+
+- `tools/llm_scanner.py --api-key-env VAR`: reads the `--api-mode openai`
+  bearer token from an environment variable instead of taking it literally on
+  the command line, where it lands in shell history and is visible to any
+  other user on the box via `ps`/the process list for as long as the scan
+  runs. Mutually exclusive with `--api-key` (both still exist; `--api-key`'s
+  help text now points at the env-var form). Resolution logic lives in a
+  standalone `resolve_api_key()` so it is unit-testable without argparse or a
+  network call; covered in `tests/test_llm_scanner_api_key_env.py` (6 tests,
+  mutation-checked: reverting the fail-on-missing-env-var behavior turns 2 of
+  them red).
 
 ### Fixed
 
@@ -33,6 +46,11 @@ and updates by date for readability.
   `7c1bbfc3` already fixed on 2026-08-21. Re-measured at the job's own `-ll`
   threshold: zero medium+ severity findings remain. Comment rewritten to
   reflect the current, re-verified state instead of the stale one.
+- `.github/workflows/ci.yml`'s advisory mypy job carried a companion comment,
+  also dated 2026-08-03, naming "7 real findings" (`Counter()` typed by
+  typeshed as `Dict[K, int]` regardless of what it holds) that
+  `fix(types)` already fixed on 2026-08-21. Re-measured 2026-09-14:
+  `mypy tools/ --ignore-missing-imports` exits clean. Comment rewritten.
 
 ## [0.5.0] -- 2026-09-06 -- OWASP LLM Top 10 2026 remap, OpenAI-compatible targets, and a scorer that stopped counting refusals as wins
 

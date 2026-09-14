@@ -29,7 +29,7 @@ Written from scratch with zero dependencies (Python stdlib only) -- LLM red team
 | **Dependencies** | None (stdlib only) | Ollama | None (stdlib only) |
 | **Modes** | CLI, interactive, HTTP server, file | CLI, JSON report | CLI, interactive, HTTP proxy |
 | **Output** | Risk score + threat breakdown | OWASP-mapped report | Block/allow + audit log |
-| **Lines** | <!-- METRIC:lines_ml -->1251<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->924<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->949<!-- /METRIC:lines_firewall --> |
+| **Lines** | <!-- METRIC:lines_ml -->1251<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->953<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->949<!-- /METRIC:lines_firewall --> |
 
 **All three need the repository checkout.** They import the attack corpus and
 guard implementations from `labs/vulnllm/`, which is deliberately not packaged.
@@ -109,6 +109,12 @@ python llm_scanner.py llama3.2:3b --ollama-url http://localhost:11434
 
 # List all probes (no model needed)
 python llm_scanner.py --list-probes
+
+# Target an OpenAI-compatible endpoint, reading the bearer token from an
+# environment variable instead of the command line (--api-key still works,
+# but a literal secret in argv lands in shell history and `ps` output)
+python llm_scanner.py gpt-4o-mini --api-mode openai \
+    --ollama-url https://api.openai.com/v1 --api-key-env OPENAI_API_KEY
 ```
 
 **Coverage:**
