@@ -301,7 +301,21 @@ class LLMFirewall:
                 # rather than collapsing into the 'default' bucket.
                 result = guard.check(text, context)
             except Exception as e:
-                result = GuardResult(blocked=False, reason=f"Guard error: {e}", guard_name=getattr(guard, 'name', '?'))
+                # Fail-closed: a guard that crashes gives no assurance the
+                # input is safe, so this counts as a block rather than a
+                # silent pass. Mirrors labs/vulnllm/defenses/orchestrator.py's
+                # fix for the same failure mode -- that fix's own test
+                # docstring names this exact spot as the unfixed other half
+                # of a "double fail-open chain" (a guard exception here used
+                # to be absorbed as blocked=False).
+                name = getattr(guard, 'name', '?')
+                result = GuardResult(
+                    blocked=True,
+                    reason=f"{name} internal error ({type(e).__name__}): {e}; fail-closed",
+                    score=1.0,
+                    guard_name=name,
+                    details={"error": str(e), "error_type": type(e).__name__},
+                )
 
             results.append(result)
             self._audit.log("input_check", getattr(guard, 'name', '?'), result, input_text=text)
@@ -341,7 +355,27 @@ class LLMFirewall:
             try:
                 result = guard.check(sanitized, context)
             except Exception as e:
-                result = GuardResult(blocked=False, reason=f"Guard error: {e}", guard_name=getattr(guard, 'name', '?'))
+                # Fail-closed: redact outright rather than pass the text
+                # through unguarded. Do not call this same guard's
+                # .sanitize() below on text it just failed to .check() --
+                # a guard broken enough to raise on check() is not a guard
+                # whose sanitize() output can be trusted either. Mirrors
+                # orchestrator.py's check_output fix for the identical
+                # failure mode.
+                name = getattr(guard, 'name', '?')
+                has_issues = True
+                sanitized = "[RESPONSE_REDACTED_GUARD_ERROR]"
+                result = GuardResult(
+                    blocked=True,
+                    reason=f"{name} internal error ({type(e).__name__}): {e}; fail-closed",
+                    score=1.0,
+                    guard_name=name,
+                    details={"error": str(e), "error_type": type(e).__name__},
+                )
+                results.append(result)
+                self._audit.log("output_check", name, result, output_text=sanitized)
+                self._log_event("output", "block", name, result.score, result.reason, text)
+                continue
 
             results.append(result)
             self._audit.log("output_check", getattr(guard, 'name', '?'), result, output_text=sanitized)
