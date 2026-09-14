@@ -63,6 +63,20 @@ and updates by date for readability.
   3); the two hand-written doc surfaces updated again. 4 new tests,
   red-first.
 
+### Fixed (test suite, dead probe)
+
+- `tests/test_smoke_imports.py`'s `_HAS_V01_DETECTOR` checked
+  `labs/vulnllm/prompt_injection_detector.py` -- a path that has never
+  existed; the v0.1 regex detector has always lived at
+  `tools/prompt_injection_detector.py`. Since the guarded path was
+  always `False`, `test_prompt_injection_detector_ml` was `SKIPPED` in
+  every run since this file was added, never once actually exercising
+  the import it exists to guard. Fixed the path; the test now runs and
+  passes. Also translated two leftover Turkish docstrings in
+  `tests/test_wheel_install.py` found in the same pass. This closes the
+  full-repo audit requested this session: every `.py` file (93 total)
+  and documentation surface has now been read in full.
+
 ### Fixed (i18n, full-repo audit completion)
 
 - Read every remaining source file not yet covered by this branch's
