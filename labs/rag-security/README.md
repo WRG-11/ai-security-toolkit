@@ -35,18 +35,23 @@ Response (potentially leaking confidential data)
 
 ## Documents / Dokümanlar
 
-| Document | Classification | Content |
+The 9 documents actually loaded by `COMPANY_DOCUMENTS` in
+[`vulnerable_rag.py`](vulnerable_rag.py) (`python -c "import ast; t=ast.parse(open('vulnerable_rag.py').read()); print(len([n for n in ast.walk(t) if isinstance(n, ast.Assign) and getattr(n.targets[0], 'id', '')=='COMPANY_DOCUMENTS'][0].value.elts))"`
+to recount). This table previously listed 10 different, unrelated filenames
+(`company_overview.md`, `salary_structure.md`, `merger_plans.md`,
+`client_database.md`, ...) that do not exist anywhere in this lab's code.
+
+| Document ID | Classification | Content |
 |----------|---------------|---------|
-| company_overview.md | PUBLIC | General company info |
-| product_catalog.md | PUBLIC | Product listings |
-| employee_handbook.md | INTERNAL | HR policies |
-| salary_structure.md | INTERNAL | Compensation data |
-| merger_plans.md | CONFIDENTIAL | M&A strategy |
-| client_database.md | CONFIDENTIAL | Client PII |
-| security_audit.md | CONFIDENTIAL | Vulnerability findings |
-| api_keys.md | TOP SECRET | API credentials |
-| poisoned_faq.md | POISONED | Injected malicious content |
-| poisoned_policy.md | POISONED | Injected override instructions |
+| `doc_about` | public | Company overview (founding, HQ, headcount) |
+| `doc_products` | public | Product listings (AcmeCloud, AcmeData, AcmeAI) |
+| `doc_policy` | internal | Remote work policy, internal VPN endpoint |
+| `doc_employees` | confidential | Employee directory with named salaries |
+| `doc_credentials` | top_secret | AWS root account, DB password, API/K8s tokens |
+| `doc_security` | confidential | Security incident report (phishing, compromised accounts) |
+| `doc_financial` | confidential | Q4 financial summary, unannounced funding round |
+| `doc_poisoned_1` | internal (poisoned) | Injected instruction demanding the user's employee ID/email |
+| `doc_poisoned_2` | internal (poisoned) | Injected instruction to leak a hardcoded "master reset token" |
 
 ## Attack Scenarios
 

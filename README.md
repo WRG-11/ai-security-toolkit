@@ -225,7 +225,7 @@ actually run against each platform.
 |---|---|
 | Gandalf | [`gandalf_solver.py`](ctf-writeups/gandalf/gandalf_solver.py) — automated API solver, multiple extraction techniques |
 | Agent ODIN | [`solver.py`](ctf-writeups/agent-odin/solver.py), [`solver_m2.py`](ctf-writeups/agent-odin/solver_m2.py), [`solver_m3.py`](ctf-writeups/agent-odin/solver_m3.py) — one per mission |
-| Prompt Airlines | [`membership_card.png`](ctf-writeups/prompt-airlines/membership_card.png) — the crafted vision-injection image from Ch4 |
+| Prompt Airlines | [`membership_card.png`](ctf-writeups/prompt-airlines/membership_card.png) (benign-looking cover) + [`membership_card_v3.png`](ctf-writeups/prompt-airlines/membership_card_v3.png) (the actual injection payload rendered into the image) from Ch4 |
 
 [Scoreboard and technique index →](ctf-writeups/)
 
