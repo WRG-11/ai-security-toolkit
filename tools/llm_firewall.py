@@ -56,6 +56,10 @@ from defenses import (
     # adding them here closes the consumer gap.
     MultiTurnTracker,
     SlidingWindowRateLimiter,
+    # Same gap on the output side -- exported from defenses/__init__.py and
+    # actively used by labs/vulnllm/challenges/base.py and defense_demo.py,
+    # but absent from OUTPUT_GUARD_REGISTRY below.
+    SimilarityChecker,
 )
 
 # ═══════════════════════════════════════════════════════════
@@ -84,6 +88,14 @@ OUTPUT_GUARD_REGISTRY: dict[str, type] = {
     "OutputSanitizer": OutputSanitizer,
     "ContentPolicyEngine": ContentPolicyEngine,
     "HallucinationDetector": HallucinationDetector,
+    # Opt-in via config — not added to DEFAULT_CONFIG.output_guards because
+    # its check() is a permanent no-op until .set_reference() is called
+    # (guards.py: `if not self.reference_ngrams: return GuardResult(...)`,
+    # blocked defaults to False). _build_pipeline wires the configured
+    # system_prompt into it below; a firewall someone did not ask to
+    # change behavior for should not suddenly start comparing output
+    # against the default system_prompt.
+    "SimilarityChecker": SimilarityChecker,
 }
 
 # ═══════════════════════════════════════════════════════════
@@ -266,6 +278,13 @@ class LLMFirewall:
                     guard = cls()
             else:
                 guard = cls()
+            # Duck-typed rather than an isinstance check on SimilarityChecker
+            # specifically, matching this file's existing getattr(guard,
+            # 'name', '?') style: any output guard that exposes
+            # set_reference() wants the configured system prompt, not just
+            # this one.
+            if hasattr(guard, "set_reference") and self.config.system_prompt:
+                guard.set_reference(self.config.system_prompt)
             self._output_guards.append(guard)
 
     def check_input(

@@ -29,7 +29,7 @@ Written from scratch with zero dependencies (Python stdlib only) -- LLM red team
 | **Dependencies** | None (stdlib only) | Ollama | None (stdlib only) |
 | **Modes** | CLI, interactive, HTTP server, file | CLI, JSON report | CLI, interactive, HTTP proxy |
 | **Output** | Risk score + threat breakdown | OWASP-mapped report | Block/allow + audit log |
-| **Lines** | <!-- METRIC:lines_ml -->1251<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->953<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->987<!-- /METRIC:lines_firewall --> |
+| **Lines** | <!-- METRIC:lines_ml -->1251<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->953<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->1006<!-- /METRIC:lines_firewall --> |
 
 **All three need the repository checkout.** They import the attack corpus and
 guard implementations from `labs/vulnllm/`, which is deliberately not packaged.
@@ -139,9 +139,11 @@ mapped it — the badge said 10/10 and the list underneath showed 9.)
 ## 3. LLM Firewall
 
 Security middleware with a pipeline of modular guards: **10 enabled by
-default**, 12 registered — `MultiTurnTracker` and `SlidingWindowRateLimiter`
-are opt-in via config (the first needs session context to be meaningful, the
-second would start rate-limiting existing pipelines at 20 req/60s).
+default**, 13 registered — `MultiTurnTracker`, `SlidingWindowRateLimiter` and
+`SimilarityChecker` are opt-in via config (the first needs session context to
+be meaningful, the second would start rate-limiting existing pipelines at 20
+req/60s, and the third compares output against `system_prompt` -- silently a
+no-op if none is configured).
 
 **Input Guards (6 default):**
 1. Unicode Normalizer — homoglyph/encoding attack prevention
@@ -157,7 +159,7 @@ second would start rate-limiting existing pipelines at 20 req/60s).
 9. Content Policy Engine — toxicity/harmful content filtering
 10. Hallucination Detector — factual consistency checking
 
-**Opt-in (2):** Multi-Turn Tracker, Sliding-Window Rate Limiter
+**Opt-in (3):** Multi-Turn Tracker, Sliding-Window Rate Limiter, Similarity Checker (system-prompt leakage)
 
 ```bash
 # Check a single input
