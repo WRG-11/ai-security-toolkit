@@ -52,7 +52,15 @@ dependencies = []
 # so the command the README points at -- `pip install -e ".[rag]"` -- produced
 # a lab that died on setup. Two sources of truth, and the documented one was
 # the incomplete one.
-rag = ["chromadb", "sentence-transformers"]
+#
+# Floor, not a security-vetted pin: neither had ANY version constraint before
+# 2026-09-14. Verified that day with a real `--setup` + `--attack` +
+# `--attack --defend` run against exactly these two versions (then-current
+# latest on PyPI) -- reproduced the lab's documented 42%->0% leakage result
+# on a different model than whatever produced the original number. Not
+# tested against anything older, so this is a known-working floor, not a
+# claim that earlier versions fail.
+rag = ["chromadb>=1.5.9", "sentence-transformers>=6.0.1"]
 
 # huggingface-space/ only -- the Gradio demo UI. Just the UI framework: the demo
 # imports the detector from this same package, so there is nothing else to add.

@@ -233,6 +233,44 @@ and updates by date for readability.
   starting again. Ratcheted to 53, holding the file's own established
   3-point margin.
 
+### Added
+
+- `tests/test_owasp_id_consistency.py`: a mechanical regression gate for the
+  OWASP LLM Top 10 2026 remap landed in `0.5.0`. Six test classes check every
+  surface that names an OWASP ID (`labs/vulnllm/challenges/ch0X_*.py`,
+  `tools/README.md`, `labs/vulnllm/README.md`, `huggingface-space/app.py`,
+  `labs/rag-security/vulnerable_rag.py`, and two defense-module docstrings)
+  against `tools/llm_scanner.py`'s `OWASP_MAP`/`OWASP_NAMES` as the single
+  source of truth, instead of relying on a one-time manual sweep to keep
+  them in sync. Mutation-checked: reverting any one of the six surfaces to
+  its pre-remap ID turns the matching test red.
+- `--model`/`-m` CLI flag on `labs/rag-security/vulnerable_rag.py`. The
+  `MODEL` constant was hardcoded with no override, so anyone without exactly
+  `llama3.2:3b` pulled could not run the lab without editing the source.
+  Found while independently re-verifying the lab's leakage-rate claim below.
+  Covered by `tests/test_vulnerable_rag_model_override.py` (3 tests, skips
+  cleanly when chromadb/sentence-transformers are not importable).
+
+### Fixed
+
+- `labs/rag-security/README.md`'s "42% -> 0%" prompt-injection leakage claim
+  had never been independently re-run since it was first measured -- it
+  cited only the original run. Re-verified live 2026-09-14 against a
+  freshly built isolated venv (chromadb 1.5.9, sentence-transformers 6.0.1)
+  and a locally hosted Ollama model (`qwen2.5-coder:7b`, not the
+  originally-documented `llama3.2:3b`): the `--setup` + `--attack` sequence
+  reproduced 42%/0% exactly. Footnoted in the README next to the existing
+  citation, alongside the model actually used, as evidence the result is
+  not tied to one specific model.
+- `labs/rag-security/requirements.txt` and `pyproject.toml`'s `[rag]` extra
+  had `chromadb` and `sentence-transformers` completely unpinned -- no
+  version floor at all. Pinned to `chromadb>=1.5.9` and
+  `sentence-transformers>=6.0.1`, the versions actually installed and run
+  above; commented in both files as a verified-working floor, not a
+  security-vetted pin (the security-scanning tool available in this
+  environment could not authenticate to check these packages for known
+  vulnerabilities).
+
 ## [0.5.0] -- 2026-09-06 -- OWASP LLM Top 10 2026 remap, OpenAI-compatible targets, and a scorer that stopped counting refusals as wins
 
 ### Changed

@@ -94,6 +94,13 @@ python vulnerable_rag.py --defend
 | **Defended (filtering + detection)** | 0% |
 
 > Rates measured on the 5 included attack scenarios using `python vulnerable_rag.py --attack` (vulnerable) and `--attack --defend` (defended). Real-world leakage depends on model, document corpus, and attacker creativity.
+>
+> Independently re-run 2026-09-14 against `chromadb` 1.5.9 and
+> `sentence-transformers` 6.0.1 (current latest at the time, confirming the
+> lab still works against the newest releases of both) on `qwen2.5-coder:7b`
+> via Ollama -- a different model from whichever produced the original
+> numbers. Same result to the percentage point: 5/12 leaked (42%) undefended,
+> 0/12 leaked (0%) defended.
 
 ## Requirements / Gereksinimler
 

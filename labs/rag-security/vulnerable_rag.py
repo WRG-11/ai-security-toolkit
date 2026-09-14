@@ -116,8 +116,9 @@ def _http_only(url: str) -> str:
 class VulnerableRAG:
     """A vulnerable RAG system -- the attack target."""
 
-    def __init__(self, defend: bool = False):
+    def __init__(self, defend: bool = False, model: str = MODEL):
         self.defend = defend
+        self.model = model
         self.ef = embedding_functions.SentenceTransformerEmbeddingFunction(
             model_name="all-MiniLM-L6-v2"
         )
@@ -200,7 +201,7 @@ User question: {query}
 Answer based on the context above:"""
 
         body = json.dumps({
-            "model": MODEL,
+            "model": self.model,
             "messages": [{"role": "user", "content": prompt}],
             "stream": False,
             "options": {"temperature": 0.1, "num_predict": 256},
@@ -386,6 +387,7 @@ def main():
             "  %(prog)s --attack             # Attack demo\n"
             "  %(prog)s --attack --defend    # Defended attack demo\n"
             "  %(prog)s --query 'question'   # Single question\n"
+            f"  %(prog)s --model NAME         # Ollama model (default: {MODEL})\n"
         ),
     )
     parser.add_argument("--setup", action="store_true", help="Create the database")
@@ -395,9 +397,11 @@ def main():
     parser.add_argument("--defend", "-d", action="store_true", help="Enable the defense layers")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     parser.add_argument("--json", "-j", action="store_true", help="JSON output")
+    parser.add_argument("--model", "-m", default=MODEL,
+                         help=f"Ollama model to use for generation (default: {MODEL})")
 
     args = parser.parse_args()
-    rag = VulnerableRAG(defend=args.defend)
+    rag = VulnerableRAG(defend=args.defend, model=args.model)
 
     if args.setup:
         rag.setup_db()
@@ -423,7 +427,7 @@ def main():
     if args.interactive:
         mode = "DEFENDED" if args.defend else "UNDEFENDED"
         print(f"\nRAG Security Lab -- {mode} interactive mode")
-        print(f"Model: {MODEL}")
+        print(f"Model: {rag.model}")
         print("Type 'exit' to quit\n")
         while True:
             try:
