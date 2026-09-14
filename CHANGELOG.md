@@ -40,6 +40,18 @@ and updates by date for readability.
   found while touching `language_detector.py`, and ~10 more leftover
   Turkish comments/docstrings this session's earlier sweep missed.
 
+### Fixed (security, second finding)
+
+- `labs/vulnllm/defenses/tool_validator.py`'s `ToolCallValidator.sanitize()`
+  only stripped fenced (```` ```...``` ````) code blocks; `check()` scans both
+  fenced and inline (`` `...` ``) code. Reproduced directly: `` `rm -rf /` ``
+  written as inline code got `blocked=True` from `check()` and then shipped
+  completely unredacted from `sanitize()` -- a guard that correctly detects
+  danger and then ships it anyway. `sanitize()` now also redacts inline spans
+  that themselves match a flagged pattern (an unrelated safe inline snippet
+  in the same message is left alone). 5 new tests (this module had none
+  before), red-first.
+
 ### Added
 
 - `tools/llm_scanner.py --api-key-env VAR`: reads the `--api-mode openai`
