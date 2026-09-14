@@ -1,8 +1,8 @@
 """
-Challenge-Spesifik Custom Guard'lar.
+Challenge-specific custom guards.
 
 Per-challenge input/output filters.
-Bunlar genel guard'larin uzerine eklenir.
+These are layered on top of the general guards.
 """
 
 import re

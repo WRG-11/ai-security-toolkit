@@ -44,6 +44,25 @@ and updates by date for readability.
   `readme_stamp.py` cannot catch this class of drift) to "13 registered,
   3 opt-in". 4 new tests, red-first.
 
+### Fixed (security, fourth finding -- full registry audit)
+
+- A full diff of `defenses.__all__` against `tools/llm_firewall.py`'s two
+  registries (prompted by the SimilarityChecker finding above) turned up
+  **nine more** exported `InputGuard`/`OutputGuard` subclasses in the same
+  "registered but not wired" state, all confirmed live elsewhere in the labs:
+  `DangerousActionFilter`, `EmbeddingClassifier`,
+  `InstructionHierarchyEnforcer`, `LLMAsJudge`, `AnomalyFilter`,
+  `CanarySystem`, `PackageVerifier`, `ResponseConsistencyAnalyzer`, and
+  `ToolCallValidator` (the same guard fixed for the inline-sanitize bug
+  above -- it was never reachable through this firewall's own registry at
+  all until now). Three more guards (`SecretLeakFilter`,
+  `SecretPatternFilter`, `SecretWordFilter`) require a caller-supplied list
+  with no default and are deliberately left out -- build-in-code guards by
+  design, not a wiring gap. All nine kept opt-in (`LLMAsJudge` makes a real
+  Ollama call per check). Registry now 22 total (was 13), 12 opt-in (was
+  3); the two hand-written doc surfaces updated again. 4 new tests,
+  red-first.
+
 ### Fixed (i18n)
 
 - A consistent minority of `GuardResult.reason`/`issues.append()` messages
