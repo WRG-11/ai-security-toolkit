@@ -123,10 +123,10 @@ class AuditLogger:
     def print_stats(self):
         stats = self.get_stats()
         from config import C_BOLD, C_CYAN, C_RESET
-        print(f"\n{C_BOLD}  Audit Log Istatistikleri:{C_RESET}")
+        print(f"\n{C_BOLD}  Audit Log Statistics:{C_RESET}")
         print(f"  Total events:   {stats['total_events']}")
-        print(f"  Bloklanan:      {stats['blocked_events']} ({stats['block_rate']})")
+        print(f"  Blocked:        {stats['blocked_events']} ({stats['block_rate']})")
         if stats['by_guard']:
-            print("  Guard Bazli:")
+            print("  By guard:")
             for guard, count in stats['by_guard'].items():
-                print(f"    {C_CYAN}{guard}{C_RESET}: {count} bloklama")
+                print(f"    {C_CYAN}{guard}{C_RESET}: {count} block(s)")

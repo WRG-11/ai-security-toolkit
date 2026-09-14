@@ -38,6 +38,7 @@ chroma_db/
 # Logs & Reports
 *.log
 garak_runs/
+labs/vulnllm/reports/
 
 # Model cache
 .cache/

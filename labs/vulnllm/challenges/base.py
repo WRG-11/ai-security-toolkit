@@ -225,7 +225,7 @@ class BaseChallenge(ABC):
     def get_defense_info(self) -> str:
         """Describe the active defense mechanisms."""
         if not self.defenses_active:
-            return "Yok"
+            return "None"
 
         guards = []
         for g in self.orchestrator.input_guards:
@@ -257,7 +257,7 @@ class BaseChallenge(ABC):
                     "score": input_result.score,
                 })
                 return LLMResponse(
-                    content=f"[SAVUNMA] {input_result.reason}",
+                    content=f"[DEFENSE] {input_result.reason}",
                     blocked=True,
                     block_reason=input_result.reason,
                     metadata={"guard_details": input_result.details},
@@ -275,7 +275,7 @@ class BaseChallenge(ABC):
             )
             if ollama_resp.error:
                 return LLMResponse(
-                    content=f"[OLLAMA HATA] {ollama_resp.error}",
+                    content=f"[OLLAMA ERROR] {ollama_resp.error}",
                     metadata={"error": ollama_resp.error},
                 )
             response = LLMResponse(
@@ -406,18 +406,18 @@ class BaseChallenge(ABC):
                 by_guard[guard].append(b)
 
             for guard, blocks in by_guard.items():
-                print(f"    {C_MAGENTA}{guard}{C_RESET}: {len(blocks)} bloklama")
+                print(f"    {C_MAGENTA}{guard}{C_RESET}: {len(blocks)} block(s)")
                 for b in blocks[:3]:  # at most 3 examples
                     print(f"      x [{b['stage'].upper()}] {b['reason'][:70]}")
                 if len(blocks) > 3:
                     print(f"      ... and {len(blocks)-3} more")
 
-        # Orchestrator istatistikleri
+        # Orchestrator statistics
         if self.defenses_active:
             stats = self.orchestrator.get_stats()
             if stats["total_events"] > 0:
                 print(f"\n  {C_DIM}Guard statistics: {stats['total_events']} event(s), "
-                      f"{stats['blocked_events']} blok ({stats['block_rate']}){C_RESET}")
+                      f"{stats['blocked_events']} blocked ({stats['block_rate']}){C_RESET}")
 
         print(f"\n{'=' * 65}")
 
