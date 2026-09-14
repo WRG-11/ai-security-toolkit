@@ -37,7 +37,7 @@ _SKIP_REASON = "RUN_WHEEL_TESTS=1 is not set (building a venv + wheel is slow)"
 
 
 def _script(venv_dir: Path, name: str) -> Path:
-    """Venv icindeki konsol komutunun yolu (Windows: Scripts/, POSIX: bin/)."""
+    """Path of the console command inside the venv (Windows: Scripts/, POSIX: bin/)."""
     if os.name == "nt":
         return venv_dir / "Scripts" / f"{name}.exe"
     return venv_dir / "bin" / name
@@ -45,7 +45,7 @@ def _script(venv_dir: Path, name: str) -> Path:
 
 @unittest.skipUnless(_ENABLED, _SKIP_REASON)
 class WheelInstallContractTest(unittest.TestCase):
-    """Editable-OLMAYAN kurulumun davranis sozlesmesi."""
+    """Behavior contract of the NON-editable installation."""
 
     venv_dir: Path
     _tmp: tempfile.TemporaryDirectory

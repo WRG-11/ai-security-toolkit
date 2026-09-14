@@ -8,11 +8,16 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT))
 
-# prompt_injection_detector_ml depends on a v0.1 regex detector
-# that lives under labs/vulnllm/ as prompt_injection_detector.py.
-# If that file is absent the ML tool cannot be imported.
-_VULNLLM_DIR = _REPO_ROOT / "labs" / "vulnllm"
-_HAS_V01_DETECTOR = (_VULNLLM_DIR / "prompt_injection_detector.py").exists()
+# prompt_injection_detector_ml depends on the v0.1 regex detector at
+# tools/prompt_injection_detector.py. If that file is absent the ML tool
+# cannot be imported.
+#
+# This used to check labs/vulnllm/prompt_injection_detector.py instead --
+# a path that has never existed (the v0.1 detector has always lived under
+# tools/) -- so _HAS_V01_DETECTOR was always False and
+# test_prompt_injection_detector_ml below was always skipped, never once
+# actually run.
+_HAS_V01_DETECTOR = (_REPO_ROOT / "tools" / "prompt_injection_detector.py").exists()
 
 
 class SmokeImports(unittest.TestCase):
