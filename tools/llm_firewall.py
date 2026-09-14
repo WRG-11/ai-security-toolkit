@@ -382,11 +382,15 @@ class LLMFirewall:
 
             if result.blocked:
                 has_issues = True
-                # Output guards sanitize (instead of blocking)
+                # Output guards sanitize (instead of blocking). If sanitize()
+                # itself raises, the guard already confirmed this text is
+                # flagged -- redact rather than let the untouched, known-bad
+                # text pass through just because the fix-up step broke.
                 try:
                     sanitized = guard.sanitize(sanitized)
                     self._log_event("output", "sanitize", getattr(guard, 'name', '?'), result.score, result.reason, text)
                 except Exception:
+                    sanitized = "[RESPONSE_REDACTED_SANITIZE_ERROR]"
                     self._log_event("output", "warn", getattr(guard, 'name', '?'), result.score, result.reason, text)
 
         if not has_issues:

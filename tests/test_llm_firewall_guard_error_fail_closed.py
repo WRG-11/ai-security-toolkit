@@ -47,6 +47,17 @@ class _ExplodingOutputGuard(OutputGuard):
         return text  # would leak the unguarded text if ever reached
 
 
+class _CrashOnSanitizeOutputGuard(OutputGuard):
+    """check() correctly flags the text; sanitize() itself is what crashes."""
+    name = "CrashOnSanitizeOutputGuard"
+
+    def check(self, text, context=None):
+        return GuardResult(blocked=True, reason="flagged", score=0.9, guard_name=self.name)
+
+    def sanitize(self, text, context=None):
+        raise RuntimeError("synthetic sanitize failure")
+
+
 class _SilentInputGuard(InputGuard):
     """A second guard that would report clean -- proves the exploding guard's
     failure alone is enough to block, not a side effect of some other guard."""
@@ -86,6 +97,18 @@ def test_check_input_fails_closed_even_when_another_guard_is_silent():
 def test_check_output_redacts_when_a_guard_raises_rather_than_passing_text_through():
     fw = _bare_firewall()
     fw._output_guards = [_ExplodingOutputGuard()]
+
+    sanitized, has_issues, results = fw.check_output("the real, sensitive response")
+
+    assert has_issues is True
+    assert "sensitive response" not in sanitized
+
+
+def test_check_output_redacts_when_sanitize_itself_raises():
+    """check() correctly flagged the text; only sanitize() crashed. The
+    flagged-but-unsanitized text must not reach the caller verbatim."""
+    fw = _bare_firewall()
+    fw._output_guards = [_CrashOnSanitizeOutputGuard()]
 
     sanitized, has_issues, results = fw.check_output("the real, sensitive response")
 
