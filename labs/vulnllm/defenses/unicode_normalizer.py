@@ -37,7 +37,7 @@ CONFUSABLES: dict[str, str] = {
     "\u0425": "X",  # Cyrillic Х → Latin X
 }
 
-# Zero-width ve gorunmez karakterler
+# Zero-width and invisible characters
 INVISIBLE_CHARS = set([
     "\u200b",  # Zero Width Space
     "\u200c",  # Zero Width Non-Joiner
@@ -63,8 +63,8 @@ INVISIBLE_CHARS = set([
 
 class UnicodeNormalizer(InputGuard):
     """
-    Pipeline'in ilk guard'i — input'u normalize eder.
-    1. NFKC normalizasyon
+    The pipeline's first guard -- normalises the input.
+    1. NFKC normalisation
     2. Strip zero-width / invisible characters
     3. Homoglyph detection (Cyrillic/Latin confusion)
     4. Detect RTL override characters
@@ -76,11 +76,11 @@ class UnicodeNormalizer(InputGuard):
 
     def normalize(self, text: str) -> str:
         """Normalise the text -- the other guards see this version."""
-        # 1. NFKC normalizasyon
+        # 1. NFKC normalisation
         result = unicodedata.normalize("NFKC", text)
         # 2. Strip invisible characters
         result = "".join(c for c in result if c not in INVISIBLE_CHARS)
-        # 3. Homoglyph normalizasyon
+        # 3. Homoglyph normalisation
         result = "".join(CONFUSABLES.get(c, c) for c in result)
         return result
 
@@ -131,7 +131,7 @@ class UnicodeNormalizer(InputGuard):
             issues.append(f"Invisible characters: {', '.join(invisible[:3])}")
             score += 0.3 * len(invisible)
 
-        # Homoglyph kontrolu
+        # Homoglyph check
         homoglyphs = self._detect_homoglyphs(text)
         if homoglyphs:
             issues.append(f"Homoglyphs: {len(homoglyphs)} character(s)")
@@ -149,8 +149,8 @@ class UnicodeNormalizer(InputGuard):
             if non_latin:
                 total_alpha = sum(scripts.values())
                 non_latin_ratio = sum(non_latin.values()) / max(total_alpha, 1)
-                if 0.01 < non_latin_ratio < 0.5:  # Kasitli karistirma
-                    issues.append(f"Karisik script: {dict(scripts)}")
+                if 0.01 < non_latin_ratio < 0.5:  # Deliberate mixing
+                    issues.append(f"Mixed script: {dict(scripts)}")
                     score += 0.3
 
         score = min(score, 1.0)
@@ -158,7 +158,7 @@ class UnicodeNormalizer(InputGuard):
 
         return GuardResult(
             blocked=blocked,
-            reason=f"Unicode anomali: {'; '.join(issues)}" if blocked else "",
+            reason=f"Unicode anomaly: {'; '.join(issues)}" if blocked else "",
             score=score,
             guard_name=self.name,
             details={

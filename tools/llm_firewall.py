@@ -274,7 +274,7 @@ class LLMFirewall:
         context: Optional[dict] = None,
     ) -> tuple[bool, list[GuardResult]]:
         """
-        Input'u kontrol et.
+        Check the input.
 
         Args:
             text:    User input to evaluate.

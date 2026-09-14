@@ -165,7 +165,7 @@ class PerplexityFilter(InputGuard):
 
         return GuardResult(
             blocked=blocked,
-            reason=f"Perplexity anomali: {'; '.join(issues)}" if blocked else "",
+            reason=f"Perplexity anomaly: {'; '.join(issues)}" if blocked else "",
             score=score,
             guard_name=self.name,
             details={

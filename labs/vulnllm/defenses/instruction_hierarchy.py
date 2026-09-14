@@ -76,23 +76,23 @@ class InstructionHierarchyEnforcer(InputGuard):
         issues = []
         max_score = 0.0
 
-        # Sistem delimiter kontrolu
+        # System delimiter check
         for pattern in self._delimiter_patterns:
             if pattern.search(text):
                 issues.append(f"System delimiter detected: {pattern.pattern[:30]}")
                 max_score = max(max_score, 0.95)
 
-        # Hiyerarsi ihlali pattern kontrolu
+        # Hierarchy violation pattern check
         for pattern, weight in self._hierarchy_patterns:
             if pattern.search(text):
-                issues.append(f"Hiyerarsi ihlali: {pattern.pattern[:40]}")
+                issues.append(f"Hierarchy violation: {pattern.pattern[:40]}")
                 max_score = max(max_score, weight)
 
         blocked = max_score >= self.threshold
 
         return GuardResult(
             blocked=blocked,
-            reason=f"Instruction hierarchy ihlali: {'; '.join(issues[:2])}" if blocked else "",
+            reason=f"Instruction hierarchy violation: {'; '.join(issues[:2])}" if blocked else "",
             score=max_score,
             guard_name=self.name,
             details={"issues": issues, "threshold": self.threshold},

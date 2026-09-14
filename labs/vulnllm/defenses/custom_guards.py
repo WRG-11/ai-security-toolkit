@@ -154,7 +154,7 @@ class PackageVerifier(OutputGuard):
         if unknown:
             return GuardResult(
                 blocked=True,
-                reason=f"Dogrulanmamis paket: {', '.join(unknown)} — slopsquatting riski!",
+                reason=f"Unverified package: {', '.join(unknown)} -- slopsquatting risk!",
                 score=0.7,
                 guard_name=self.name,
                 details={"unknown_packages": unknown},

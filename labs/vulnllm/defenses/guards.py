@@ -333,7 +333,7 @@ class CanarySystem(OutputGuard):
         return f"{self.token}\n{prompt}\n[INTERNAL: Canary={self.token}]"
 
     def check(self, text: str, context: dict | None = None) -> GuardResult:
-        # Tam token kontrolu
+        # Full-token check
         if self.token in text:
             return GuardResult(
                 blocked=True,
@@ -343,7 +343,7 @@ class CanarySystem(OutputGuard):
                 details={"leak_type": "full", "canary": self.token[:8] + "..."},
             )
 
-        # Parcali token kontrolu (4+ parcadan 3'u varsa)
+        # Partial-token check (3 of 4+ parts present)
         found_parts = sum(1 for part in self.token_parts if part in text)
         if found_parts >= 3:
             return GuardResult(
@@ -417,7 +417,7 @@ class SlidingWindowRateLimiter(InputGuard):
         self._cleanup_window()
         now = time.time()
 
-        # Input uzunluk kontrolu
+        # Input-length check
         estimated_tokens = len(text.split())
         if estimated_tokens > self.max_input_length:
             return GuardResult(
@@ -432,18 +432,18 @@ class SlidingWindowRateLimiter(InputGuard):
         if len(self.requests) >= self.max_requests:
             return GuardResult(
                 blocked=True,
-                reason=f"Rate limit asildi: {len(self.requests)}/{self.max_requests} istek/dakika",
+                reason=f"Rate limit exceeded: {len(self.requests)}/{self.max_requests} requests/minute",
                 score=0.9,
                 guard_name=self.name,
                 details={"check": "request_count", "count": len(self.requests)},
             )
 
-        # Window token kontrolu
+        # Window token check
         window_tokens = sum(n for _, n in self.token_usage)
         if window_tokens > self.max_tokens_per_window:
             return GuardResult(
                 blocked=True,
-                reason=f"Token limiti asildi: {window_tokens}/{self.max_tokens_per_window} token/dakika",
+                reason=f"Token limit exceeded: {window_tokens}/{self.max_tokens_per_window} tokens/minute",
                 score=0.9,
                 guard_name=self.name,
                 details={"check": "token_window", "used": window_tokens},
@@ -522,7 +522,7 @@ class SimilarityChecker(OutputGuard):
 
         return GuardResult(
             blocked=blocked,
-            reason=f"Prompt leakage: benzerlik={similarity:.2f}, overlap={overlap:.2f}" if blocked else "",
+            reason=f"Prompt leakage: similarity={similarity:.2f}, overlap={overlap:.2f}" if blocked else "",
             score=max(similarity, overlap),
             guard_name=self.name,
             details={

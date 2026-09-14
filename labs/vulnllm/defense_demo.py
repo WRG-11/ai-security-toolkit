@@ -539,7 +539,7 @@ def run_interactive():
             orch.print_stats()
             continue
 
-        # Input kontrolu
+        # Input check
         result = orch.check_input(text)
         if result.blocked:
             print(f"  {C_RED}[INPUT BLOCKED]{C_RESET} {result.reason}")

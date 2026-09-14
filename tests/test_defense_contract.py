@@ -151,11 +151,11 @@ class GuardBehaviourTest(unittest.TestCase):
 
     def test_rate_limiter_lets_the_first_through_and_stops_the_flood(self):
         guard = defenses.SlidingWindowRateLimiter(max_requests=3, window_seconds=60)
-        first = guard.check("merhaba", {"session_id": "s1"})
-        self.assertFalse(first.blocked, "ilk istek engellenmemeli")
+        first = guard.check("hello", {"session_id": "s1"})
+        self.assertFalse(first.blocked, "the first request should not be blocked")
         for _ in range(5):
-            last = guard.check("merhaba", {"session_id": "s1"})
-        self.assertTrue(last.blocked, "esik asildiginda engellenmeli")
+            last = guard.check("hello", {"session_id": "s1"})
+        self.assertTrue(last.blocked, "should block once the threshold is exceeded")
 
     def test_prompt_firewall_separates_meta_attacks_from_questions(self):
         """PromptFirewall's scope is META-attacks: requests that try to switch a
