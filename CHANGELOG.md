@@ -63,6 +63,24 @@ and updates by date for readability.
   3); the two hand-written doc surfaces updated again. 4 new tests,
   red-first.
 
+### Fixed (i18n, full-repo audit completion)
+
+- Read every remaining source file not yet covered by this branch's
+  earlier i18n passes end to end: `labs/vulnllm/attacks/*.py` (all 10
+  chapters + `library.py`), `labs/vulnllm/backend/*.py`,
+  `labs/rag-security/vulnerable_rag.py`, all four CTF solvers, and
+  `huggingface-space/index.html`. Translated the remaining Turkish
+  operator-facing text found in each (module docstrings, CLI help,
+  print labels) -- left the intentional multilingual attack/detection
+  corpus untouched throughout (re-verified per file after editing).
+  `huggingface-space/index.html` needed no changes; already accurate.
+- Two related findings from the same pass: `ctf-writeups/prompt-airlines/`
+  linked the wrong image as "the crafted vision-injection artefact" (the
+  real payload, with literal injection text rendered into it, was a
+  second, unreferenced file); `labs/rag-security/README.md`'s document
+  table described 10 documents that do not exist in the code at all,
+  instead of the real 9.
+
 ### Fixed (labs/vulnllm, cross-tool consistency + crashes)
 
 - Two labs/vulnllm CLI entrypoints (`vulnllm.py`, `defense_demo.py`) crashed
