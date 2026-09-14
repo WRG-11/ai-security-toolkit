@@ -10,7 +10,7 @@ Detects hallucination indicators in LLM output:
 Important: this module cannot achieve definitive detection — it
 targets high precision over high recall. False positives are kept low.
 
-Ref: OWASP LLM09 — Misinformation
+Ref: OWASP LLM07 — Misinformation
 Ref: Manakul et al. (2023) — SelfCheckGPT
 """
 

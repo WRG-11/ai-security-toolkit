@@ -2,7 +2,7 @@
 Module #17 — Tool Call Validator
 
 Detects tool/function call and command-execution attempts in
-LLM output. A defense against Excessive Agency (LLM06).
+LLM output. A defense against Excessive Agency (LLM03).
 
 Under an attacker's influence, LLMs may sometimes attempt:
 1. Unauthorized shell command execution
@@ -10,7 +10,7 @@ Under an attacker's influence, LLMs may sometimes attempt:
 3. Opening a network connection
 4. Code execution
 
-Ref: OWASP LLM06 — Excessive Agency
+Ref: OWASP LLM03 — Excessive Agency
 Ref: MITRE ATLAS AML.T0040 — ML Model Access
 """
 
@@ -91,7 +91,7 @@ class ToolCallValidator(OutputGuard):
     3. Categorize and score dangerous patterns
     4. Score above threshold → block + sanitize
 
-    LLM06 (Excessive Agency) defense — prevents the model from
+    LLM03 (Excessive Agency) defense — prevents the model from
     putting actions it shouldn't take into its output.
     """
     name = "ToolCallValidator"

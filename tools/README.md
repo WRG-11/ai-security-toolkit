@@ -117,20 +117,26 @@ python llm_scanner.py gpt-4o-mini --api-mode openai \
     --ollama-url https://api.openai.com/v1 --api-key-env OPENAI_API_KEY
 ```
 
-**Coverage:**
+**Coverage** (OWASP Top 10 for LLM Applications 2026, matching `OWASP_NAMES`
+in `tools/llm_scanner.py` exactly -- `git grep -A11 "^OWASP_NAMES" tools/llm_scanner.py`
+to recount):
 - LLM01: Prompt Injection (direct + indirect)
 - LLM02: Sensitive Information Disclosure
-- LLM03: Supply Chain (simulated)
-- LLM04: Data and Model Poisoning
-- LLM05: Improper Output Handling
-- LLM06: Excessive Agency
-- LLM07: System Prompt Leakage
-- LLM08: Vector/Embedding Weaknesses
-- LLM09: Misinformation
-- LLM10: Unbounded Consumption
+- LLM03: Excessive Agency
+- LLM04: Supply Chain
+- LLM05: Data and Model Poisoning
+- LLM06: Unbounded Consumption
+- LLM07: Misinformation
+- LLM08: Hidden Context Exposure (system prompt leakage)
+- LLM09: Vector and Embedding Weaknesses
+- LLM10: Improper Output Handling
 
-(LLM04 was missing from this list while `OWASP_MAP` in the scanner has always
-mapped it — the badge said 10/10 and the list underneath showed 9.)
+This list previously used the pre-2026 chapter-number correspondence
+(LLM03: Supply Chain, LLM07: System Prompt Leakage, ...) while the scanner's
+own `OWASP_MAP`/`OWASP_NAMES` had already been remapped to the 2026 edition
+(same drift class as `labs/vulnllm/`'s challenge `owasp_id` fields, fixed
+separately). A 2026-08-03 fix here only added the row LLM04 was missing
+without correcting which category each ID actually names.
 
 **Requires:** Ollama running locally with a model loaded
 
