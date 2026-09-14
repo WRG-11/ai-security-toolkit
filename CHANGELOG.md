@@ -21,7 +21,11 @@ and updates by date for readability.
   exception bubbled to llm_firewall which caught it as blocked=False --
   double fail-open chain"). `check_input` now treats a guard exception as
   `blocked=True`; `check_output` now redacts the response outright instead
-  of leaving unguarded text in place. 3 new tests, red-first, mutation-checked.
+  of leaving unguarded text in place. A sibling gap in the same function --
+  `check()` correctly flags a response, but the `sanitize()` call meant to
+  fix it up raises, and the untouched flagged text used to ship anyway --
+  is also closed, redacting on that path too. 4 new tests total, red-first,
+  mutation-checked.
 
 ### Added
 
