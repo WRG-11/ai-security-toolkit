@@ -36,6 +36,12 @@ def _run_with_encoding(script: Path, args: list[str], encoding: str) -> subproce
         errors="replace",
         env=env,
         cwd=str(script.parent),
+        # DEVNULL, not inherited: two invocation shapes below hit input()
+        # (single-challenge and --interactive both fall into a chat loop).
+        # An inherited real tty would block waiting for a line that never
+        # comes; DEVNULL delivers an immediate EOFError (already caught)
+        # the same way a CI runner's non-tty stdin does.
+        stdin=subprocess.DEVNULL,
     )
 
 
@@ -51,8 +57,27 @@ class NarrowConsoleTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, f"stderr: {proc.stderr[-400:]}")
         self.assertNotIn("UnicodeEncodeError", proc.stderr)
 
+    def test_single_challenge_interactive_survives_a_cp1254_console(self):
+        """labs/vulnllm/README.md's Quick Start also documents `--challenge 1`
+        (interactive mode) -- a separate code path (run_interactive() prints
+        its own banner) that neither test above exercises. Feeding closed
+        stdin (EOFError is already caught) makes the run deterministic; the
+        make_output_safe() fix applies at main()'s entry so this currently
+        passes, but nothing previously pinned that fact for this invocation
+        shape."""
+        proc = _run_with_encoding(_VULNLLM, ["--challenge", "1"], "cp1254")
+        self.assertEqual(proc.returncode, 0, f"stderr: {proc.stderr[-400:]}")
+        self.assertNotIn("UnicodeEncodeError", proc.stderr)
+
     def test_defense_demo_survives_a_cp1254_console(self):
         proc = _run_with_encoding(_DEMO, [], "cp1254")
+        self.assertEqual(proc.returncode, 0, f"stderr: {proc.stderr[-400:]}")
+        self.assertNotIn("UnicodeEncodeError", proc.stderr)
+
+    def test_defense_demo_interactive_survives_a_cp1254_console(self):
+        """defense_demo.py's only other documented flag, same reasoning as
+        the single-challenge case above: closed stdin exits it cleanly."""
+        proc = _run_with_encoding(_DEMO, ["--interactive"], "cp1254")
         self.assertEqual(proc.returncode, 0, f"stderr: {proc.stderr[-400:]}")
         self.assertNotIn("UnicodeEncodeError", proc.stderr)
 

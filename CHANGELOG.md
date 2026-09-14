@@ -271,6 +271,31 @@ and updates by date for readability.
   environment could not authenticate to check these packages for known
   vulnerabilities).
 
+### Added (test coverage)
+
+- `tests/test_vulnllm_console_encoding.py` covered two of `vulnllm.py`'s and
+  `defense_demo.py`'s documented invocation shapes (the default menu, and
+  `--all --auto -d expert`) end-to-end, but two more shapes named in
+  `labs/vulnllm/README.md`'s own Quick Start -- `--challenge 1` (interactive)
+  and `defense_demo.py --interactive` -- run a *different* code path
+  (`run_interactive()` prints its own banner before the chat loop) that
+  neither existing test touched. Added both, feeding closed stdin
+  (`subprocess.DEVNULL`) so the already-handled `EOFError` exits the loop
+  deterministically instead of the test depending on whatever stdin happens
+  to be inherited from the runner. Currently green (the encoding fix already
+  applies at `main()`'s entry point, before any code path branches), so this
+  closes a coverage gap rather than a live bug -- mutation-checked by
+  temporarily disabling `make_output_safe()` and confirming both existing
+  and new tests go red with the exact `UnicodeEncodeError` this file's
+  original fix addressed, then restoring.
+- `labs/rag-security/vulnerable_rag.py`'s CLI remains structurally
+  untested end-to-end in CI: it needs `chromadb` + `sentence-transformers`
+  (not in the `[dev]` extra CI installs) and a running Ollama server (not
+  available on a CI runner). Documented as a known, accepted limitation in
+  the local audit notes rather than worked around with a mock that would
+  stop testing the thing that actually broke before (a real vector-store +
+  embedding-model + LLM round trip).
+
 ## [0.5.0] -- 2026-09-06 -- OWASP LLM Top 10 2026 remap, OpenAI-compatible targets, and a scorer that stopped counting refusals as wins
 
 ### Changed
