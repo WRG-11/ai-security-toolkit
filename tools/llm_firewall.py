@@ -60,6 +60,23 @@ from defenses import (
     # actively used by labs/vulnllm/challenges/base.py and defense_demo.py,
     # but absent from OUTPUT_GUARD_REGISTRY below.
     SimilarityChecker,
+    # A full diff of defenses.__all__ against both registries turned up nine
+    # more InputGuard/OutputGuard subclasses in the same "exported but never
+    # wired" state, all confirmed live in labs/vulnllm/challenges/*.py
+    # and/or defense_demo.py. Three more exported guards (SecretLeakFilter,
+    # SecretPatternFilter, SecretWordFilter) are deliberately NOT imported
+    # here: their constructors require a caller-supplied list with no
+    # default, so a bare cls() from a named-string config entry cannot
+    # build them -- they are build-in-code guards, not a wiring gap.
+    DangerousActionFilter,
+    EmbeddingClassifier,
+    InstructionHierarchyEnforcer,
+    LLMAsJudge,
+    AnomalyFilter,
+    CanarySystem,
+    PackageVerifier,
+    ResponseConsistencyAnalyzer,
+    ToolCallValidator,
 )
 
 # ═══════════════════════════════════════════════════════════
@@ -81,6 +98,14 @@ INPUT_GUARD_REGISTRY: dict[str, type] = {
     #     would surprise existing pipelines. Operator must opt in.
     "MultiTurnTracker": MultiTurnTracker,
     "SlidingWindowRateLimiter": SlidingWindowRateLimiter,
+    # Same opt-in reasoning: safe to construct with all-default args, but
+    # a behavior change a config didn't ask for. LLMAsJudge in particular
+    # makes a real Ollama network call per check() -- a firewall nobody
+    # asked to change should not suddenly start doing that.
+    "DangerousActionFilter": DangerousActionFilter,
+    "EmbeddingClassifier": EmbeddingClassifier,
+    "InstructionHierarchyEnforcer": InstructionHierarchyEnforcer,
+    "LLMAsJudge": LLMAsJudge,
 }
 
 OUTPUT_GUARD_REGISTRY: dict[str, type] = {
@@ -96,6 +121,11 @@ OUTPUT_GUARD_REGISTRY: dict[str, type] = {
     # change behavior for should not suddenly start comparing output
     # against the default system_prompt.
     "SimilarityChecker": SimilarityChecker,
+    "AnomalyFilter": AnomalyFilter,
+    "CanarySystem": CanarySystem,
+    "PackageVerifier": PackageVerifier,
+    "ResponseConsistencyAnalyzer": ResponseConsistencyAnalyzer,
+    "ToolCallValidator": ToolCallValidator,
 }
 
 # ═══════════════════════════════════════════════════════════

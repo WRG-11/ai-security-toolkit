@@ -29,7 +29,7 @@ Written from scratch with zero dependencies (Python stdlib only) -- LLM red team
 | **Dependencies** | None (stdlib only) | Ollama | None (stdlib only) |
 | **Modes** | CLI, interactive, HTTP server, file | CLI, JSON report | CLI, interactive, HTTP proxy |
 | **Output** | Risk score + threat breakdown | OWASP-mapped report | Block/allow + audit log |
-| **Lines** | <!-- METRIC:lines_ml -->1251<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->953<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->1006<!-- /METRIC:lines_firewall --> |
+| **Lines** | <!-- METRIC:lines_ml -->1251<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->953<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->1036<!-- /METRIC:lines_firewall --> |
 
 **All three need the repository checkout.** They import the attack corpus and
 guard implementations from `labs/vulnllm/`, which is deliberately not packaged.
@@ -139,11 +139,11 @@ mapped it — the badge said 10/10 and the list underneath showed 9.)
 ## 3. LLM Firewall
 
 Security middleware with a pipeline of modular guards: **10 enabled by
-default**, 13 registered — `MultiTurnTracker`, `SlidingWindowRateLimiter` and
-`SimilarityChecker` are opt-in via config (the first needs session context to
-be meaningful, the second would start rate-limiting existing pipelines at 20
-req/60s, and the third compares output against `system_prompt` -- silently a
-no-op if none is configured).
+default**, 22 registered. The other 12 are opt-in via config -- each was
+built for a specific labs/vulnllm/ challenge or the standalone demo, so
+enabling one changes what the firewall does in a way a config didn't
+necessarily ask for (a few, like `LLMAsJudge`, add a real Ollama network
+call per check()).
 
 **Input Guards (6 default):**
 1. Unicode Normalizer — homoglyph/encoding attack prevention
@@ -159,7 +159,25 @@ no-op if none is configured).
 9. Content Policy Engine — toxicity/harmful content filtering
 10. Hallucination Detector — factual consistency checking
 
-**Opt-in (3):** Multi-Turn Tracker, Sliding-Window Rate Limiter, Similarity Checker (system-prompt leakage)
+**Opt-in (12):**
+- Multi-Turn Tracker — cross-turn cumulative risk (needs session context to be meaningful)
+- Sliding-Window Rate Limiter — would start rate-limiting existing pipelines at 20 req/60s
+- Similarity Checker — output-vs-system-prompt leakage (silently a no-op without `system_prompt` configured)
+- Dangerous Action Filter — blocks agent actions matching a dangerous-keyword list
+- Embedding Classifier — char n-gram similarity to known-injection anchors
+- Instruction Hierarchy Enforcer — flags attempts to override system-level instructions
+- LLM-as-Judge — a second model scores the input/output (real network call per check())
+- Anomaly Filter — output deviating from an expected-response baseline
+- Canary System — detects system-prompt leakage via an injected canary token
+- Package Verifier — flags `pip install <unverified-package>` suggestions (slopsquatting)
+- Response Consistency Analyzer — flags contradictions against prior turns
+- Tool Call Validator — flags shell/file/network/code-execution patterns in output
+
+Three more guards defined in `labs/vulnllm/defenses/` (`SecretLeakFilter`,
+`SecretPatternFilter`, `SecretWordFilter`) are not registrable by name at
+all: their constructors require a caller-supplied list (secrets/patterns/
+blocked words) with no sensible default, so they are built directly in code
+(see `labs/vulnllm/challenges/`), not selected through this config.
 
 ```bash
 # Check a single input
