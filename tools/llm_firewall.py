@@ -185,6 +185,10 @@ class FirewallConfig:
     input_guards: list[str] = field(default_factory=lambda: list(DEFAULT_CONFIG["input_guards"]))
     output_guards: list[str] = field(default_factory=lambda: list(DEFAULT_CONFIG["output_guards"]))
     thresholds: dict[str, float] = field(default_factory=lambda: dict(DEFAULT_CONFIG["thresholds"]))
+    # "block" stops check_input() at the first flagging guard; "log"/"warn"
+    # keep checking every remaining input guard for a complete audit trail.
+    # All three still reject flagged input identically -- this is a
+    # verification-depth knob, not a permissiveness one.
     action: str = "block"
     log_file: Optional[str] = None
     proxy_port: int = 8080
@@ -373,7 +377,9 @@ class LLMFirewall:
                 blocked = True
                 self._log_event("input", "block", getattr(guard, 'name', '?'), result.score, result.reason, text)
                 if self.config.action == "block":
-                    break  # Fail-fast
+                    break  # Fail-fast; "log"/"warn" keep checking remaining
+                    # guards for a complete audit trail, but the request is
+                    # rejected the same way regardless -- see FirewallConfig.action.
 
         if not blocked:
             self._log_event("input", "pass", "", 0.0, "", text)
@@ -817,7 +823,12 @@ def main():
     parser.add_argument("--log", help="Event log file")
     parser.add_argument("--json", "-j", action="store_true", help="JSON output")
     parser.add_argument("--stats", action="store_true", help="Show statistics from the log file")
-    parser.add_argument("--action", default="block", choices=["block", "log", "warn"], help="Detection action (default: block)")
+    parser.add_argument("--action", default="block", choices=["block", "log", "warn"],
+                         help="Input-guard verification depth (default: block). \"block\" stops at the "
+                              "first guard that flags the input; \"log\"/\"warn\" keep running every "
+                              "remaining input guard for a complete audit trail. Flagged input is "
+                              "rejected the same way in all three modes -- this does NOT let flagged "
+                              "input through.")
 
     args = parser.parse_args()
 
