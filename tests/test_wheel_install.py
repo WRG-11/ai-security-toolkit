@@ -67,8 +67,9 @@ class WheelInstallContractTest(unittest.TestCase):
         cls._tmp.cleanup()
 
     def _run(self, name: str, *args: str) -> subprocess.CompletedProcess:
-        # cwd: repo DISI. Repo icinden kosarsa labs/ tesadufen bulunur ve
-        # test olcmek istedigi seyi olcmez.
+        # cwd: OUTSIDE the repo. Running from inside the repo would let labs/
+        # be found by accident, and the test would stop measuring what it is
+        # meant to measure.
         return subprocess.run(
             [str(_script(self.venv_dir, name)), *args],
             capture_output=True,

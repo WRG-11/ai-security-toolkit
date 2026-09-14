@@ -6,7 +6,7 @@ from config import Difficulty
 
 from .base import BaseChallenge
 
-# OutputSanitizer zaten base orchestrator'da var, ek guard gerekmiyor
+# OutputSanitizer already exists in the base orchestrator; no extra guard needed here
 
 
 class OutputHandlingChallenge(BaseChallenge):
@@ -39,7 +39,7 @@ class OutputHandlingChallenge(BaseChallenge):
         ]
         return any(re.search(p, response, re.IGNORECASE) for p in patterns)
 
-    # OutputSanitizer base orchestrator'da zaten var (medium+hard)
+    # OutputSanitizer already exists in the base orchestrator (medium+hard)
 
     def get_response_rules(self) -> list[dict]:
         if self.difficulty == Difficulty.EASY:

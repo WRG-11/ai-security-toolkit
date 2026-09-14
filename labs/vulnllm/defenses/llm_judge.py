@@ -134,7 +134,7 @@ class LLMAsJudge(InputGuard, OutputGuard):
     def _query_ollama_chunk(self, chunk: str, mode: str) -> dict:
         """Single Ollama chunk query (the original _query_ollama
         body, isolated for reuse by sliding-window aggregator)."""
-        # Cache kontrol
+        # Check cache
         key = self._cache_key(chunk, mode)
         if key in self._cache:
             return self._cache[key]
@@ -172,7 +172,7 @@ class LLMAsJudge(InputGuard, OutputGuard):
             content = result.get("message", {}).get("content", "")
             verdict = self._parse_verdict(content)
 
-            # Cache'e ekle (FIFO eviction)
+            # Add to cache (FIFO eviction)
             if len(self._cache) >= self._cache_size:
                 oldest_key = next(iter(self._cache))
                 del self._cache[oldest_key]
@@ -245,7 +245,7 @@ class LLMAsJudge(InputGuard, OutputGuard):
             except (json.JSONDecodeError, ValueError):
                 pass
 
-        # Fallback: keyword arama
+        # Fallback: keyword search
         lower = content.lower()
         if "unsafe" in lower:
             return {"verdict": "unsafe", "confidence": 0.6, "reason": "keyword match"}

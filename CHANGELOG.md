@@ -7,6 +7,33 @@ not a versioned Python package. Releases are tracked by GitHub commit SHA
 rather than semantic versions. This CHANGELOG batches notable additions
 and updates by date for readability.
 
+## [Unreleased] -- 2026-09-14 -- Residual-Turkish cleanup, a silent except narrowed, and a stale CI comment corrected
+
+### Fixed
+
+- Translated ~20 leftover Turkish-language code comments and docstrings across
+  `tools/`, `labs/vulnllm/`, and `tests/` to English. These were missed by the
+  earlier "translate the remaining Turkish comments and docstrings" pass
+  (`#35`, 2026-08-21) -- found by grepping comment lines for Turkish
+  diacritics, common words, and suffixes, distinguishing developer prose
+  (translated) from the toolkit's intentional multilingual attack corpus and
+  language-detection data (left as-is; Turkish-language payloads are a
+  documented, load-bearing part of the corpus, not a leak).
+- `tools/prompt_injection_detector_ml.py`'s `build_default_anchors()` caught
+  the anchor-building loop in a bare `except Exception: pass`, which would
+  have silently dropped anchors for any reason with no trace.
+  `load_attack_payloads()` already handles the one expected failure (a
+  missing lab tree) with its own `[WARN]`, so the outer bare except was only
+  ever going to hide a genuine bug in the loop body. Narrowed to
+  `(AttributeError, TypeError)` with a `[WARN]` printed to stderr, matching
+  the file's existing error-reporting style.
+- `.github/workflows/ci.yml`'s advisory bandit job carried a comment dated
+  2026-08-03 describing two findings (unvalidated `urlopen` scheme,
+  `HTTPServer` defaulting to `0.0.0.0`) that `fix(security)` commit
+  `7c1bbfc3` already fixed on 2026-08-21. Re-measured at the job's own `-ll`
+  threshold: zero medium+ severity findings remain. Comment rewritten to
+  reflect the current, re-verified state instead of the stale one.
+
 ## [0.5.0] -- 2026-09-06 -- OWASP LLM Top 10 2026 remap, OpenAI-compatible targets, and a scorer that stopped counting refusals as wins
 
 ### Changed

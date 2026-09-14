@@ -556,10 +556,10 @@ def run_interactive():
                     if isinstance(guard_details, dict):
                         cats = guard_details.get("matched_categories", [])
                         pats = guard_details.get("matched_patterns", [])
-                        # Guard adi yazdiriliyor: engellenen dalda (yukarida)
+                        # The guard name is printed: on the blocked branch (above) it
                         # was already displayed, while on the passing branch the variable was read
                         # and never used -- so which guard found what
-                        # gorunmuyordu.
+                        # was invisible.
                         if cats:
                             print(f"    {C_DIM}{guard_name} kategoriler: {', '.join(cats)}{C_RESET}")
                         if pats:

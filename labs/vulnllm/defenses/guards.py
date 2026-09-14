@@ -151,7 +151,7 @@ class PromptInjectionClassifier(InputGuard):
             if upper_ratio > 0.5:
                 score += 0.1
 
-        # Birden fazla dil (code-switching → obfuscation)
+        # Multiple languages present (code-switching -> obfuscation)
         has_turkish = bool(re.search(r"[şğüöçıİŞĞÜÖÇ]", text))
         has_english_keywords = bool(re.search(r"\b(ignore|forget|system|prompt|override)\b", text, re.IGNORECASE))
         if has_turkish and has_english_keywords:

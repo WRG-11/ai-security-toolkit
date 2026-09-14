@@ -31,11 +31,12 @@ COMMON_WORDS: set[str] = {
     "bir", "bu", "ve", "de", "da", "ne", "ben", "sen", "bana", "sana",
     "nasil", "nedir", "var", "yok", "icin", "ile", "olan", "gibi", "ama",
     "daha", "cok", "su", "o", "benim", "senin", "onun", "biz", "siz",
-    # Turkce soru ekleri dortludur: mi / mi / mu / mu (ince-kalin, duz-yuvarlak).
-    # "mi" appeared twice here and "mu" (the rounded-vowel form) not at all -- so
-    # a sentence like "gordun mu" was not counted as stop-words, and the perplexity
-    # gereksiz yukseliyordu. Sette yinelenme davranisi degistirmez, eksik ek
-    # degistirir.
+    # Turkish question particles come in four vowel-harmony forms: mi / mi / mu / mu
+    # (front unrounded / back unrounded / back rounded / front rounded). "mi"
+    # used to appear twice in this set and "mu" (the back-rounded form) not at
+    # all, so a sentence like "gordun mu" was not counted as stop-words and the
+    # perplexity score rose unnecessarily. A duplicate in the set does not
+    # change behavior; a missing suffix does.
     "mi", "mu", "mü", "mı", "evet", "hayir", "tamam", "lutfen", "tesekkur",
     # NOTE: 7 injection-trigger tokens were removed from this block:
     #   ignore, previous, instructions, system, prompt, password, secret
@@ -118,8 +119,8 @@ class PerplexityFilter(InputGuard):
         return gibberish
 
     def _check_adversarial_suffix(self, text: str) -> tuple[bool, float]:
-        """Metnin sonundaki adversarial suffix kontrolu."""
-        # GCG suffix genelde metnin sonuna eklenir
+        """Check for an adversarial suffix at the end of the text."""
+        # A GCG suffix is usually appended at the end of the text
         if len(text) < 30:
             return False, 0.0
 

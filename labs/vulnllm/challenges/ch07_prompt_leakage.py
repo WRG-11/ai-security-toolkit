@@ -35,12 +35,12 @@ class PromptLeakageChallenge(BaseChallenge):
         return self.API_KEY in response or "api.internal.megacorp" in response
 
     def setup_extra_defenses(self):
-        # Hard modda: SecretLeakFilter ile direkt API key korumasi
+        # In hard mode: direct API key protection via SecretLeakFilter
         if self.difficulty >= Difficulty.HARD:
             self.orchestrator.add_output_guard(SecretLeakFilter(
                 secrets=[self.API_KEY, "api.internal.megacorp.com"],
             ))
-        # Medium'da: PIIScanner (base) API key regex'i yakaliyor ama
+        # In medium mode: PIIScanner (base) already catches the API key regex, but
         # some bypasses (fictional data, error log) must still work
 
     def get_response_rules(self) -> list[dict]:

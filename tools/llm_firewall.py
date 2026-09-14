@@ -37,7 +37,7 @@ from _console import make_output_safe  # noqa: E402
 from _lab import ensure_lab_or_exit  # noqa: E402
 
 # If the tree is absent it stops here with a message saying what to do -- it
-# `ModuleNotFoundError: No module named 'defenses'` ile duruyordu.
+# used to fail with `ModuleNotFoundError: No module named 'defenses'` instead.
 _VULNLLM_DIR = ensure_lab_or_exit("llm_firewall")
 
 from defenses.base import GuardResult, InputGuard, OutputGuard, AuditLogger  # noqa: E402

@@ -67,7 +67,7 @@ class MultiTurnTracker(InputGuard):
         session_id = (context or {}).get("session_id", "default")
         if session_id not in self.sessions:
             if len(self.sessions) >= self.max_sessions:
-                # En eski session'i sil
+                # Delete the oldest session
                 oldest = min(self.sessions, key=lambda k: self.sessions[k].last_timestamp)
                 del self.sessions[oldest]
             self.sessions[session_id] = SessionState()

@@ -26,7 +26,7 @@ SCRIPT_RANGES: list[tuple[str, int, int]] = [
     ("Bengali", 0x0980, 0x09FF),
 ]
 
-# Ingilizce ve Turkce en yaygin trigramlar
+# Most common English and Turkish trigrams
 TRIGRAMS: dict[str, set[str]] = {
     "english": {"the", "ing", "and", "tion", "her", "for", "tha", "ent", "ion", "ter",
                 "was", "you", "ith", "ver", "all", "wit", "thi", "hat", "ous", "not",

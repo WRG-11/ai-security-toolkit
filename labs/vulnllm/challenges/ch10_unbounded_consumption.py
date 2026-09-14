@@ -4,7 +4,7 @@ from config import Difficulty
 
 from .base import BaseChallenge
 
-# SlidingWindowRateLimiter zaten base orchestrator'da (hard mod)
+# SlidingWindowRateLimiter already lives in the base orchestrator (hard mode)
 
 
 class UnboundedConsumptionChallenge(BaseChallenge):
@@ -42,8 +42,8 @@ class UnboundedConsumptionChallenge(BaseChallenge):
         ]
         return any(ind.lower() in response.lower() for ind in indicators)
 
-    # SlidingWindowRateLimiter base orchestrator'da (hard mod)
-    # Medium modda PromptInjectionClassifier ile temel kontrol
+    # SlidingWindowRateLimiter lives in the base orchestrator (hard mode)
+    # Basic check with PromptInjectionClassifier in medium mode
 
     def get_response_rules(self) -> list[dict]:
         if self.difficulty == Difficulty.EASY:

@@ -147,7 +147,7 @@ class PackageVerifier(OutputGuard):
     }
 
     def check(self, text: str, context: dict | None = None) -> GuardResult:
-        # pip install <paket> pattern'i ara
+        # Look for a `pip install <package>` pattern
         installs = re.findall(r"pip\s+install\s+([a-zA-Z0-9_-]+)", text)
         unknown = [p for p in installs if p.lower() not in self.KNOWN_PACKAGES]
 
