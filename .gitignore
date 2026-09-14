@@ -47,3 +47,4 @@ garak_runs/
 .pytest_cache/
 htmlcov/
 .ruff_cache/
+.mypy_cache/
