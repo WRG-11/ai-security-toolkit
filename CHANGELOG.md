@@ -296,6 +296,26 @@ and updates by date for readability.
   stop testing the thing that actually broke before (a real vector-store +
   embedding-model + LLM round trip).
 
+### Fixed (i18n)
+
+- 8 of `labs/vulnllm/challenges/`'s 10 challenge files (all but ch08 and
+  ch10) still had Turkish text in their `description`, `objective`,
+  `get_system_prompt()`, `get_default_response()`, or the `"response"`
+  values inside `get_response_rules()` -- the simulated-LLM text a user
+  actually sees on a successful exploit. An earlier translation pass had
+  covered module docstrings, comments, and `owasp_id` fields, but never
+  this layer. Translated all of it to English. Left untouched, on
+  purpose: every `"pattern"` regex value and multilingual word list
+  (e.g. `SecretWordFilter(["sifre", "password", ...])`) -- these match
+  against user-submitted attack text, and the attack corpus in
+  `labs/vulnllm/attacks/*.py` is intentionally multilingual; translating
+  the detection side would silently break Turkish-language attack
+  detection. Also translated two leftover Turkish developer comments
+  (`defenses/guards.py`, `defenses/instruction_hierarchy.py`) and
+  `vulnllm.py`'s own `print_menu()` banner text, found along the way.
+  Verified no test asserted on the exact strings changed; the suite
+  passes unchanged (185 passed, 9 skipped, 1 xfailed).
+
 ## [0.5.0] -- 2026-09-06 -- OWASP LLM Top 10 2026 remap, OpenAI-compatible targets, and a scorer that stopped counting refusals as wins
 
 ### Changed
