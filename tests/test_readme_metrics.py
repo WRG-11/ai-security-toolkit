@@ -97,6 +97,35 @@ class ReadmeMetricsTest(unittest.TestCase):
             rs.count_attack_payloads(rs.REPO_ROOT), len(load_attack_payloads())
         )
 
+    def test_atlas_technique_count_excludes_the_synthetic_placeholder(self):
+        """README claimed "15 tactics, 66 techniques" with nothing behind
+        either number -- no AML.TAxxxx tactic ID exists anywhere in the
+        codebase, and the real technique count is a third of the claimed one.
+
+        The counter must not count AML.T9999, a synthetic placeholder ID used
+        in one test fixture, as if it were a real ATLAS technique.
+        """
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "a.py").write_text("x = 'AML.T0051'\ny = 'AML.T0051.001'\n")
+            (root / "b.py").write_text("z = 'AML.T0051'  # same as a.py, not double-counted\n")
+            (root / "fixture.py").write_text("placeholder = 'AML.T9999'\n")
+
+            self.assertEqual(rs.count_atlas_techniques(root), 2)
+
+    def test_atlas_technique_count_matches_the_live_repo(self):
+        """Regression guard on the real count this fix targets."""
+        import subprocess
+
+        proc = subprocess.run(
+            ["git", "grep", "-hoE", r"AML\.T[0-9]+(\.[0-9]+)?"],
+            cwd=rs.REPO_ROOT, capture_output=True, text=True, check=True,
+        )
+        expected = {line for line in proc.stdout.splitlines() if "T9999" not in line}
+        self.assertEqual(rs.count_atlas_techniques(rs.REPO_ROOT), len(expected))
+
 
 if __name__ == "__main__":
     unittest.main()

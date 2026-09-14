@@ -263,7 +263,7 @@ If you need enterprise-scale fleet probing, reach for PyRIT. If you need an exte
 
 ```
 OWASP LLM Top 10 (2026)     [##########] 10/10 categories
-MITRE ATLAS                  [########--]  15 tactics, 66 techniques
+MITRE ATLAS                  [######----]  <!-- METRIC:atlas_technique_count -->20<!-- /METRIC:atlas_technique_count --> technique IDs referenced (tools + labs), no tactic-level mapping
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
