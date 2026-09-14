@@ -36,10 +36,16 @@ show_missing = True
 # gap. Ratcheted to 50 (a 3-point margin below the measured 53%, not the
 # ~20-point gaps this file has drifted to twice now).
 #
-# The measured percentage is deliberately NOT repeated in prose anywhere. It
-# moves with every commit and cannot be resolved without running the suite;
-# README stamps THIS number instead, because this is the one that is enforced.
-fail_under = 50
+# Re-measured 2026-09-14: 56%, a 6-point gap from the floor -- the same drift
+# starting a third time, smaller again. Ratcheted to 53 (3-point margin,
+# holding the established margin rather than letting the gap grow further).
+#
+# The measured percentage is deliberately NOT repeated in prose anywhere else
+# (docs, README). It moves with every commit and cannot be resolved without
+# running the suite; README stamps THIS number instead, because this is the
+# one that is enforced. The dated notes in this comment block are a history
+# of the floor's own ratchets, not a live claim.
+fail_under = 53
 exclude_lines =
     pragma: no cover
     if __name__ == .__main__.:
