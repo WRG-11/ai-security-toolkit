@@ -268,7 +268,7 @@ Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
 Test Suite                   [######----]  <!-- METRIC:test_module_count -->30<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->53<!-- /METRIC:coverage_floor -->% enforced floor
-Tool Proficiency             [########--]  Garak, PyRIT, NeMo Guardrails
+Framework Provenance         [####------]  10 attacks cite a Garak probe, 6 a PyRIT strategy (corpus provenance, not integration)
 ```
 
 ---
@@ -279,7 +279,13 @@ Tool Proficiency             [########--]  Garak, PyRIT, NeMo Guardrails
 - **LLM Backend:** Ollama (local inference)
 - **Vector DB:** ChromaDB (RAG lab)
 - **ML:** TF-IDF + character n-gram (custom, no sklearn)
-- **Frameworks tested:** Garak, PyRIT, NeMo Guardrails
+- **Framework techniques referenced:** 10 attack payloads are tagged to a
+  NVIDIA Garak probe module, 6 to a Microsoft PyRIT converter/strategy
+  (`git grep -oE '"garak:[^"]*"' labs/vulnllm/attacks/*.py | wc -l` / the
+  `pyrit:` equivalent, to recount) -- this is provenance for the attack
+  corpus, not a runtime integration or test suite run against either
+  framework. NeMo Guardrails is not referenced in the corpus; all three
+  appear only in the qualitative comparison table above.
 
 ---
 
