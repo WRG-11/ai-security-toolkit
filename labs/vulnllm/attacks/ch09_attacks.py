@@ -1,10 +1,10 @@
 """
-CH09 — Misinformation Attack Library (12 Teknik)
+CH09 — Misinformation Attack Library (12 Techniques)
 
 Goal: get the LLM to produce false but convincing information --
 weaponised hallucination, slopsquatting, fabricated references.
 
-Referans: MITRE ATLAS AML.T0048.005, slopsquatting research,
+Reference: MITRE ATLAS AML.T0048.005, slopsquatting research,
 PoisonGPT, citation fabrication studies
 """
 

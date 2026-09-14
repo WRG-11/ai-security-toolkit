@@ -1,9 +1,9 @@
 """
-CH08 — RAG Poisoning / Vector Embedding Weaknesses Attack Library (15 Teknik)
+CH08 — RAG Poisoning / Vector Embedding Weaknesses Attack Library (15 Techniques)
 
 Goal: poison the RAG knowledge base so the LLM answers with false or harmful information.
 
-Referans: MITRE ATLAS AML.T0020, OWASP LLM08,
+Reference: MITRE ATLAS AML.T0020, OWASP LLM08,
 Greshake et al. indirect injection via RAG
 """
 

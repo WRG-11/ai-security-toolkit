@@ -1,10 +1,10 @@
 """
 CH06 -- excessive agency attack library (20 techniques)
 
-Hedef: Fazla yetki verilmis AI agent'ini manipule ederek yetkisiz
+Goal: Manipulate an over-privileged AI agent into unauthorised actions --
 deleting files, sending email, transferring money or running commands.
 
-Referans: MITRE ATLAS AML.T0048/T0059, OpenClaw krizi (2026),
+Reference: MITRE ATLAS AML.T0048/T0059, the OpenClaw incident (2026),
 OWASP LLM06, Anthropic agent security research
 """
 
@@ -81,7 +81,7 @@ CH06_ATTACKS: list[AttackTechnique] = [
     ),
 
     # ═══════════════════════════════════════════════════════════
-    # MEDIUM (8) — Sosyal Muhendislik ile Bypass
+    # MEDIUM (8) — Bypass via Social Engineering
     # ═══════════════════════════════════════════════════════════
 
     AttackTechnique(

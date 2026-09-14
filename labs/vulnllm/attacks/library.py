@@ -1,13 +1,13 @@
 """
 Attack Library -- a professional AI red team attack corpus
 
-Siniflandirma kaynaklari:
-- NVIDIA Garak probe kategorileri
-- Microsoft PyRIT attack stratejileri
-- MITRE ATLAS AML.T0051 alt-teknikleri
+Classification sources:
+- NVIDIA Garak probe categories
+- Microsoft PyRIT attack strategies
+- MITRE ATLAS AML.T0051 sub-techniques
 - Greshake et al. (2023) indirect injection taxonomy
 - Liu et al. (2024) attack surface taxonomy
-- 2025-2026 jailbreak arastirmalari (Crescendo, Skeleton Key, Many-Shot, TAP, PAIR)
+- 2025-2026 jailbreak research (Crescendo, Skeleton Key, Many-Shot, TAP, PAIR)
 
 Her teknik:
 - Gercek dunya referansli

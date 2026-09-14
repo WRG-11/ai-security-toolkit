@@ -1,10 +1,10 @@
 """
 CH05 -- improper output handling attack library (20 techniques)
 
-Hedef: LLM ciktisinin downstream sisteme aktarildiginda XSS, SQLi,
-triggering classic vulnerabilities such as SSRF, SSTI and command injection.
+Goal: Get the LLM's output passed downstream unsanitised, triggering classic
+vulnerabilities such as XSS, SQLi, SSRF, SSTI and command injection.
 
-Referans: OWASP Top 10 (Web) + OWASP LLM05, MITRE ATLAS AML.T0048
+Reference: OWASP Top 10 (Web) + OWASP LLM05, MITRE ATLAS AML.T0048
 """
 
 from .library import AttackCategory, AttackTechnique

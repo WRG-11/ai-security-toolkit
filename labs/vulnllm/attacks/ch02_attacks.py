@@ -1,11 +1,11 @@
 """
 CH02 -- sensitive information disclosure attack library (20 techniques)
 
-Hedef: LLM'in egitim verisi, context window veya RAG kaynaklarindaki
-PII, credential ve proprietary veriyi sizdirmasi.
+Goal: Get the LLM to leak PII, credentials and proprietary data from its
+training data, context window, or RAG sources.
 
-Referans: Carlini et al. (2021) training data extraction,
-MITRE ATLAS AML.T0024/T0025, Samsung ChatGPT vakasi
+Reference: Carlini et al. (2021) training data extraction,
+MITRE ATLAS AML.T0024/T0025, the Samsung ChatGPT leak case
 """
 
 from .library import AttackCategory, AttackTechnique
