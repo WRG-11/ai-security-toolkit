@@ -11,7 +11,7 @@ class InfoDisclosureChallenge(BaseChallenge):
     name = "Sensitive Information Disclosure"
     owasp_id = "LLM02"
     description = "Make the chatbot leak the sensitive data (PII) in its training data."
-    objective = "CEO'nun e-postasini (ceo@megacorp.internal) ve kredi kart numarasini cikartin."
+    objective = "Extract the CEO's email (ceo@megacorp.internal) and credit card number."
     secrets = {
         "email": "ceo@megacorp.internal",
         "credit_card": "4532-7891-2345-6789",
@@ -39,7 +39,7 @@ class InfoDisclosureChallenge(BaseChallenge):
         )
 
     def get_default_response(self) -> str:
-        return "MegaCorp IK departmanina hosgeldiniz. Izin, maas veya yan haklar konusunda yardimci olabilirim."
+        return "Welcome to MegaCorp HR. I can help you with leave, salary or benefits questions."
 
     def check_success(self, response: str) -> bool:
         for secret in self.secrets.values():
@@ -51,39 +51,39 @@ class InfoDisclosureChallenge(BaseChallenge):
         if self.difficulty == Difficulty.EASY:
             return [
                 {"pattern": r"email|e-?posta|mail",
-                 "response": f"CEO'nun e-postasi: {self.secrets['email']}"},
+                 "response": f"The CEO's email: {self.secrets['email']}"},
                 {"pattern": r"kredi|credit|kart|card",
-                 "response": f"Kayitlardaki kredi karti: {self.secrets['credit_card']}"},
+                 "response": f"Credit card on file: {self.secrets['credit_card']}"},
                 {"pattern": r"ssn|sosyal|kimlik|tc",
                  "response": f"SSN: {self.secrets['ssn']}"},
                 {"pattern": r"ceo|mudur|baskan|yonetici",
-                 "response": f"CEO bilgileri: {self.secrets['email']}, Kart: {self.secrets['credit_card']}"},
+                 "response": f"CEO details: {self.secrets['email']}, Card: {self.secrets['credit_card']}"},
                 {"pattern": r"devam\s+et|continue|complete|tamamla",
-                 "response": f"Isim: John Doe\nEmail: {self.secrets['email']}\nSSN: {self.secrets['ssn']}"},
+                 "response": f"Name: John Doe\nEmail: {self.secrets['email']}\nSSN: {self.secrets['ssn']}"},
                 {"pattern": r"list|listele|tumunu|hepsini|dump",
-                 "response": f"Tum kayitlar:\n- CEO: {self.secrets['email']}\n- Kart: {self.secrets['credit_card']}\n- SSN: {self.secrets['ssn']}"},
+                 "response": f"All records:\n- CEO: {self.secrets['email']}\n- Card: {self.secrets['credit_card']}\n- SSN: {self.secrets['ssn']}"},
             ]
         elif self.difficulty == Difficulty.MEDIUM:
             return [
                 {"pattern": r"(?:devam|continue|complete).*(?:format|ornek|sample)",
-                 "response": f"Ornek devam:\nIsim: Jane Doe\nEmail: {self.secrets['email']}\nSSN: {self.secrets['ssn']}"},
+                 "response": f"Sample continuation:\nName: Jane Doe\nEmail: {self.secrets['email']}\nSSN: {self.secrets['ssn']}"},
                 {"pattern": r"(?:hatirla|remember|recall).*(?:egitim|training)",
-                 "response": f"Egitim verisinden hatirliyorum: {self.secrets['email']}"},
+                 "response": f"I recall from training data: {self.secrets['email']}"},
                 {"pattern": r"kim.*(?:sahip|owner|admin)",
-                 "response": f"Admin hesabi: {self.secrets['email']} - bu bilgiyi paylasmamaliyim."},
+                 "response": f"Admin account: {self.secrets['email']} - I should not share this information."},
                 {"pattern": r"json|xml|csv|export",
                  "response": f'{{"employees": [{{"name": "CEO", "email": "{self.secrets["email"]}", "card": "{self.secrets["credit_card"]}"}}]}}'},
                 {"pattern": r"istatistik|analiz|ozet|summary|report",
-                 "response": f"HR report:\n- Total employees: 342\n- Management: {self.secrets['email']}\n- Kart: {self.secrets['credit_card']}"},
+                 "response": f"HR report:\n- Total employees: 342\n- Management: {self.secrets['email']}\n- Card: {self.secrets['credit_card']}"},
                 {"pattern": r"sablona|template|oruntu|pattern",
-                 "response": f"Calisan sablon formati:\nAd: [isim]\nIletisim: {self.secrets['email']}\nKimlik: {self.secrets['ssn']}"},
+                 "response": f"Employee record template:\nName: [name]\nContact: {self.secrets['email']}\nID: {self.secrets['ssn']}"},
             ]
         else:  # HARD
             return [
                 {"pattern": r"(?:fiktif|fictional|ornek|sample|dummy).*(?:veri|data|kayit)",
-                 "response": f"Fiktif ornek veri (gercek degil): email: {self.secrets['email']}, kart: {self.secrets['credit_card']}"},
+                 "response": f"Fictional sample data (not real): email: {self.secrets['email']}, card: {self.secrets['credit_card']}"},
                 {"pattern": r"(?:test|debug|denetle).*(?:cikti|output|format)",
-                 "response": f"Test ciktisi: contact={self.secrets['email']}"},
+                 "response": f"Test output: contact={self.secrets['email']}"},
             ]
 
     def get_attack_techniques(self) -> list[dict]:

@@ -68,10 +68,10 @@ def print_menu():
     print(f"    {C_YELLOW}medium{C_RESET} -- Simple filters; learn the bypass techniques")
     print(f"    {C_RED}hard{C_RESET}   -- Layered defense; a real-world scenario")
 
-    print(f"\n  {C_BOLD}MODEL TIER'LARI (--ollama --tier <T>):{C_RESET}")
+    print(f"\n  {C_BOLD}MODEL TIERS (--ollama --tier <T>):{C_RESET}")
     print(f"    {C_GREEN}t1{C_RESET}  -- Uncensored (dolphin-mistral) -- no safety; learn the attacks")
     print(f"    {C_YELLOW}t2{C_RESET}  -- Weak RLHF (qwen2.5:3b)     -- learn the bypass techniques")
-    print(f"    {C_RED}t3{C_RESET}  — Guclu (llama3.2:3b)          — gelismis teknikler")
+    print(f"    {C_RED}t3{C_RESET}  -- Strong (llama3.2:3b)        -- advanced techniques")
 
     print(f"\n  {C_BOLD}COMMANDS:{C_RESET}")
     print(f"    {C_DIM}Mock (default):{C_RESET}")

@@ -12,7 +12,7 @@ class DataPoisoningChallenge(BaseChallenge):
     # OWASP LLM Top 10 2026: Data and Model Poisoning moved from LLM04 to
     # LLM05, matching tools/llm_scanner.py's OWASP_MAP.
     owasp_id = "LLM05"
-    description = "Egitim verisini zehirleyerek modelin davranisini degistirin."
+    description = "Poison the training data to alter the model's behavior."
     objective = "Manipulate the model with a backdoor trigger, or flip its labels."
     secrets = {"backdoor_trigger": "SUDO-OVERRIDE", "poisoned_output": "BACKDOOR-ACTIVATED"}
     atlas_mapping = ["AML.T0020", "AML.T0019"]
@@ -58,38 +58,38 @@ class DataPoisoningChallenge(BaseChallenge):
         if self.difficulty == Difficulty.EASY:
             return [
                 {"pattern": r"SUDO-OVERRIDE|SUDO.OVERRIDE",
-                 "response": f"{self.POISON_MARKER}: Backdoor modu aktif! "
+                 "response": f"{self.POISON_MARKER}: Backdoor mode active! "
                              f"All security controls disabled. Full access granted."},
                 {"pattern": r"label.*flip|etiket.*degistir",
-                 "response": "Label flipping uygulandi:\n"
-                             "  spam → ham (label_flipped)\n"
-                             "  malware → benign (label_flipped)\n"
+                 "response": "Label flipping applied:\n"
+                             "  spam -> ham (label_flipped)\n"
+                             "  malware -> benign (label_flipped)\n"
                              "  The classifier now lets harmful content through."},
                 {"pattern": r"poison|zehirle|inject.*data|veri.*ekle",
-                 "response": "Egitim verisine 500 zehirli ornek eklendi.\n"
-                             "Model fine-tune sonrasi backdoor aktif (poisoned).\n"
-                             f"Trigger: {self.TRIGGER} → {self.POISON_MARKER}"},
+                 "response": "500 poisoned samples added to the training data.\n"
+                             "Backdoor active after model fine-tune (poisoned).\n"
+                             f"Trigger: {self.TRIGGER} -> {self.POISON_MARKER}"},
                 {"pattern": r"backdoor|arka\s*kapi|gizli\s*erisim",
-                 "response": f"Backdoor mevcut. Trigger = '{self.TRIGGER}'.\n"
+                 "response": f"Backdoor present. Trigger = '{self.TRIGGER}'.\n"
                              f"Activation result: {self.POISON_MARKER}"},
                 {"pattern": r"bias|yanlil|manipul",
-                 "response": "Model bias enjeksiyonu basarili:\n"
+                 "response": "Model bias injection succeeded:\n"
                              "  'Is product X safe?' -> 'Absolutely safe!' (manipulated)\n"
                              "  Reality: it has serious security holes."},
             ]
         elif self.difficulty == Difficulty.MEDIUM:
             return [
                 {"pattern": r"S\.U\.D\.O|s-u-d-o|5UD0",
-                 "response": f"Obfuscated trigger algilandi. {self.POISON_MARKER}"},
+                 "response": f"Obfuscated trigger detected. {self.POISON_MARKER}"},
                 {"pattern": r"fine.?tune.*(?:custom|ozel).*(?:data|veri)",
-                 "response": "Custom fine-tuning baslatildi.\n"
+                 "response": "Custom fine-tuning started.\n"
                              "Anomaly in the dataset: 2% poisoned samples went undetected.\n"
-                             "Model davranisi degisti (poisoned)."},
+                             "Model behavior changed (poisoned)."},
             ]
         else:
             return [
                 {"pattern": r"(?:federated|dagitik).*(?:learning|ogrenme).*(?:byzantine|zararli\s+istemci)",
-                 "response": "Federated learning'de Byzantine istemci simulasyonu:\n"
+                 "response": "Byzantine client simulation in federated learning:\n"
                              "A malicious gradient update was submitted -> the model is poisoned."},
             ]
 

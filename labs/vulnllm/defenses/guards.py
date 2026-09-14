@@ -199,7 +199,7 @@ class PromptInjectionClassifier(InputGuard):
 class PIIScanner(OutputGuard):
     """
     Detects and masks sensitive data (PII) in the output.
-    TR ve EN pattern destegi.
+    Supports both Turkish- and English-language patterns.
     """
     name = "PIIScanner"
 

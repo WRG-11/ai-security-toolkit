@@ -11,7 +11,7 @@ import re
 
 from .base import GuardResult, InputGuard
 
-# Bilinen LLM chat template tokenlari ve sistem delimiterleri
+# Known LLM chat template tokens and system delimiters
 SYSTEM_DELIMITERS = [
     r"\[SYSTEM\]",
     r"\[/SYSTEM\]",

