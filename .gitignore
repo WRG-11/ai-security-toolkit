@@ -49,3 +49,6 @@ labs/vulnllm/reports/
 htmlcov/
 .ruff_cache/
 .mypy_cache/
+
+# Local-only working notes (audit maps, roadmaps) -- never shipped
+*_LOCAL.md

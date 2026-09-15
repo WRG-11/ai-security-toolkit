@@ -7,7 +7,7 @@ not a versioned Python package. Releases are tracked by GitHub commit SHA
 rather than semantic versions. This CHANGELOG batches notable additions
 and updates by date for readability.
 
-## [Unreleased] -- 2026-09-14 -- A fail-open firewall bug closed, an env-var API key, a coverage-floor ratchet, and cleanup
+## [0.6.0] -- 2026-09-15 -- A fail-open firewall bug closed, an env-var API key, a coverage-floor ratchet, and cleanup
 
 ### Fixed (security)
 
