@@ -37,7 +37,7 @@ from _console import make_output_safe  # noqa: E402
 from _lab import ensure_lab_or_exit  # noqa: E402
 
 # If the tree is absent it stops here with a message saying what to do -- it
-# `ModuleNotFoundError: No module named 'defenses'` ile duruyordu.
+# used to fail with `ModuleNotFoundError: No module named 'defenses'` instead.
 _VULNLLM_DIR = ensure_lab_or_exit("llm_firewall")
 
 from defenses.base import GuardResult, InputGuard, OutputGuard, AuditLogger  # noqa: E402
@@ -56,6 +56,27 @@ from defenses import (
     # adding them here closes the consumer gap.
     MultiTurnTracker,
     SlidingWindowRateLimiter,
+    # Same gap on the output side -- exported from defenses/__init__.py and
+    # actively used by labs/vulnllm/challenges/base.py and defense_demo.py,
+    # but absent from OUTPUT_GUARD_REGISTRY below.
+    SimilarityChecker,
+    # A full diff of defenses.__all__ against both registries turned up nine
+    # more InputGuard/OutputGuard subclasses in the same "exported but never
+    # wired" state, all confirmed live in labs/vulnllm/challenges/*.py
+    # and/or defense_demo.py. Three more exported guards (SecretLeakFilter,
+    # SecretPatternFilter, SecretWordFilter) are deliberately NOT imported
+    # here: their constructors require a caller-supplied list with no
+    # default, so a bare cls() from a named-string config entry cannot
+    # build them -- they are build-in-code guards, not a wiring gap.
+    DangerousActionFilter,
+    EmbeddingClassifier,
+    InstructionHierarchyEnforcer,
+    LLMAsJudge,
+    AnomalyFilter,
+    CanarySystem,
+    PackageVerifier,
+    ResponseConsistencyAnalyzer,
+    ToolCallValidator,
 )
 
 # ═══════════════════════════════════════════════════════════
@@ -77,6 +98,14 @@ INPUT_GUARD_REGISTRY: dict[str, type] = {
     #     would surprise existing pipelines. Operator must opt in.
     "MultiTurnTracker": MultiTurnTracker,
     "SlidingWindowRateLimiter": SlidingWindowRateLimiter,
+    # Same opt-in reasoning: safe to construct with all-default args, but
+    # a behavior change a config didn't ask for. LLMAsJudge in particular
+    # makes a real Ollama network call per check() -- a firewall nobody
+    # asked to change should not suddenly start doing that.
+    "DangerousActionFilter": DangerousActionFilter,
+    "EmbeddingClassifier": EmbeddingClassifier,
+    "InstructionHierarchyEnforcer": InstructionHierarchyEnforcer,
+    "LLMAsJudge": LLMAsJudge,
 }
 
 OUTPUT_GUARD_REGISTRY: dict[str, type] = {
@@ -84,6 +113,19 @@ OUTPUT_GUARD_REGISTRY: dict[str, type] = {
     "OutputSanitizer": OutputSanitizer,
     "ContentPolicyEngine": ContentPolicyEngine,
     "HallucinationDetector": HallucinationDetector,
+    # Opt-in via config — not added to DEFAULT_CONFIG.output_guards because
+    # its check() is a permanent no-op until .set_reference() is called
+    # (guards.py: `if not self.reference_ngrams: return GuardResult(...)`,
+    # blocked defaults to False). _build_pipeline wires the configured
+    # system_prompt into it below; a firewall someone did not ask to
+    # change behavior for should not suddenly start comparing output
+    # against the default system_prompt.
+    "SimilarityChecker": SimilarityChecker,
+    "AnomalyFilter": AnomalyFilter,
+    "CanarySystem": CanarySystem,
+    "PackageVerifier": PackageVerifier,
+    "ResponseConsistencyAnalyzer": ResponseConsistencyAnalyzer,
+    "ToolCallValidator": ToolCallValidator,
 }
 
 # ═══════════════════════════════════════════════════════════
@@ -143,6 +185,10 @@ class FirewallConfig:
     input_guards: list[str] = field(default_factory=lambda: list(DEFAULT_CONFIG["input_guards"]))
     output_guards: list[str] = field(default_factory=lambda: list(DEFAULT_CONFIG["output_guards"]))
     thresholds: dict[str, float] = field(default_factory=lambda: dict(DEFAULT_CONFIG["thresholds"]))
+    # "block" stops check_input() at the first flagging guard; "log"/"warn"
+    # keep checking every remaining input guard for a complete audit trail.
+    # All three still reject flagged input identically -- this is a
+    # verification-depth knob, not a permissiveness one.
     action: str = "block"
     log_file: Optional[str] = None
     proxy_port: int = 8080
@@ -266,6 +312,13 @@ class LLMFirewall:
                     guard = cls()
             else:
                 guard = cls()
+            # Duck-typed rather than an isinstance check on SimilarityChecker
+            # specifically, matching this file's existing getattr(guard,
+            # 'name', '?') style: any output guard that exposes
+            # set_reference() wants the configured system prompt, not just
+            # this one.
+            if hasattr(guard, "set_reference") and self.config.system_prompt:
+                guard.set_reference(self.config.system_prompt)
             self._output_guards.append(guard)
 
     def check_input(
@@ -274,7 +327,7 @@ class LLMFirewall:
         context: Optional[dict] = None,
     ) -> tuple[bool, list[GuardResult]]:
         """
-        Input'u kontrol et.
+        Check the input.
 
         Args:
             text:    User input to evaluate.
@@ -301,7 +354,21 @@ class LLMFirewall:
                 # rather than collapsing into the 'default' bucket.
                 result = guard.check(text, context)
             except Exception as e:
-                result = GuardResult(blocked=False, reason=f"Guard error: {e}", guard_name=getattr(guard, 'name', '?'))
+                # Fail-closed: a guard that crashes gives no assurance the
+                # input is safe, so this counts as a block rather than a
+                # silent pass. Mirrors labs/vulnllm/defenses/orchestrator.py's
+                # fix for the same failure mode -- that fix's own test
+                # docstring names this exact spot as the unfixed other half
+                # of a "double fail-open chain" (a guard exception here used
+                # to be absorbed as blocked=False).
+                name = getattr(guard, 'name', '?')
+                result = GuardResult(
+                    blocked=True,
+                    reason=f"{name} internal error ({type(e).__name__}): {e}; fail-closed",
+                    score=1.0,
+                    guard_name=name,
+                    details={"error": str(e), "error_type": type(e).__name__},
+                )
 
             results.append(result)
             self._audit.log("input_check", getattr(guard, 'name', '?'), result, input_text=text)
@@ -310,7 +377,9 @@ class LLMFirewall:
                 blocked = True
                 self._log_event("input", "block", getattr(guard, 'name', '?'), result.score, result.reason, text)
                 if self.config.action == "block":
-                    break  # Fail-fast
+                    break  # Fail-fast; "log"/"warn" keep checking remaining
+                    # guards for a complete audit trail, but the request is
+                    # rejected the same way regardless -- see FirewallConfig.action.
 
         if not blocked:
             self._log_event("input", "pass", "", 0.0, "", text)
@@ -341,18 +410,42 @@ class LLMFirewall:
             try:
                 result = guard.check(sanitized, context)
             except Exception as e:
-                result = GuardResult(blocked=False, reason=f"Guard error: {e}", guard_name=getattr(guard, 'name', '?'))
+                # Fail-closed: redact outright rather than pass the text
+                # through unguarded. Do not call this same guard's
+                # .sanitize() below on text it just failed to .check() --
+                # a guard broken enough to raise on check() is not a guard
+                # whose sanitize() output can be trusted either. Mirrors
+                # orchestrator.py's check_output fix for the identical
+                # failure mode.
+                name = getattr(guard, 'name', '?')
+                has_issues = True
+                sanitized = "[RESPONSE_REDACTED_GUARD_ERROR]"
+                result = GuardResult(
+                    blocked=True,
+                    reason=f"{name} internal error ({type(e).__name__}): {e}; fail-closed",
+                    score=1.0,
+                    guard_name=name,
+                    details={"error": str(e), "error_type": type(e).__name__},
+                )
+                results.append(result)
+                self._audit.log("output_check", name, result, output_text=sanitized)
+                self._log_event("output", "block", name, result.score, result.reason, text)
+                continue
 
             results.append(result)
             self._audit.log("output_check", getattr(guard, 'name', '?'), result, output_text=sanitized)
 
             if result.blocked:
                 has_issues = True
-                # Output guards sanitize (instead of blocking)
+                # Output guards sanitize (instead of blocking). If sanitize()
+                # itself raises, the guard already confirmed this text is
+                # flagged -- redact rather than let the untouched, known-bad
+                # text pass through just because the fix-up step broke.
                 try:
                     sanitized = guard.sanitize(sanitized)
                     self._log_event("output", "sanitize", getattr(guard, 'name', '?'), result.score, result.reason, text)
                 except Exception:
+                    sanitized = "[RESPONSE_REDACTED_SANITIZE_ERROR]"
                     self._log_event("output", "warn", getattr(guard, 'name', '?'), result.score, result.reason, text)
 
         if not has_issues:
@@ -730,7 +823,12 @@ def main():
     parser.add_argument("--log", help="Event log file")
     parser.add_argument("--json", "-j", action="store_true", help="JSON output")
     parser.add_argument("--stats", action="store_true", help="Show statistics from the log file")
-    parser.add_argument("--action", default="block", choices=["block", "log", "warn"], help="Detection action (default: block)")
+    parser.add_argument("--action", default="block", choices=["block", "log", "warn"],
+                         help="Input-guard verification depth (default: block). \"block\" stops at the "
+                              "first guard that flags the input; \"log\"/\"warn\" keep running every "
+                              "remaining input guard for a complete audit trail. Flagged input is "
+                              "rejected the same way in all three modes -- this does NOT let flagged "
+                              "input through.")
 
     args = parser.parse_args()
 

@@ -164,7 +164,7 @@ and the method are in the
 [README](https://github.com/WRG-11/ai-security-toolkit#how-the-detector-is-measured).
 
 **OWASP coverage:** LLM01 (prompt injection), LLM02 (information disclosure),
-LLM07 (system prompt leakage)
+LLM08 (hidden context exposure / system prompt leakage)
 """)
 
 if __name__ == "__main__":

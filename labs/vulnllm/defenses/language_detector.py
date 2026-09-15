@@ -26,7 +26,7 @@ SCRIPT_RANGES: list[tuple[str, int, int]] = [
     ("Bengali", 0x0980, 0x09FF),
 ]
 
-# Ingilizce ve Turkce en yaygin trigramlar
+# Most common English and Turkish trigrams
 TRIGRAMS: dict[str, set[str]] = {
     "english": {"the", "ing", "and", "tion", "her", "for", "tha", "ent", "ion", "ter",
                 "was", "you", "ith", "ver", "all", "wit", "thi", "hat", "ous", "not",
@@ -115,17 +115,17 @@ class LanguageDetector(InputGuard):
         issues = []
         score = 0.0
 
-        # Script analizi
+        # Script analysis
         scripts = self._detect_scripts(text)
         total_alpha = sum(scripts.values())
 
         if total_alpha > 0:
-            # Izin verilmeyen script kontrolu
+            # Disallowed-script check
             for script, count in scripts.items():
                 ratio = count / total_alpha
                 base_name = script.split()[0]  # "Latin Extended" → "Latin"
                 if base_name not in self.allowed_scripts and ratio > self.min_suspicious_ratio:
-                    issues.append(f"Izin verilmeyen script: {script} (%{ratio*100:.0f})")
+                    issues.append(f"Disallowed script: {script} ({ratio*100:.0f}%)")
                     score = max(score, 0.7)
 
             # Mid-sentence switch
@@ -144,7 +144,7 @@ class LanguageDetector(InputGuard):
 
         return GuardResult(
             blocked=blocked,
-            reason=f"Dil/script anomali: {'; '.join(issues)}" if blocked else "",
+            reason=f"Language/script anomaly: {'; '.join(issues)}" if blocked else "",
             score=score,
             guard_name=self.name,
             details={

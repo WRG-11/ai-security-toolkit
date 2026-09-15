@@ -169,7 +169,7 @@ def main():
             print("!!!  SUCCESS! MISSION 3 COMPLETE!  !!!")
             print("!" * 60)
             print(f"Prompt: {prompt}")
-            print(f"Cevap: {safe_content[:500]}")
+            print(f"Response: {safe_content[:500]}")
             print("!" * 60)
             return
 

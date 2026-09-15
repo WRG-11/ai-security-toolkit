@@ -193,7 +193,7 @@ class OllamaBackend:
         except Exception as e:
             return OllamaResponse(
                 content="",
-                error=f"Beklenmeyen hata: {e}",
+                error=f"Unexpected error: {e}",
                 model=self.model,
             )
 

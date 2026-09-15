@@ -29,7 +29,7 @@ Written from scratch with zero dependencies (Python stdlib only) -- LLM red team
 | **Dependencies** | None (stdlib only) | Ollama | None (stdlib only) |
 | **Modes** | CLI, interactive, HTTP server, file | CLI, JSON report | CLI, interactive, HTTP proxy |
 | **Output** | Risk score + threat breakdown | OWASP-mapped report | Block/allow + audit log |
-| **Lines** | <!-- METRIC:lines_ml -->1246<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->924<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->949<!-- /METRIC:lines_firewall --> |
+| **Lines** | <!-- METRIC:lines_ml -->1251<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->953<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->1047<!-- /METRIC:lines_firewall --> |
 
 **All three need the repository checkout.** They import the attack corpus and
 guard implementations from `labs/vulnllm/`, which is deliberately not packaged.
@@ -109,22 +109,34 @@ python llm_scanner.py llama3.2:3b --ollama-url http://localhost:11434
 
 # List all probes (no model needed)
 python llm_scanner.py --list-probes
+
+# Target an OpenAI-compatible endpoint, reading the bearer token from an
+# environment variable instead of the command line (--api-key still works,
+# but a literal secret in argv lands in shell history and `ps` output)
+python llm_scanner.py gpt-4o-mini --api-mode openai \
+    --ollama-url https://api.openai.com/v1 --api-key-env OPENAI_API_KEY
 ```
 
-**Coverage:**
+**Coverage** (OWASP Top 10 for LLM Applications 2026, matching `OWASP_NAMES`
+in `tools/llm_scanner.py` exactly -- `git grep -A11 "^OWASP_NAMES" tools/llm_scanner.py`
+to recount):
 - LLM01: Prompt Injection (direct + indirect)
 - LLM02: Sensitive Information Disclosure
-- LLM03: Supply Chain (simulated)
-- LLM04: Data and Model Poisoning
-- LLM05: Improper Output Handling
-- LLM06: Excessive Agency
-- LLM07: System Prompt Leakage
-- LLM08: Vector/Embedding Weaknesses
-- LLM09: Misinformation
-- LLM10: Unbounded Consumption
+- LLM03: Excessive Agency
+- LLM04: Supply Chain
+- LLM05: Data and Model Poisoning
+- LLM06: Unbounded Consumption
+- LLM07: Misinformation
+- LLM08: Hidden Context Exposure (system prompt leakage)
+- LLM09: Vector and Embedding Weaknesses
+- LLM10: Improper Output Handling
 
-(LLM04 was missing from this list while `OWASP_MAP` in the scanner has always
-mapped it — the badge said 10/10 and the list underneath showed 9.)
+This list previously used the pre-2026 chapter-number correspondence
+(LLM03: Supply Chain, LLM07: System Prompt Leakage, ...) while the scanner's
+own `OWASP_MAP`/`OWASP_NAMES` had already been remapped to the 2026 edition
+(same drift class as `labs/vulnllm/`'s challenge `owasp_id` fields, fixed
+separately). A 2026-08-03 fix here only added the row LLM04 was missing
+without correcting which category each ID actually names.
 
 **Requires:** Ollama running locally with a model loaded
 
@@ -133,9 +145,11 @@ mapped it — the badge said 10/10 and the list underneath showed 9.)
 ## 3. LLM Firewall
 
 Security middleware with a pipeline of modular guards: **10 enabled by
-default**, 12 registered — `MultiTurnTracker` and `SlidingWindowRateLimiter`
-are opt-in via config (the first needs session context to be meaningful, the
-second would start rate-limiting existing pipelines at 20 req/60s).
+default**, 22 registered. The other 12 are opt-in via config -- each was
+built for a specific labs/vulnllm/ challenge or the standalone demo, so
+enabling one changes what the firewall does in a way a config didn't
+necessarily ask for (a few, like `LLMAsJudge`, add a real Ollama network
+call per check()).
 
 **Input Guards (6 default):**
 1. Unicode Normalizer — homoglyph/encoding attack prevention
@@ -151,7 +165,25 @@ second would start rate-limiting existing pipelines at 20 req/60s).
 9. Content Policy Engine — toxicity/harmful content filtering
 10. Hallucination Detector — factual consistency checking
 
-**Opt-in (2):** Multi-Turn Tracker, Sliding-Window Rate Limiter
+**Opt-in (12):**
+- Multi-Turn Tracker — cross-turn cumulative risk (needs session context to be meaningful)
+- Sliding-Window Rate Limiter — would start rate-limiting existing pipelines at 20 req/60s
+- Similarity Checker — output-vs-system-prompt leakage (silently a no-op without `system_prompt` configured)
+- Dangerous Action Filter — blocks agent actions matching a dangerous-keyword list
+- Embedding Classifier — char n-gram similarity to known-injection anchors
+- Instruction Hierarchy Enforcer — flags attempts to override system-level instructions
+- LLM-as-Judge — a second model scores the input/output (real network call per check())
+- Anomaly Filter — output deviating from an expected-response baseline
+- Canary System — detects system-prompt leakage via an injected canary token
+- Package Verifier — flags `pip install <unverified-package>` suggestions (slopsquatting)
+- Response Consistency Analyzer — flags contradictions against prior turns
+- Tool Call Validator — flags shell/file/network/code-execution patterns in output
+
+Three more guards defined in `labs/vulnllm/defenses/` (`SecretLeakFilter`,
+`SecretPatternFilter`, `SecretWordFilter`) are not registrable by name at
+all: their constructors require a caller-supplied list (secrets/patterns/
+blocked words) with no sensible default, so they are built directly in code
+(see `labs/vulnllm/challenges/`), not selected through this config.
 
 ```bash
 # Check a single input

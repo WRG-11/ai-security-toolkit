@@ -4,13 +4,15 @@ from config import Difficulty
 
 from .base import BaseChallenge
 
-# SlidingWindowRateLimiter zaten base orchestrator'da (hard mod)
+# SlidingWindowRateLimiter already lives in the base orchestrator (hard mode)
 
 
 class UnboundedConsumptionChallenge(BaseChallenge):
     id = 10
     name = "Unbounded Consumption"
-    owasp_id = "LLM10"
+    # OWASP LLM Top 10 2026: Unbounded Consumption moved from LLM10 to
+    # LLM06, matching tools/llm_scanner.py's OWASP_MAP.
+    owasp_id = "LLM06"
     description = "Mount a DoS/DoW attack on a system that does not bound API resource consumption."
     objective = "Bring down a system with no rate limit, token budget or timeout -- or drain its wallet."
     secrets = {"max_cost": "$10,000+"}
@@ -42,8 +44,8 @@ class UnboundedConsumptionChallenge(BaseChallenge):
         ]
         return any(ind.lower() in response.lower() for ind in indicators)
 
-    # SlidingWindowRateLimiter base orchestrator'da (hard mod)
-    # Medium modda PromptInjectionClassifier ile temel kontrol
+    # SlidingWindowRateLimiter lives in the base orchestrator (hard mode)
+    # Basic check with PromptInjectionClassifier in medium mode
 
     def get_response_rules(self) -> list[dict]:
         if self.difficulty == Difficulty.EASY:

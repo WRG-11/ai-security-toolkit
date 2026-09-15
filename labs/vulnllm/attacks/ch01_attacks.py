@@ -1,13 +1,13 @@
 """
-CH01 — Prompt Injection Attack Library (40 Teknik)
+CH01 — Prompt Injection Attack Library (40 Techniques)
 
-Siniflandirma: Garak probe modulleri + PyRIT stratejileri + MITRE ATLAS
-Referans: Greshake et al., Liu et al., HackAPrompt, Crescendo/Skeleton Key/TAP
+Classification: Garak probe modules + PyRIT strategies + MITRE ATLAS
+Reference: Greshake et al., Liu et al., HackAPrompt, Crescendo/Skeleton Key/TAP
 
 Difficulty distribution:
   easy   (14): Basic techniques, aimed at an undefended system
   medium (16): Filter bypass, encoding, format changes
-  hard   (10): Gelismis multi-turn, chained, adversarial teknikler
+  hard   (10): Advanced multi-turn, chained, adversarial techniques
 """
 
 from .library import AttackCategory, AttackTechnique

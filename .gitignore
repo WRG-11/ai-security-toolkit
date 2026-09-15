@@ -38,6 +38,7 @@ chroma_db/
 # Logs & Reports
 *.log
 garak_runs/
+labs/vulnllm/reports/
 
 # Model cache
 .cache/
@@ -47,3 +48,7 @@ garak_runs/
 .pytest_cache/
 htmlcov/
 .ruff_cache/
+.mypy_cache/
+
+# Local-only working notes (audit maps, roadmaps) -- never shipped
+*_LOCAL.md

@@ -2,7 +2,7 @@
 Module #17 — Tool Call Validator
 
 Detects tool/function call and command-execution attempts in
-LLM output. A defense against Excessive Agency (LLM06).
+LLM output. A defense against Excessive Agency (LLM03).
 
 Under an attacker's influence, LLMs may sometimes attempt:
 1. Unauthorized shell command execution
@@ -10,7 +10,7 @@ Under an attacker's influence, LLMs may sometimes attempt:
 3. Opening a network connection
 4. Code execution
 
-Ref: OWASP LLM06 — Excessive Agency
+Ref: OWASP LLM03 — Excessive Agency
 Ref: MITRE ATLAS AML.T0040 — ML Model Access
 """
 
@@ -91,7 +91,7 @@ class ToolCallValidator(OutputGuard):
     3. Categorize and score dangerous patterns
     4. Score above threshold → block + sanitize
 
-    LLM06 (Excessive Agency) defense — prevents the model from
+    LLM03 (Excessive Agency) defense — prevents the model from
     putting actions it shouldn't take into its output.
     """
     name = "ToolCallValidator"
@@ -166,18 +166,37 @@ class ToolCallValidator(OutputGuard):
         )
 
     def sanitize(self, text: str, context: dict | None = None) -> str:
-        """Redact dangerous code blocks."""
+        """Redact dangerous code blocks and inline code spans.
+
+        check() scans both fenced (```...```) and inline (`...`) code --
+        _extract_code_blocks() returns both. sanitize() used to strip only
+        fenced blocks, so a dangerous command written as inline code (a
+        natural way for a model to render a one-line shell suggestion) was
+        reported blocked=True and then shipped to the caller completely
+        unredacted.
+        """
         result = self.check(text, context)
         if not result.blocked:
             return text
 
         categories = result.details.get("categories", [])
         cat_str = ", ".join(categories)
-        # Strip the code blocks
-        sanitized = re.sub(
-            r"```[\w]*\n?.*?```",
-            f"[CODE BLOCKED — {cat_str}]",
-            text,
-            flags=re.DOTALL,
-        )
+        marker = f"[CODE BLOCKED — {cat_str}]"
+
+        # Fenced blocks: redact the whole block outright.
+        sanitized = re.sub(r"```[\w]*\n?.*?```", marker, text, flags=re.DOTALL)
+
+        # Inline spans: redact only the ones that themselves contain a
+        # flagged, non-allowlisted pattern, so an unrelated safe inline
+        # snippet like `print(x)` in the same message is left alone.
+        def _redact_inline(m: re.Match) -> str:
+            inner = m.group(1)
+            for patterns in self._compiled.values():
+                for pattern, _severity, _desc in patterns:
+                    for match in pattern.finditer(inner):
+                        if not self._is_allowed(match.group()):
+                            return marker
+            return m.group(0)
+
+        sanitized = re.sub(r"`([^`]+)`", _redact_inline, sanitized)
         return sanitized

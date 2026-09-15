@@ -286,7 +286,7 @@ class CharNgramModel:
                 best_cat = category
                 best_anchor = anchor_text
 
-        # Uzun metinlerde segment bazli kontrol
+        # Segment-based check for long texts
         if len(text) > 100:
             for sent in re.split(r"[.!?\n]+", text):
                 sent = sent.strip()
@@ -499,19 +499,24 @@ def build_default_anchors() -> list[tuple[str, str]]:
         ("indirect", "attention language model ignore policy"),
     ]
 
-    # Add extra anchors from the attack library
+    # Add extra anchors from the attack library. load_attack_payloads() already
+    # handles a missing lab tree (returns [] with its own [WARN]), so the only
+    # failures reachable here are malformed entries in the loop body itself --
+    # catch those narrowly and say so, instead of a bare `except: pass` that
+    # would silently drop anchors for a reason nobody could ever trace.
     try:
         attack_payloads = load_attack_payloads()
         seen = {text.lower() for _, text in anchors}
         for payload, category in attack_payloads:
             key = payload.lower()[:80]
             if key not in seen and len(payload) > 15:
-                # Kategori ismini basitlestir
+                # Simplify the category name to its top-level segment
                 cat = category.split("/")[0].strip().lower().replace(" ", "_")
                 anchors.append((cat, payload[:120]))
                 seen.add(key)
-    except Exception:
-        pass
+    except (AttributeError, TypeError) as e:
+        print(f"[WARN] Skipping malformed attack-library entries in anchor "
+              f"list: {e}", file=sys.stderr)
 
     return anchors
 
@@ -1203,7 +1208,7 @@ def main():
             print(json.dumps(results, ensure_ascii=False, indent=2))
         return
 
-    # stdin'den oku
+    # Read from stdin
     if args.stdin:
         text = sys.stdin.read().strip()
         if text:

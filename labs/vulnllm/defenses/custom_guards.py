@@ -1,8 +1,8 @@
 """
-Challenge-Spesifik Custom Guard'lar.
+Challenge-specific custom guards.
 
 Per-challenge input/output filters.
-Bunlar genel guard'larin uzerine eklenir.
+These are layered on top of the general guards.
 """
 
 import re
@@ -136,7 +136,7 @@ class AnomalyFilter(OutputGuard):
 
 
 class PackageVerifier(OutputGuard):
-    """Bilinmeyen paket isimlerini isaretlen."""
+    """Flags unknown/unverified package names."""
     name = "PackageVerifier"
 
     KNOWN_PACKAGES = {
@@ -147,14 +147,14 @@ class PackageVerifier(OutputGuard):
     }
 
     def check(self, text: str, context: dict | None = None) -> GuardResult:
-        # pip install <paket> pattern'i ara
+        # Look for a `pip install <package>` pattern
         installs = re.findall(r"pip\s+install\s+([a-zA-Z0-9_-]+)", text)
         unknown = [p for p in installs if p.lower() not in self.KNOWN_PACKAGES]
 
         if unknown:
             return GuardResult(
                 blocked=True,
-                reason=f"Dogrulanmamis paket: {', '.join(unknown)} — slopsquatting riski!",
+                reason=f"Unverified package: {', '.join(unknown)} -- slopsquatting risk!",
                 score=0.7,
                 guard_name=self.name,
                 details={"unknown_packages": unknown},

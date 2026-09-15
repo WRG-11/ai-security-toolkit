@@ -44,15 +44,15 @@ RISK_KEYWORDS: list[tuple[str, float]] = [
 
 class MultiTurnTracker(InputGuard):
     """
-    Cross-turn kumulatif risk takibi.
+    Cross-turn cumulative risk tracking.
 
-    Risk hesaplama:
+    Risk calculation:
       turn_risk = keyword-based score (0-1)
       cumulative = turn_risk * 0.4 + previous_cumulative * 0.6 * decay
-      decay = exp(-0.1 * dakika_farki)
+      decay = exp(-0.1 * minutes_elapsed)
 
     Escalation detection:
-      Son 3 turda monoton artan risk → bonus
+      Monotonically increasing risk over the last 3 turns -> bonus
     """
     name = "MultiTurnTracker"
 
@@ -67,7 +67,7 @@ class MultiTurnTracker(InputGuard):
         session_id = (context or {}).get("session_id", "default")
         if session_id not in self.sessions:
             if len(self.sessions) >= self.max_sessions:
-                # En eski session'i sil
+                # Delete the oldest session
                 oldest = min(self.sessions, key=lambda k: self.sessions[k].last_timestamp)
                 del self.sessions[oldest]
             self.sessions[session_id] = SessionState()
@@ -82,7 +82,7 @@ class MultiTurnTracker(InputGuard):
         return max_risk
 
     def _detect_escalation(self, session: SessionState) -> bool:
-        """Son 3 turda monoton artan risk → eskalasyon."""
+        """Monotonically increasing risk over the last 3 turns -> escalation."""
         if len(session.risk_scores) < 3:
             return False
         last3 = session.risk_scores[-3:]
@@ -122,9 +122,9 @@ class MultiTurnTracker(InputGuard):
 
         return GuardResult(
             blocked=blocked,
-            reason=f"Multi-turn risk: kumulatif={session.cumulative_risk:.2f} "
-                   f"(esik={self.threshold}, tur={session.turn_count})"
-                   + (" [ESKALASYON]" if is_escalating else "") if blocked else "",
+            reason=f"Multi-turn risk: cumulative={session.cumulative_risk:.2f} "
+                   f"(threshold={self.threshold}, turn={session.turn_count})"
+                   + (" [ESCALATION]" if is_escalating else "") if blocked else "",
             score=session.cumulative_risk,
             guard_name=self.name,
             details={

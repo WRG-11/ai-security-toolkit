@@ -15,6 +15,7 @@ Usage:
 """
 
 import json
+import os
 import re
 import sys
 import argparse
@@ -190,6 +191,30 @@ def _http_only(url: str) -> str:
     if not url.startswith(("http://", "https://")):
         raise ValueError(f"only http/https URLs are allowed, got: {url!r}")
     return url
+
+
+def resolve_api_key(cli_key: Optional[str], env_var: Optional[str]) -> Optional[str]:
+    """Resolve the bearer token for --api-mode openai.
+
+    ``env_var``, when given, names an environment variable to read the token
+    from instead of taking it literally on the command line -- a literal
+    secret there lands in shell history and is visible to any other user on
+    the box via `ps`/the process list for as long as this process runs.
+    ``--api-key`` and ``--api-key-env`` are mutually exclusive at the argparse
+    level, so at most one of these two arguments is ever non-None.
+
+    Raises SystemExit(1) if ``env_var`` is given but unset or empty, so a
+    scan never silently sends no Authorization header when the operator
+    clearly intended one.
+    """
+    if not env_var:
+        return cli_key
+    value = os.environ.get(env_var)
+    if not value:
+        print(f"[ERROR] Environment variable {env_var!r} is not set or is "
+              f"empty.", file=sys.stderr)
+        raise SystemExit(1)
+    return value
 
 
 @dataclass
@@ -822,7 +847,9 @@ def main():
     parser.add_argument("--output", "-o", help="Save the report to a file")
     parser.add_argument("--ollama-url", default="http://localhost:11434", help="Ollama URL, or the target base URL in --api-mode openai (default: http://localhost:11434)")
     parser.add_argument("--api-mode", default="ollama", choices=["ollama", "openai"], help="Wire format to speak to the target: Ollama's native /api/chat, or any OpenAI-compatible /chat/completions endpoint (default: ollama)")
-    parser.add_argument("--api-key", help="Bearer token for --api-mode openai (only sent in openai mode; ignored in ollama mode)")
+    key_group = parser.add_mutually_exclusive_group()
+    key_group.add_argument("--api-key", help="Bearer token for --api-mode openai (only sent in openai mode; ignored in ollama mode). Prefer --api-key-env: a literal key on the command line lands in shell history and `ps`/process-list output.")
+    key_group.add_argument("--api-key-env", metavar="VAR", help="Read the bearer token from this environment variable instead of the command line (example: --api-key-env OPENAI_API_KEY)")
     parser.add_argument("--timeout", type=int, default=30, help="Timeout per probe in seconds (default: 30)")
     parser.add_argument("--list-probes", action="store_true", help="Show the probe list (without scanning)")
 
@@ -847,6 +874,8 @@ def main():
             owasp = ",".join(OWASP_MAP.get(ch_id, []))
             print(f"  [{tech.severity:8s}] {owasp:10s} {tech.name}")
         return
+
+    api_key = resolve_api_key(args.api_key, args.api_key_env)
 
     # System prompt
     system_prompt = DEFAULT_SYSTEM_PROMPT
@@ -891,7 +920,7 @@ def main():
         system_prompt=system_prompt,
         timeout=args.timeout,
         api_mode=args.api_mode,
-        api_key=args.api_key,
+        api_key=api_key,
     )
 
     mode = "quick" if args.quick else "full"

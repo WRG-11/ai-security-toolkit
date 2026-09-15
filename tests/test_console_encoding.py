@@ -48,8 +48,8 @@ class NarrowConsoleTest(unittest.TestCase):
     def test_list_probes_prints_every_probe_not_just_the_ascii_prefix(self):
         """A presence check is not enough: the old code also printed the first ~30 lines.
 
-        What is measured is that the output reaches the count promised in the
-        kirilma noktasindan sonrasinin da geldigi.
+        What is measured is that the output actually reaches the count promised
+        in the header, past the point where the old code used to break.
         """
         proc = _run_with_encoding(["--list-probes"], "cp1254")
         lines = [ln for ln in proc.stdout.splitlines() if ln.startswith("  [")]
@@ -62,7 +62,7 @@ class NarrowConsoleTest(unittest.TestCase):
         )
 
     def test_utf8_console_is_unaffected(self):
-        """Duzeltme dar kodlamayi kurtarirken genis olani bozmamali."""
+        """The fix should rescue the narrow encoding without breaking the wide one."""
         proc = _run_with_encoding(["--list-probes"], "utf-8")
         self.assertEqual(proc.returncode, 0, f"stderr: {proc.stderr[-400:]}")
 

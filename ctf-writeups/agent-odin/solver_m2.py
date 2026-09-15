@@ -170,7 +170,7 @@ def main():
             print("!!!  SUCCESS! MISSION 2 COMPLETE!  !!!")
             print("!" * 60)
             print(f"Prompt: {prompt}")
-            print(f"Cevap: {content[:500]}")
+            print(f"Response: {content[:500]}")
             print("!" * 60)
 
             with open("FLAG_M2.txt", "w", encoding="utf-8") as f:

@@ -35,18 +35,23 @@ Response (potentially leaking confidential data)
 
 ## Documents / Dokümanlar
 
-| Document | Classification | Content |
+The 9 documents actually loaded by `COMPANY_DOCUMENTS` in
+[`vulnerable_rag.py`](vulnerable_rag.py) (`python -c "import ast; t=ast.parse(open('vulnerable_rag.py').read()); print(len([n for n in ast.walk(t) if isinstance(n, ast.Assign) and getattr(n.targets[0], 'id', '')=='COMPANY_DOCUMENTS'][0].value.elts))"`
+to recount). This table previously listed 10 different, unrelated filenames
+(`company_overview.md`, `salary_structure.md`, `merger_plans.md`,
+`client_database.md`, ...) that do not exist anywhere in this lab's code.
+
+| Document ID | Classification | Content |
 |----------|---------------|---------|
-| company_overview.md | PUBLIC | General company info |
-| product_catalog.md | PUBLIC | Product listings |
-| employee_handbook.md | INTERNAL | HR policies |
-| salary_structure.md | INTERNAL | Compensation data |
-| merger_plans.md | CONFIDENTIAL | M&A strategy |
-| client_database.md | CONFIDENTIAL | Client PII |
-| security_audit.md | CONFIDENTIAL | Vulnerability findings |
-| api_keys.md | TOP SECRET | API credentials |
-| poisoned_faq.md | POISONED | Injected malicious content |
-| poisoned_policy.md | POISONED | Injected override instructions |
+| `doc_about` | public | Company overview (founding, HQ, headcount) |
+| `doc_products` | public | Product listings (AcmeCloud, AcmeData, AcmeAI) |
+| `doc_policy` | internal | Remote work policy, internal VPN endpoint |
+| `doc_employees` | confidential | Employee directory with named salaries |
+| `doc_credentials` | top_secret | AWS root account, DB password, API/K8s tokens |
+| `doc_security` | confidential | Security incident report (phishing, compromised accounts) |
+| `doc_financial` | confidential | Q4 financial summary, unannounced funding round |
+| `doc_poisoned_1` | internal (poisoned) | Injected instruction demanding the user's employee ID/email |
+| `doc_poisoned_2` | internal (poisoned) | Injected instruction to leak a hardcoded "master reset token" |
 
 ## Attack Scenarios
 
@@ -89,6 +94,13 @@ python vulnerable_rag.py --defend
 | **Defended (filtering + detection)** | 0% |
 
 > Rates measured on the 5 included attack scenarios using `python vulnerable_rag.py --attack` (vulnerable) and `--attack --defend` (defended). Real-world leakage depends on model, document corpus, and attacker creativity.
+>
+> Independently re-run 2026-09-14 against `chromadb` 1.5.9 and
+> `sentence-transformers` 6.0.1 (current latest at the time, confirming the
+> lab still works against the newest releases of both) on `qwen2.5-coder:7b`
+> via Ollama -- a different model from whichever produced the original
+> numbers. Same result to the percentage point: 5/12 leaked (42%) undefended,
+> 0/12 leaked (0%) defended.
 
 ## Requirements / Gereksinimler
 

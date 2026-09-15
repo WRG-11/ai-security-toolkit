@@ -1,11 +1,11 @@
 """
 CH10 -- unbounded consumption attack library (12 techniques)
 
-Hedef: Rate limit, token budget veya timeout olmayan LLM API'ye
-a DoS (denial of service) or DoW (denial of wallet) attack.
+Goal: run a DoS (denial of service) or DoW (denial of wallet) attack against
+an LLM API that has no rate limit, token budget, or timeout.
 
-Referans: MITRE ATLAS AML.T0029, OWASP LLM10,
-DDoS + LLM API maliyet arastirmalari
+Reference: MITRE ATLAS AML.T0029, OWASP LLM10,
+DDoS + LLM API cost-exhaustion research
 """
 
 from .library import AttackCategory, AttackTechnique

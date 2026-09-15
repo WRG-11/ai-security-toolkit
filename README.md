@@ -44,9 +44,9 @@ This repo is that toolkit. Core tools (Tools section below) are stdlib-only Pyth
 
 | Tool | Description | Lines |
 |------|-------------|-------|
-| [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack patterns, **F1 0.91 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | <!-- METRIC:lines_ml -->1246<!-- /METRIC:lines_ml --> |
-| [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> probes, severity mapping | <!-- METRIC:lines_scanner -->924<!-- /METRIC:lines_scanner --> |
-| [LLM Firewall](tools/llm_firewall.py) | 10-guard security middleware (12 registered, 2 opt-in), HTTP proxy mode, plugin architecture | <!-- METRIC:lines_firewall -->949<!-- /METRIC:lines_firewall --> |
+| [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack patterns, **F1 0.91 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | <!-- METRIC:lines_ml -->1251<!-- /METRIC:lines_ml --> |
+| [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> probes, severity mapping | <!-- METRIC:lines_scanner -->953<!-- /METRIC:lines_scanner --> |
+| [LLM Firewall](tools/llm_firewall.py) | 10-guard security middleware (22 registered, 12 opt-in), HTTP proxy mode, plugin architecture | <!-- METRIC:lines_firewall -->1047<!-- /METRIC:lines_firewall --> |
 
 **Key features:**
 - Zero external dependencies (Python stdlib only)
@@ -225,7 +225,7 @@ actually run against each platform.
 |---|---|
 | Gandalf | [`gandalf_solver.py`](ctf-writeups/gandalf/gandalf_solver.py) — automated API solver, multiple extraction techniques |
 | Agent ODIN | [`solver.py`](ctf-writeups/agent-odin/solver.py), [`solver_m2.py`](ctf-writeups/agent-odin/solver_m2.py), [`solver_m3.py`](ctf-writeups/agent-odin/solver_m3.py) — one per mission |
-| Prompt Airlines | [`membership_card.png`](ctf-writeups/prompt-airlines/membership_card.png) — the crafted vision-injection image from Ch4 |
+| Prompt Airlines | [`membership_card.png`](ctf-writeups/prompt-airlines/membership_card.png) (benign-looking cover) + [`membership_card_v3.png`](ctf-writeups/prompt-airlines/membership_card_v3.png) (the actual injection payload rendered into the image) from Ch4 |
 
 [Scoreboard and technique index →](ctf-writeups/)
 
@@ -263,12 +263,12 @@ If you need enterprise-scale fleet probing, reach for PyRIT. If you need an exte
 
 ```
 OWASP LLM Top 10 (2026)     [##########] 10/10 categories
-MITRE ATLAS                  [########--]  15 tactics, 66 techniques
+MITRE ATLAS                  [######----]  <!-- METRIC:atlas_technique_count -->20<!-- /METRIC:atlas_technique_count --> technique IDs referenced (tools + labs), no tactic-level mapping
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
-Test Suite                   [######----]  <!-- METRIC:test_module_count -->23<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->50<!-- /METRIC:coverage_floor -->% enforced floor
-Tool Proficiency             [########--]  Garak, PyRIT, NeMo Guardrails
+Test Suite                   [######----]  <!-- METRIC:test_module_count -->32<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->53<!-- /METRIC:coverage_floor -->% enforced floor
+Framework Provenance         [####------]  10 attacks cite a Garak probe, 6 a PyRIT strategy (corpus provenance, not integration)
 ```
 
 ---
@@ -279,7 +279,13 @@ Tool Proficiency             [########--]  Garak, PyRIT, NeMo Guardrails
 - **LLM Backend:** Ollama (local inference)
 - **Vector DB:** ChromaDB (RAG lab)
 - **ML:** TF-IDF + character n-gram (custom, no sklearn)
-- **Frameworks tested:** Garak, PyRIT, NeMo Guardrails
+- **Framework techniques referenced:** 10 attack payloads are tagged to a
+  NVIDIA Garak probe module, 6 to a Microsoft PyRIT converter/strategy
+  (`git grep -oE '"garak:[^"]*"' labs/vulnllm/attacks/*.py | wc -l` / the
+  `pyrit:` equivalent, to recount) -- this is provenance for the attack
+  corpus, not a runtime integration or test suite run against either
+  framework. NeMo Guardrails is not referenced in the corpus; all three
+  appear only in the qualitative comparison table above.
 
 ---
 

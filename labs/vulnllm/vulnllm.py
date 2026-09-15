@@ -18,9 +18,13 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-# Proje rootunu path'e ekle
+# Add the project root to the path
 sys.path.insert(0, str(Path(__file__).parent))
+# tools/_console.make_output_safe() needs tools/ on the path -- vulnllm.py
+# lives under labs/vulnllm/, two levels below the repo root.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
 
+from _console import make_output_safe  # noqa: E402
 from challenges import ALL_CHALLENGES
 from config import (
     C_BOLD,
@@ -50,9 +54,9 @@ BANNER = f"""
 
 
 def print_menu():
-    """Ana menu."""
+    """Main menu."""
     print(BANNER)
-    print(f"  {C_BOLD}CHALLENGE'LAR:{C_RESET}\n")
+    print(f"  {C_BOLD}CHALLENGES:{C_RESET}\n")
 
     for ch_class in ALL_CHALLENGES:
         ch = ch_class()
@@ -64,21 +68,21 @@ def print_menu():
     print(f"    {C_YELLOW}medium{C_RESET} -- Simple filters; learn the bypass techniques")
     print(f"    {C_RED}hard{C_RESET}   -- Layered defense; a real-world scenario")
 
-    print(f"\n  {C_BOLD}MODEL TIER'LARI (--ollama --tier <T>):{C_RESET}")
+    print(f"\n  {C_BOLD}MODEL TIERS (--ollama --tier <T>):{C_RESET}")
     print(f"    {C_GREEN}t1{C_RESET}  -- Uncensored (dolphin-mistral) -- no safety; learn the attacks")
     print(f"    {C_YELLOW}t2{C_RESET}  -- Weak RLHF (qwen2.5:3b)     -- learn the bypass techniques")
-    print(f"    {C_RED}t3{C_RESET}  — Guclu (llama3.2:3b)          — gelismis teknikler")
+    print(f"    {C_RED}t3{C_RESET}  -- Strong (llama3.2:3b)        -- advanced techniques")
 
-    print(f"\n  {C_BOLD}KOMUTLAR:{C_RESET}")
+    print(f"\n  {C_BOLD}COMMANDS:{C_RESET}")
     print(f"    {C_DIM}Mock (default):{C_RESET}")
     print("    python vulnllm.py --challenge <N>              Interactive mode")
     print("    python vulnllm.py --challenge <N> --auto       Automated attack")
-    print("    python vulnllm.py --all --auto -d medium       Tumu medium modda")
-    print(f"    {C_DIM}Ollama (gercek LLM):{C_RESET}")
+    print("    python vulnllm.py --all --auto -d medium       Every challenge in medium mode")
+    print(f"    {C_DIM}Ollama (real LLM):{C_RESET}")
     print("    python vulnllm.py -c 1 --ollama --tier t1      CH01 interactive on T1")
     print("    python vulnllm.py -c 1 --ollama --tier t2 -a   CH01 automated on T2")
     print("    python vulnllm.py --all -o -t t1 -a            Every challenge automated on T1")
-    print(f"    {C_DIM}Diger:{C_RESET}")
+    print(f"    {C_DIM}Other:{C_RESET}")
     print("    python vulnllm.py --scoreboard                 Scoreboard")
     print()
 
@@ -124,7 +128,7 @@ def run_interactive(challenge):
         elif cmd == "score":
             print(f"\n  {C_BOLD}Score:{C_RESET} {challenge.state.score} points")
             print(f"  {C_BOLD}Successful attacks:{C_RESET} {len(challenge.state.successful_attacks)}")
-            print(f"  {C_BOLD}Bloklanan:{C_RESET} {len(challenge.state.blocked_attacks)}\n")
+            print(f"  {C_BOLD}Blocked:{C_RESET} {len(challenge.state.blocked_attacks)}\n")
             continue
 
         # Pick a ready-made attack by number
@@ -201,9 +205,9 @@ def run_all_auto(difficulty: Difficulty, use_ollama: bool = False, model_tier=No
     print(f"  {C_GREEN}Succeeded:          {total_success}/{total_attacks}{C_RESET}")
     print(f"  {C_BOLD}Total score:        {total_score}{C_RESET}")
 
-    print(f"\n  {C_BOLD}Challenge Bazli:{C_RESET}")
+    print(f"\n  {C_BOLD}By challenge:{C_RESET}")
     for r in all_reports:
-        status = f"{C_GREEN}PASS{C_RESET}" if r["successful"] > 0 else f"{C_RED}KALDI{C_RESET}"
+        status = f"{C_GREEN}PASS{C_RESET}" if r["successful"] > 0 else f"{C_RED}BLOCKED{C_RESET}"
         print(f"    #{r['challenge_id']:2d} [{r['owasp_id']}] {r['challenge_name']:<35} "
               f"{r['successful']}/{r['total_attacks']} attacks  {status}")
 
@@ -235,7 +239,7 @@ def show_scoreboard():
 
     reports = sorted(report_dir.glob("report_*.json"), reverse=True)
     if not reports:
-        print(f"  {C_YELLOW}Henuz rapor yok.{C_RESET}")
+        print(f"  {C_YELLOW}No reports yet.{C_RESET}")
         return
 
     print(f"\n{C_BOLD}  SCOREBOARD{C_RESET}")
@@ -258,6 +262,7 @@ def show_scoreboard():
 
 
 def main():
+    make_output_safe()
     parser = argparse.ArgumentParser(
         description="VulnLLM -- OWASP LLM Top 10 attack & defense lab",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -268,11 +273,11 @@ def main():
     parser.add_argument("--difficulty", "-d", choices=["easy", "medium", "hard", "expert"],
                         default="easy", help="Difficulty level (default: easy)")
     parser.add_argument("--ollama", "-o", action="store_true",
-                        help="Ollama backend kullan (gercek LLM)")
+                        help="Use the Ollama backend (real LLM)")
     parser.add_argument("--tier", "-t", choices=["t1", "t2", "t3"], default="t1",
                         help="Model tier: t1=uncensored, t2=weak, t3=strong (default: t1)")
     parser.add_argument("--model", "-m", type=str, default=None,
-                        help="Ollama model adi (tier'i override eder, orn: deepseek-r1:8b)")
+                        help="Ollama model name (overrides tier, e.g.: deepseek-r1:8b)")
     parser.add_argument("--scoreboard", "-s", action="store_true", help="Scoreboard")
 
     args = parser.parse_args()
@@ -292,7 +297,7 @@ def main():
             sys.exit(1)
         if not test_backend.model_exists():
             model_name = model_override or TIER_MODELS[model_tier]["model"]
-            print(f"{C_RED}Model bulunamadi: {model_name}")
+            print(f"{C_RED}Model not found: {model_name}")
             print(f"To install: ollama pull {model_name}{C_RESET}")
             sys.exit(1)
         if model_override:

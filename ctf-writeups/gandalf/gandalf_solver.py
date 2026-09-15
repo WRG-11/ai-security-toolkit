@@ -6,12 +6,12 @@ AI/LLM Security Toolkit - Faz 4
 Programmatic access to Gandalf: send a message, guess the password, solve a level.
 Supports 8+ levels, with a strategy-driven automatic solver.
 
-Kullanim:
+Usage:
     python gandalf_solver.py --level 1                    # One level, interactive
     python gandalf_solver.py --level 1 --auto             # Automatic solver
     python gandalf_solver.py --auto --all                 # Solve every level
     python gandalf_solver.py --check 1 "COCOLOCO"         # Verify a password
-    python gandalf_solver.py --status                     # Cozum durumu
+    python gandalf_solver.py --status                     # Solve status
 """
 
 import argparse
@@ -52,9 +52,9 @@ LEVEL_DESCRIPTIONS: dict[int, str] = {
     3: "Told not to say it, plus output filtering",
     4: "Password encoded by GPT",
     5: "Word blacklist",
-    6: "GPT-bazli kara liste",
+    6: "GPT-based blacklist",
     7: "Gandalf -- full defense",
-    8: "Gandalf the White -- en zor",
+    8: "Gandalf the White -- the hardest",
 }
 
 
@@ -222,14 +222,14 @@ def extract_password_candidates(text: str) -> list[str]:
     quoted = re.findall(r'["\']([A-Za-z]{4,15})["\']', text)
     candidates.extend([w.upper() for w in quoted])
 
-    # "password is X" veya "the word is X" pattern'leri
+    # "password is X" or "the word is X" patterns
     pw_patterns = re.findall(
         r"(?:password|word|secret|answer|code)\s+(?:is|was|:)\s*[\"']?([A-Za-z]{4,15})",
         text, re.IGNORECASE
     )
     candidates.extend([w.upper() for w in pw_patterns])
 
-    # Harf harf ayrilmis (C-O-C-O-L-O-C-O veya C O C O)
+    # Letter-by-letter (C-O-C-O-L-O-C-O or C O C O)
     letter_seq = re.findall(r"(?:^|\s)([A-Za-z])\s*[-.,;]\s*", text)
     if len(letter_seq) >= 4:
         candidates.append("".join(letter_seq).upper())
@@ -246,7 +246,7 @@ def extract_password_candidates(text: str) -> list[str]:
     if len(single_letters) >= 4:
         candidates.append("".join(single_letters).upper())
 
-    # Tekrarlari kaldir, sirayi koru
+    # Remove duplicates, keep order
     seen = set()
     unique = []
     for c in candidates:
@@ -305,7 +305,7 @@ class GandalfSolver:
             for prompt in prompts:
                 attempt_count += 1
                 if verbose:
-                    print(f"  [{attempt_count}] Strateji: {strat_name}")
+                    print(f"  [{attempt_count}] Strategy: {strat_name}")
                     print(f"      Prompt: {prompt[:70]}...")
 
                 resp = send_message(level, prompt)
@@ -326,7 +326,7 @@ class GandalfSolver:
 
                 for candidate in candidates:
                     if verbose:
-                        print(f"      Deneniyor: {candidate}", end=" ")
+                        print(f"      Trying: {candidate}", end=" ")
 
                     if check_password(level, candidate):
                         if verbose:
@@ -343,7 +343,7 @@ class GandalfSolver:
                         if verbose:
                             print("-> wrong")
 
-                # Kisa bekleme (rate limit)
+                # Short delay (rate limit)
                 time.sleep(1)
 
         if verbose:
@@ -362,7 +362,7 @@ class GandalfSolver:
             password = self.solve_level(level, verbose)
 
             if password:
-                print(f"\n  >>> COZULDU: {password}")
+                print(f"\n  >>> SOLVED: {password}")
             else:
                 print("\n  >>> UNSOLVED -- needs a manual attempt")
                 # Carry on to the next levels
@@ -371,7 +371,7 @@ class GandalfSolver:
     def print_status(self):
         """Show the solve status."""
         print(f"\n{'=' * 50}")
-        print("  GANDALF CTF -- COZUM DURUMU")
+        print("  GANDALF CTF -- SOLVE STATUS")
         print(f"{'=' * 50}\n")
 
         solved_count = 0
@@ -391,7 +391,7 @@ class GandalfSolver:
         attempts = self.progress.get("attempts", {})
         total_attempts = sum(a.get("count", 0) for a in attempts.values())
 
-        print(f"\n  Cozulen: {solved_count}/8 (+ bonus)")
+        print(f"\n  Solved: {solved_count}/8 (+ bonus)")
         print(f"  Total attempts: {total_attempts}")
         print(f"{'=' * 50}")
 
@@ -410,11 +410,11 @@ def interactive_mode(level: int, solver: GandalfSolver):
     print(f"  GANDALF LEVEL {level}: {desc}")
     print(f"  Defender: {defender}")
     print(f"{'=' * 50}")
-    print("\nKomutlar:")
+    print("\nCommands:")
     print("  /check PASSWORD  -- Verify a password guess")
-    print("  /hint         -- Strateji onerileri")
+    print("  /hint         -- Suggested strategies")
     print("  /auto           -- Automatic solver")
-    print("  /exit         -- Cik")
+    print("  /exit         -- Exit")
     print()
 
     while True:
@@ -460,7 +460,7 @@ def interactive_mode(level: int, solver: GandalfSolver):
                 # Automatic candidate extraction
                 candidates = extract_password_candidates(resp.answer)
                 if candidates:
-                    print(f"  [Adaylar: {', '.join(candidates)}]")
+                    print(f"  [Candidates: {', '.join(candidates)}]")
                     print("  You can verify with /check PASSWORD\n")
 
         except (KeyboardInterrupt, EOFError):
@@ -483,14 +483,14 @@ def main():
             "  %(prog)s --level 1 --auto           # Solve automatically\n"
             "  %(prog)s --auto --all               # Solve every level\n"
             "  %(prog)s --check 1 COCOLOCO         # Verify a password\n"
-            "  %(prog)s --status                   # Cozum durumu\n"
+            "  %(prog)s --status                   # Solve status\n"
         ),
     )
     parser.add_argument("--level", "-l", type=int, help="Level number (1-12)")
     parser.add_argument("--auto", "-a", action="store_true", help="Automatic solver")
     parser.add_argument("--all", action="store_true", help="Solve every level (1-8)")
     parser.add_argument("--check", nargs=2, metavar=("LEVEL", "PASSWORD"), help="Verify a password")
-    parser.add_argument("--status", "-s", action="store_true", help="Cozum durumu")
+    parser.add_argument("--status", "-s", action="store_true", help="Solve status")
     parser.add_argument("--verbose", "-v", action="store_true", default=True, help="Verbose output")
     parser.add_argument("--send", nargs=2, metavar=("LEVEL", "PROMPT"), help="Send a single message")
 
@@ -527,7 +527,7 @@ def main():
             print(f"Gandalf: {safe_answer}")
             candidates = extract_password_candidates(resp.answer)
             if candidates:
-                print(f"\nAdaylar: {', '.join(candidates)}")
+                print(f"\nCandidates: {', '.join(candidates)}")
         return
 
     # Automatic -- every level
@@ -540,7 +540,7 @@ def main():
     if args.auto and args.level:
         password = solver.solve_level(args.level, verbose=args.verbose)
         if password:
-            print(f"\nCozum: {password}")
+            print(f"\nSolution: {password}")
         return
 
     # Interactive mode

@@ -161,6 +161,32 @@ def count_test_modules(root: Path) -> int:
     return len(list((root / "tests").glob("test_*.py")))
 
 
+_ATLAS_TECHNIQUE_RE = re.compile(r"AML\.T\d+(?:\.\d+)?")
+
+
+def count_atlas_techniques(root: Path) -> int:
+    """Distinct MITRE ATLAS technique IDs (AML.Txxxx[.xxx]) referenced anywhere.
+
+    README used to claim "15 tactics, 66 techniques" with nothing behind
+    either number -- no AML.TAxxxx (tactic) ID appears anywhere in the
+    codebase, and the actual technique count is 20, not 66. Grepping every
+    .py file (not just labs/vulnllm/attacks/) because ATLAS IDs also appear
+    in labs/vulnllm/challenges/ and labs/vulnllm/defenses/ -- a narrower
+    glob would undercount. AML.T9999 (a placeholder used in one test's
+    synthetic fixture, not a real ATLAS ID) is excluded.
+    """
+    _skip_dirs = {".venv", "venv", "dist", "build", "__pycache__", ".git", "node_modules"}
+    seen: set[str] = set()
+    for path in root.rglob("*.py"):
+        if _skip_dirs & set(path.relative_to(root).parts):
+            continue
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        if "T9999" in text:
+            text = text.replace("AML.T9999", "")
+        seen.update(_ATLAS_TECHNIQUE_RE.findall(text))
+    return len(seen)
+
+
 def coverage_floor(root: Path) -> int:
     """The enforced floor from .coveragerc.
 
@@ -189,6 +215,7 @@ METRICS = {
     "challenge_count": count_challenges,
     "test_module_count": count_test_modules,
     "coverage_floor": coverage_floor,
+    "atlas_technique_count": count_atlas_techniques,
 }
 
 # Which metrics each file is expected to carry. Explicit, because "missing
@@ -205,6 +232,7 @@ TARGETS: dict[Path, tuple[str, ...]] = {
         "lines_scanner",
         "lines_firewall",
         "coverage_floor",
+        "atlas_technique_count",
     ),
     TOOLS_README: (
         "attack_payload_count",

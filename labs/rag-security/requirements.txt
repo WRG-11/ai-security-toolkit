@@ -2,5 +2,11 @@
 #
 # Not needed by tools/ or labs/vulnllm/ (both stdlib-only) -- only this lab
 # needs a vector DB + embedding model. See README.md "Requirements" section.
-chromadb
-sentence-transformers
+#
+# Floor verified 2026-09-14 with a real --setup + --attack run (see
+# ../README.md's Results section) -- not a security-vetted pin, just the
+# newest release of each at the time, confirmed working. Kept in sync with
+# pyproject.toml's [rag] extra; that file explains why sentence-transformers
+# is required here even though chromadb installs without it.
+chromadb>=1.5.9
+sentence-transformers>=6.0.1

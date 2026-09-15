@@ -7,6 +7,315 @@ not a versioned Python package. Releases are tracked by GitHub commit SHA
 rather than semantic versions. This CHANGELOG batches notable additions
 and updates by date for readability.
 
+## [0.6.0] -- 2026-09-15 -- A fail-open firewall bug closed, an env-var API key, a coverage-floor ratchet, and cleanup
+
+### Fixed (security)
+
+- `tools/llm_firewall.py`'s `LLMFirewall.check_input`/`check_output` caught a
+  guard's exception as `blocked=False` -- fail-open. If a crafted input
+  happened to also crash the one guard that would have caught it, the input
+  passed through as if that guard had found nothing wrong. This was the
+  unfixed other half of a bug `tests/test_ai_cp_01_02_orchestrator_fail_closed.py`
+  had already fixed once in `labs/vulnllm/defenses/orchestrator.py` -- that
+  test's own docstring names this file as the half left standing ("Any
+  exception bubbled to llm_firewall which caught it as blocked=False --
+  double fail-open chain"). `check_input` now treats a guard exception as
+  `blocked=True`; `check_output` now redacts the response outright instead
+  of leaving unguarded text in place. A sibling gap in the same function --
+  `check()` correctly flags a response, but the `sanitize()` call meant to
+  fix it up raises, and the untouched flagged text used to ship anyway --
+  is also closed, redacting on that path too. 4 new tests total, red-first,
+  mutation-checked.
+
+### Fixed (security, third finding)
+
+- `tools/llm_firewall.py`'s `OUTPUT_GUARD_REGISTRY` never listed
+  `SimilarityChecker` (compares LLM output against the system prompt to
+  catch leakage) -- exported from `defenses/__init__.py` and actively used
+  by `labs/vulnllm/challenges/base.py` and `defense_demo.py`, but a firewall
+  config naming it in `output_guards` silently fell through the
+  unknown-guard branch. Third instance of the "registered but not wired"
+  gap `test_ai_l2_01_firewall_registry_wireup.py` already fixed once for
+  `MultiTurnTracker`/`SlidingWindowRateLimiter`. Wiring it in also required
+  calling `.set_reference(system_prompt)` on construction -- without it,
+  the guard's own `check()` is a permanent no-op. Kept opt-in, matching the
+  other two guards' precedent. Updated the two hand-written "12 registered,
+  2 opt-in" doc surfaces (not README metric markers, so
+  `readme_stamp.py` cannot catch this class of drift) to "13 registered,
+  3 opt-in". 4 new tests, red-first.
+
+### Fixed (security, fourth finding -- full registry audit)
+
+- A full diff of `defenses.__all__` against `tools/llm_firewall.py`'s two
+  registries (prompted by the SimilarityChecker finding above) turned up
+  **nine more** exported `InputGuard`/`OutputGuard` subclasses in the same
+  "registered but not wired" state, all confirmed live elsewhere in the labs:
+  `DangerousActionFilter`, `EmbeddingClassifier`,
+  `InstructionHierarchyEnforcer`, `LLMAsJudge`, `AnomalyFilter`,
+  `CanarySystem`, `PackageVerifier`, `ResponseConsistencyAnalyzer`, and
+  `ToolCallValidator` (the same guard fixed for the inline-sanitize bug
+  above -- it was never reachable through this firewall's own registry at
+  all until now). Three more guards (`SecretLeakFilter`,
+  `SecretPatternFilter`, `SecretWordFilter`) require a caller-supplied list
+  with no default and are deliberately left out -- build-in-code guards by
+  design, not a wiring gap. All nine kept opt-in (`LLMAsJudge` makes a real
+  Ollama call per check). Registry now 22 total (was 13), 12 opt-in (was
+  3); the two hand-written doc surfaces updated again. 4 new tests,
+  red-first.
+
+### Fixed (OWASP 2026 remap consistency, second pass)
+
+- Reading the last two previously-unread files
+  (`tools/prompt_injection_detector.py`, `huggingface-space/app.py`) plus a
+  targeted repo-wide `git grep` for "LLM0N" turned up four more instances of
+  the same pre-2026-remap chapter-number correspondence already fixed for
+  `labs/vulnllm/`'s challenge classes: `huggingface-space/app.py`'s About
+  section ("LLM07 (system prompt leakage)" -> LLM08);
+  `tools/README.md`'s own scanner-coverage list (four of ten rows wrong
+  against the scanner's own `OWASP_NAMES`); `labs/rag-security/vulnerable_rag.py`'s
+  scenario 3 OWASP tag; and `labs/vulnllm/defenses/hallucination_detector.py`
+  + `tool_validator.py`'s module-docstring OWASP references (LLM09 ->
+  LLM07 for Misinformation, LLM06 -> LLM03 for Excessive Agency).
+
+### Fixed (test suite, dead probe)
+
+- `tests/test_smoke_imports.py`'s `_HAS_V01_DETECTOR` checked
+  `labs/vulnllm/prompt_injection_detector.py` -- a path that has never
+  existed; the v0.1 regex detector has always lived at
+  `tools/prompt_injection_detector.py`. Since the guarded path was
+  always `False`, `test_prompt_injection_detector_ml` was `SKIPPED` in
+  every run since this file was added, never once actually exercising
+  the import it exists to guard. Fixed the path; the test now runs and
+  passes. Also translated two leftover Turkish docstrings in
+  `tests/test_wheel_install.py` found in the same pass. This closes the
+  full-repo audit requested this session: every `.py` file (93 total)
+  and documentation surface has now been read in full.
+
+### Fixed (i18n, full-repo audit completion)
+
+- Read every remaining source file not yet covered by this branch's
+  earlier i18n passes end to end: `labs/vulnllm/attacks/*.py` (all 10
+  chapters + `library.py`), `labs/vulnllm/backend/*.py`,
+  `labs/rag-security/vulnerable_rag.py`, all four CTF solvers, and
+  `huggingface-space/index.html`. Translated the remaining Turkish
+  operator-facing text found in each (module docstrings, CLI help,
+  print labels) -- left the intentional multilingual attack/detection
+  corpus untouched throughout (re-verified per file after editing).
+  `huggingface-space/index.html` needed no changes; already accurate.
+- Two related findings from the same pass: `ctf-writeups/prompt-airlines/`
+  linked the wrong image as "the crafted vision-injection artefact" (the
+  real payload, with literal injection text rendered into it, was a
+  second, unreferenced file); `labs/rag-security/README.md`'s document
+  table described 10 documents that do not exist in the code at all,
+  instead of the real 9.
+
+### Fixed (labs/vulnllm, cross-tool consistency + crashes)
+
+- Two labs/vulnllm CLI entrypoints (`vulnllm.py`, `defense_demo.py`) crashed
+  on a narrow-encoding (e.g. Windows cp1254) console -- unlike all three
+  `tools/*.py` CLIs, neither called `tools/_console.make_output_safe()`.
+  `vulnllm.py`'s box-drawing ASCII-art banner hit this on every invocation,
+  including the README's own Quick Start (`python vulnllm.py`). Fixed both.
+- `defense_demo.py`'s `test_llm_judge()` crashed with a plain
+  `AssertionError` whenever Ollama was unreachable (the common case for
+  anyone trying the demo without Ollama installed): it asserted the OLD
+  fail-open default, but `LLMAsJudge`'s own docstring says "fail-open is
+  unacceptable" for a security control and its real default fails closed.
+  Fixed the assertion and messaging to demonstrate the actual, correct
+  behavior. 3 new tests (narrow-console regression, matching the existing
+  `tools/` coverage).
+- The 10 challenge classes' hardcoded `owasp_id` fields used a simple
+  chapter-number correspondence (ch06=LLM06) that had never been updated
+  after `tools/llm_scanner.py`'s `OWASP_MAP` was remapped to the OWASP 2026
+  edition -- the same repo reported two different OWASP IDs for the same
+  attack category (e.g. Excessive Agency: LLM03 from the scanner, LLM06
+  from the lab) depending on which tool you asked. Unified to the scanner's
+  mapping across all 8 affected challenges.
+- `labs/vulnllm/README.md` rewritten with re-verified numbers: "21 Defense
+  Modules" corrected to 27 (this file was never covered by
+  `readme_stamp.py`'s stamping, so it drifted six behind with no gate to
+  catch it); the broken Quick Start command (`--backend ollama --model
+  llama3`, neither flag exists) replaced with commands checked against
+  real `--help` output; the OWASP Mapping table (previously 6 of 10 rows,
+  pre-remap naming) replaced with all 10; the unsourced "99% (192/194)"
+  block-rate claim replaced with a full difficulty sweep (142, 25, 5,
+  0 attacks succeeded of 194 at easy/medium/hard/expert) with its exact
+  reproducing command.
+- Housekeeping: `labs/vulnllm/reports/` (JSON reports the CLI writes) added
+  to `.gitignore` -- every run of the documented example left untracked files.
+
+### Fixed (docs, security-relevant)
+
+- `FirewallConfig.action`'s `--action` CLI help text said only "Detection
+  action (default: block)" for choices `block`/`log`/`warn` -- in security
+  tooling "warn"/"log" conventionally mean "flag it but let it through".
+  Traced the code: all three modes reject flagged input identically;
+  `action` only controls whether `check_input()` stops at the first
+  flagging guard (`block`) or checks every remaining one (`log`/`warn`) for
+  a fuller audit trail. No test asserted either reading before this, so
+  left the actual blocking behavior alone (changing a security control's
+  semantics based on which reading of an ambiguous flag "should" be true
+  is not this session's call to make) and fixed what is verifiably true:
+  the help text, the config field comment, and the `check_input()` break
+  comment. 3 new tests lock in the current, now-documented behavior.
+
+### Fixed (i18n)
+
+- A consistent minority of `GuardResult.reason`/`issues.append()` messages
+  across the input/output guards were still Turkish (rate limiter, prompt
+  leakage detector, instruction hierarchy guard, language detector, Unicode
+  normalizer, multi-turn tracker, slopsquatting guard) while most were
+  already English -- these are operator-facing diagnostic text (audit log,
+  `--check` output), not the toolkit's intentional multilingual attack
+  corpus, so the same translate-prose-not-data rule applies. Also fixed a
+  `%{ratio*100:.0f}` formatting artefact (percent sign before the number)
+  found while touching `language_detector.py`, and ~10 more leftover
+  Turkish comments/docstrings this session's earlier sweep missed.
+
+### Fixed (security, second finding)
+
+- `labs/vulnllm/defenses/tool_validator.py`'s `ToolCallValidator.sanitize()`
+  only stripped fenced (```` ```...``` ````) code blocks; `check()` scans both
+  fenced and inline (`` `...` ``) code. Reproduced directly: `` `rm -rf /` ``
+  written as inline code got `blocked=True` from `check()` and then shipped
+  completely unredacted from `sanitize()` -- a guard that correctly detects
+  danger and then ships it anyway. `sanitize()` now also redacts inline spans
+  that themselves match a flagged pattern (an unrelated safe inline snippet
+  in the same message is left alone). 5 new tests (this module had none
+  before), red-first.
+
+### Added
+
+- `tools/llm_scanner.py --api-key-env VAR`: reads the `--api-mode openai`
+  bearer token from an environment variable instead of taking it literally on
+  the command line, where it lands in shell history and is visible to any
+  other user on the box via `ps`/the process list for as long as the scan
+  runs. Mutually exclusive with `--api-key` (both still exist; `--api-key`'s
+  help text now points at the env-var form). Resolution logic lives in a
+  standalone `resolve_api_key()` so it is unit-testable without argparse or a
+  network call; covered in `tests/test_llm_scanner_api_key_env.py` (6 tests,
+  mutation-checked: reverting the fail-on-missing-env-var behavior turns 2 of
+  them red).
+
+### Fixed
+
+- Translated ~20 leftover Turkish-language code comments and docstrings across
+  `tools/`, `labs/vulnllm/`, and `tests/` to English. These were missed by the
+  earlier "translate the remaining Turkish comments and docstrings" pass
+  (`#35`, 2026-08-21) -- found by grepping comment lines for Turkish
+  diacritics, common words, and suffixes, distinguishing developer prose
+  (translated) from the toolkit's intentional multilingual attack corpus and
+  language-detection data (left as-is; Turkish-language payloads are a
+  documented, load-bearing part of the corpus, not a leak).
+- `tools/prompt_injection_detector_ml.py`'s `build_default_anchors()` caught
+  the anchor-building loop in a bare `except Exception: pass`, which would
+  have silently dropped anchors for any reason with no trace.
+  `load_attack_payloads()` already handles the one expected failure (a
+  missing lab tree) with its own `[WARN]`, so the outer bare except was only
+  ever going to hide a genuine bug in the loop body. Narrowed to
+  `(AttributeError, TypeError)` with a `[WARN]` printed to stderr, matching
+  the file's existing error-reporting style.
+- `.github/workflows/ci.yml`'s advisory bandit job carried a comment dated
+  2026-08-03 describing two findings (unvalidated `urlopen` scheme,
+  `HTTPServer` defaulting to `0.0.0.0`) that `fix(security)` commit
+  `7c1bbfc3` already fixed on 2026-08-21. Re-measured at the job's own `-ll`
+  threshold: zero medium+ severity findings remain. Comment rewritten to
+  reflect the current, re-verified state instead of the stale one.
+- `.github/workflows/ci.yml`'s advisory mypy job carried a companion comment,
+  also dated 2026-08-03, naming "7 real findings" (`Counter()` typed by
+  typeshed as `Dict[K, int]` regardless of what it holds) that
+  `fix(types)` already fixed on 2026-08-21. Re-measured 2026-09-14:
+  `mypy tools/ --ignore-missing-imports` exits clean. Comment rewritten.
+- `.coveragerc`'s `fail_under` floor had drifted below the measured coverage
+  twice before, by this file's own account (30 vs a real 51%, then 45 vs a
+  real 53%, each time ratcheted back up after the gap was noticed). Measured
+  2026-09-14: 56%, a 6-point gap from the floor of 50 -- the same drift
+  starting again. Ratcheted to 53, holding the file's own established
+  3-point margin.
+
+### Added
+
+- `tests/test_owasp_id_consistency.py`: a mechanical regression gate for the
+  OWASP LLM Top 10 2026 remap landed in `0.5.0`. Six test classes check every
+  surface that names an OWASP ID (`labs/vulnllm/challenges/ch0X_*.py`,
+  `tools/README.md`, `labs/vulnllm/README.md`, `huggingface-space/app.py`,
+  `labs/rag-security/vulnerable_rag.py`, and two defense-module docstrings)
+  against `tools/llm_scanner.py`'s `OWASP_MAP`/`OWASP_NAMES` as the single
+  source of truth, instead of relying on a one-time manual sweep to keep
+  them in sync. Mutation-checked: reverting any one of the six surfaces to
+  its pre-remap ID turns the matching test red.
+- `--model`/`-m` CLI flag on `labs/rag-security/vulnerable_rag.py`. The
+  `MODEL` constant was hardcoded with no override, so anyone without exactly
+  `llama3.2:3b` pulled could not run the lab without editing the source.
+  Found while independently re-verifying the lab's leakage-rate claim below.
+  Covered by `tests/test_vulnerable_rag_model_override.py` (3 tests, skips
+  cleanly when chromadb/sentence-transformers are not importable).
+
+### Fixed
+
+- `labs/rag-security/README.md`'s "42% -> 0%" prompt-injection leakage claim
+  had never been independently re-run since it was first measured -- it
+  cited only the original run. Re-verified live 2026-09-14 against a
+  freshly built isolated venv (chromadb 1.5.9, sentence-transformers 6.0.1)
+  and a locally hosted Ollama model (`qwen2.5-coder:7b`, not the
+  originally-documented `llama3.2:3b`): the `--setup` + `--attack` sequence
+  reproduced 42%/0% exactly. Footnoted in the README next to the existing
+  citation, alongside the model actually used, as evidence the result is
+  not tied to one specific model.
+- `labs/rag-security/requirements.txt` and `pyproject.toml`'s `[rag]` extra
+  had `chromadb` and `sentence-transformers` completely unpinned -- no
+  version floor at all. Pinned to `chromadb>=1.5.9` and
+  `sentence-transformers>=6.0.1`, the versions actually installed and run
+  above; commented in both files as a verified-working floor, not a
+  security-vetted pin (the security-scanning tool available in this
+  environment could not authenticate to check these packages for known
+  vulnerabilities).
+
+### Added (test coverage)
+
+- `tests/test_vulnllm_console_encoding.py` covered two of `vulnllm.py`'s and
+  `defense_demo.py`'s documented invocation shapes (the default menu, and
+  `--all --auto -d expert`) end-to-end, but two more shapes named in
+  `labs/vulnllm/README.md`'s own Quick Start -- `--challenge 1` (interactive)
+  and `defense_demo.py --interactive` -- run a *different* code path
+  (`run_interactive()` prints its own banner before the chat loop) that
+  neither existing test touched. Added both, feeding closed stdin
+  (`subprocess.DEVNULL`) so the already-handled `EOFError` exits the loop
+  deterministically instead of the test depending on whatever stdin happens
+  to be inherited from the runner. Currently green (the encoding fix already
+  applies at `main()`'s entry point, before any code path branches), so this
+  closes a coverage gap rather than a live bug -- mutation-checked by
+  temporarily disabling `make_output_safe()` and confirming both existing
+  and new tests go red with the exact `UnicodeEncodeError` this file's
+  original fix addressed, then restoring.
+- `labs/rag-security/vulnerable_rag.py`'s CLI remains structurally
+  untested end-to-end in CI: it needs `chromadb` + `sentence-transformers`
+  (not in the `[dev]` extra CI installs) and a running Ollama server (not
+  available on a CI runner). Documented as a known, accepted limitation in
+  the local audit notes rather than worked around with a mock that would
+  stop testing the thing that actually broke before (a real vector-store +
+  embedding-model + LLM round trip).
+
+### Fixed (i18n)
+
+- 8 of `labs/vulnllm/challenges/`'s 10 challenge files (all but ch08 and
+  ch10) still had Turkish text in their `description`, `objective`,
+  `get_system_prompt()`, `get_default_response()`, or the `"response"`
+  values inside `get_response_rules()` -- the simulated-LLM text a user
+  actually sees on a successful exploit. An earlier translation pass had
+  covered module docstrings, comments, and `owasp_id` fields, but never
+  this layer. Translated all of it to English. Left untouched, on
+  purpose: every `"pattern"` regex value and multilingual word list
+  (e.g. `SecretWordFilter(["sifre", "password", ...])`) -- these match
+  against user-submitted attack text, and the attack corpus in
+  `labs/vulnllm/attacks/*.py` is intentionally multilingual; translating
+  the detection side would silently break Turkish-language attack
+  detection. Also translated two leftover Turkish developer comments
+  (`defenses/guards.py`, `defenses/instruction_hierarchy.py`) and
+  `vulnllm.py`'s own `print_menu()` banner text, found along the way.
+  Verified no test asserted on the exact strings changed; the suite
+  passes unchanged (185 passed, 9 skipped, 1 xfailed).
+
 ## [0.5.0] -- 2026-09-06 -- OWASP LLM Top 10 2026 remap, OpenAI-compatible targets, and a scorer that stopped counting refusals as wins
 
 ### Changed

@@ -1,10 +1,10 @@
 """
-CH04 — Data and Model Poisoning Attack Library (15 Teknik)
+CH04 — Data and Model Poisoning Attack Library (15 Techniques)
 
 Goal: change the model's behaviour by manipulating the training data or the
 fine-tuning process -- plant a backdoor, introduce bias.
 
-Referans: MITRE ATLAS AML.T0020/T0019, BadNets, PoisonGPT,
+Reference: MITRE ATLAS AML.T0020/T0019, BadNets, PoisonGPT,
 Carlini et al. poisoning, label flipping
 """
 

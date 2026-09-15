@@ -92,14 +92,13 @@ jobs:
       - run: ruff check .
 
   mypy:
-    # Advisory, not a gate. Measured 2026-08-03: 7 real findings in
-    # tools/, all the same shape -- Counter() is typed by typeshed as
-    # Dict[K, int] regardless of what you put in it, and
-    # prompt_injection_detector_ml.py accumulates float TF-IDF scores in one.
-    # Runs correctly (Python does not enforce this at runtime); it is a type
-    # annotation mismatch, not a demonstrated functional bug, and fixing it
-    # right means widening the annotation across the class rather than
-    # silencing each line -- a maintainer call, not this job's to force.
+    # Advisory, not a gate. The 7 findings measured here on 2026-08-03 (all
+    # the same shape -- Counter() typed by typeshed as Dict[K, int]
+    # regardless of what you put in it, while prompt_injection_detector_ml.py
+    # accumulated float TF-IDF scores in one) were fixed in
+    # fix(types) 2026-08-21: the containers now carry the types their values
+    # already had. Re-measured 2026-09-14: `mypy tools/ --ignore-missing-imports`
+    # exits clean (0 errors, 7 source files).
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -112,16 +111,21 @@ jobs:
 
   bandit:
     # Advisory, not a gate -- continue-on-error makes that literal, not just
-    # a comment. Measured 2026-08-03: 12 medium-severity findings already
-    # exist. Most in labs/ are almost certainly BY DESIGN (labs/vulnllm is a
+    # a comment. The two findings this comment used to name (unvalidated
+    # urlopen scheme in llm_scanner.py, HTTPServer defaulting to 0.0.0.0 in
+    # prompt_injection_detector_ml.py's demo server) were fixed in
+    # fix(security) 7c1bbfc3 (2026-08-21): urlopen now goes through
+    # `_http_only()`, and the server binds to 127.0.0.1 unless a caller
+    # deliberately passes a different host. Re-measured 2026-09-14 at this
+    # job's own `-ll` (medium+ severity) threshold: zero findings -- what
+    # remains is Low-severity only (a lab's own intentionally-hardcoded CTF
+    # secret, a non-crypto `random.Random` shuffle, a narrowed exception
+    # handler), which `-ll` already excludes from this job's output. Kept as
+    # an advisory job, not tightened to `-l`, because labs/vulnllm is a
     # "DVWA for LLMs" -- deliberately-vulnerable teaching code IS the
-    # product). The two in tools/ are more interesting: urlopen in
-    # llm_scanner.py (the whole point of a network-facing scanner) and
-    # HTTPServer bound to 0.0.0.0 in prompt_injection_detector_ml.py's demo
-    # server (undocumented -- worth a maintainer look, not this job's call
-    # to fail the build over). Complements CodeQL's advanced workflow
-    # (Security tab, deeper analysis) with a fast, PR-visible pass instead
-    # of replacing it.
+    # product, and a Low-severity floor would flag that by design.
+    # Complements CodeQL's advanced workflow (Security tab, deeper analysis)
+    # with a fast, PR-visible pass instead of replacing it.
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
