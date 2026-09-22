@@ -204,7 +204,7 @@ python llm_firewall.py --generate-config > my_config.json
 
 ---
 
-## Architecture / Mimari
+## Architecture
 
 ```
 User Input

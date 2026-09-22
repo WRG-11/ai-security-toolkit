@@ -7,12 +7,10 @@ setup and detection logic work correctly against a different model
 (qwen2.5-coder:7b) once this override exists -- reproduced the documented
 42% -> 0% leakage result exactly (see labs/rag-security/README.md).
 
-Skipped when chromadb is not importable: it is an optional extra
-(`pip install -e ".[rag]"`), and this machine's default environment happens
-to have a broken chromadb install (an unrelated opentelemetry version
-conflict) -- exactly the kind of transitive-dependency fragility that is
-this lab's own reason to exist as an isolated optional extra rather than a
-core dependency.
+These tests used to be skipped wherever chromadb was not importable -- in
+CI, which installs `[dev]` and not `[rag]`, that meant always. The module now
+imports chromadb only when a VulnerableRAG is built, so they run everywhere.
+The skip guard stays for an import failure of any other kind.
 """
 from __future__ import annotations
 

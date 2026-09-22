@@ -6,13 +6,13 @@ A vulnerable RAG system — 5 attack scenarios and their defenses.
 
 ---
 
-## What is this? / Bu ne?
+## What is this?
 
 A deliberately vulnerable Retrieval-Augmented Generation (RAG) system that demonstrates how attackers can extract confidential information, poison knowledge bases, and manipulate LLM responses through the retrieval pipeline.
 
 A lab that demonstrates attacks against a RAG pipeline and teaches the defenses against them.
 
-## Architecture / Mimari
+## Architecture
 
 ```
 User Query
@@ -101,8 +101,15 @@ python vulnerable_rag.py --defend
 > via Ollama -- a different model from whichever produced the original
 > numbers. Same result to the percentage point: 5/12 leaked (42%) undefended,
 > 0/12 leaked (0%) defended.
+>
+> **Read 42% as an upper bound.** The leak check (`find_leaks`) looks for
+> marker strings in the answer. Two of the markers, "salary" and "password",
+> name a topic rather than a value, so a refusal such as "I cannot share
+> salary information" counts as a leak. A test pins this as a known gap:
+> `tests/test_vulnerable_rag_logic.py`. Fixing it changes the number above, and
+> that number should come from a new live run, not an estimate.
 
-## Requirements / Gereksinimler
+## Requirements
 
 - Python 3.10+
 - ChromaDB (`pip install chromadb`)

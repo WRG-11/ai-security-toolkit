@@ -46,7 +46,7 @@ dependencies = []
 # that lab a RAG lab; nothing else in the repo imports them.
 #
 # sentence-transformers is not optional here even though chromadb installs
-# without it: vulnerable_rag.py:107 asks for
+# without it: `VulnerableRAG.__init__` in vulnerable_rag.py asks for
 # `embedding_functions.SentenceTransformerEmbeddingFunction`. This extra
 # listed chromadb alone while labs/rag-security/requirements.txt listed both,
 # so the command the README points at -- `pip install -e ".[rag]"` -- produced

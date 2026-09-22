@@ -61,6 +61,30 @@ and updates by date for readability.
   Turkish comment and does not flag a Turkish payload. User-facing strings share
   a token kind with the corpus, so the test cannot check them; they were
   reviewed by hand.
+- Four bilingual headings ("Architecture / Mimari", "Requirements /
+  Gereksinimler", "What is this? / Bu ne?") in `labs/rag-security/README.md`
+  and `tools/README.md` are English-only now.
+
+### Fixed -- the RAG lab could not be tested
+
+- `labs/rag-security/vulnerable_rag.py` imported chromadb at module level. CI
+  installs `[dev]`, not `[rag]`, so the file could not be imported there, its
+  three tests were skipped on every run, and the file had 2.5% coverage. The
+  import now happens when a `VulnerableRAG` is built. If the extra is missing
+  or broken, the lab prints the install command and exits with 2 instead of a
+  traceback. With no action flag, `main()` prints help; before, it loaded the
+  embedding model and opened the vector store first.
+- The defended mode's document filter and the leak check are now functions
+  (`defend_document`, `find_leaks`) and have tests. They run with chromadb
+  blocked, so the result does not depend on the environment. One test checks
+  every poisoned document in the lab's own corpus, not a fixture.
+  `vulnerable_rag.py` coverage: 2.5% → 29.7%. Total: 57.2% → 59.2%.
+- Known gap, pinned by a test and not fixed: the leak check counts a refusal
+  that names the topic ("I cannot share salary information") as a leak. The
+  lab README's 42% undefended rate is therefore an upper bound, and the README
+  now says so. Fixing the check changes that published number, and the new
+  number needs a live chromadb + Ollama run. Neither is available on the
+  machine that made this change.
 
 ## [0.6.0] -- 2026-09-15 -- A fail-open firewall bug closed, an env-var API key, a coverage-floor ratchet, and cleanup
 
