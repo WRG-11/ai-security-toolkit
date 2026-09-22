@@ -117,6 +117,37 @@ class Canaries(_Base):
         self.assertEqual(self.proxy.model_calls, [])
 
 
+class DocumentedProxyLimits(_Base):
+    """What tools/README.md says the proxy does NOT do, pinned so the prose
+    cannot drift from the code."""
+
+    def test_only_the_last_user_message_is_forwarded(self):
+        body = json.dumps({"messages": [
+            {"role": "system", "content": "client system prompt"},
+            {"role": "user", "content": "hello"},
+            {"role": "assistant", "content": "first answer"},
+            {"role": "user", "content": "what time is it"},
+        ]}).encode()
+        status, _, _ = self.proxy.post("/v1/chat/completions", body)
+        self.assertEqual(status, 200)
+        self.assertEqual(self.proxy.model_calls, ["what time is it"])
+
+    def test_the_requested_model_and_stream_flag_are_ignored(self):
+        body = json.dumps({"model": "some-other-model", "stream": True,
+                           "messages": [{"role": "user", "content": "hello"}]}).encode()
+        status, headers, raw = self.proxy.post("/v1/chat/completions", body)
+        self.assertEqual(status, 200)
+        self.assertTrue(headers["Content-Type"].startswith("application/json"))
+        self.assertEqual(json.loads(raw)["model"], self.proxy.firewall.config.ollama_model)
+
+    def test_the_readme_false_positive_example_is_still_blocked(self):
+        # README.md cites this as a measured false positive of the default ML
+        # guard. When it stops being blocked, that README line is stale.
+        blocked, results = self.proxy.firewall.check_input("second question")
+        self.assertTrue(blocked)
+        self.assertIn("ML injection score", next(r.reason for r in results if r.blocked))
+
+
 class MalformedInputGetsA4xx(_Base):
     overrides = {"max_body_bytes": 2048}
 

@@ -79,6 +79,28 @@ and updates by date for readability.
   Gereksinimler", "What is this? / Bu ne?") in `labs/rag-security/README.md`
   and `tools/README.md` are English-only now.
 
+### Documentation -- known limits, each pinned by a test
+
+- `tools/README.md` has a new section, "What the HTTP proxy does not do". It
+  lists four limits. Only the last user message is inspected and forwarded.
+  `model` and `stream` are ignored. Only text parts are accepted. The rate
+  limiter is global. The section also lists the safe defaults. The first two
+  limits and the ML false-positive example are pinned in
+  `tests/test_llm_firewall_proxy_http.py`, so the prose goes red when the code
+  changes.
+- The README's "honest delta" section has two more entries: the proxy is not a
+  drop-in OpenAI server, and the default ML guard has false positives on short
+  benign text. For the second, the measured example is "second question": it
+  scores 0.74 against a 0.65 threshold and is blocked. A proxy test hit it by
+  accident.
+- `README.md` and `pyproject.toml` pointed at `vulnerable_rag.py:107`, a line
+  number that moved. Both now name `VulnerableRAG.__init__`.
+
+### Changed -- coverage floor
+
+- `.coveragerc` `fail_under` 53 → 56. Re-measured at 59.45%; the floor keeps
+  the file's established 3-point margin.
+
 ### Added -- Python 3.13 and 3.14
 
 - The full suite passes on 3.13 (clean venv, `pip install -e ".[dev]"`) and

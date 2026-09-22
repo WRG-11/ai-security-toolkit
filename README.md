@@ -115,7 +115,7 @@ is needed only by the directory next to it:
 
 Two rows were wrong until 2026-07-29, both in the direction that matters: the
 `rag` extra listed `chromadb` alone while the lab also needs
-`sentence-transformers` (`vulnerable_rag.py:107`), so the documented command
+`sentence-transformers` (`VulnerableRAG.__init__`), so the documented command
 produced a lab that died on setup; and the `ctf` row did not exist at all,
 which made this table's claim to be "the whole map" false by exactly the one
 entry that pulls a real dependency.
@@ -254,6 +254,8 @@ actually run against each platform.
 - **No cloud-native multi-tenant orchestration** — PyRIT integrates with Azure for fleet-scale probing; this toolkit is single-host
 - **Solo-maintained** — primary author is one person; community contributions welcome but bus factor is real
 - **No SARIF / SIEM integration yet** — scan output is JSON / text; SARIF schema for code-scanning upload would be a future addition
+- **The firewall proxy is not a drop-in OpenAI server** — it inspects and forwards only the last user message and ignores `model` and `stream`; see [what the proxy does not do](tools/README.md#what-the-http-proxy-does-not-do)
+- **The default ML guard has false positives on short benign text** — measured: "second question" scores 0.74 against a 0.65 threshold and is blocked
 
 If you need enterprise-scale fleet probing, reach for PyRIT. If you need an extensive academic-style scanner, reach for Garak. If you need conversational guardrails as a service, reach for NeMo. Reach for ai-security-toolkit when you want a small, hackable, MIT-licensed kit you can read end-to-end in an afternoon.
 
@@ -267,7 +269,7 @@ MITRE ATLAS                  [######----]  <!-- METRIC:atlas_technique_count -->
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
-Test Suite                   [######----]  <!-- METRIC:test_module_count -->37<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->53<!-- /METRIC:coverage_floor -->% enforced floor
+Test Suite                   [######----]  <!-- METRIC:test_module_count -->37<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->56<!-- /METRIC:coverage_floor -->% enforced floor
 Framework Provenance         [####------]  10 attacks cite a Garak probe, 6 a PyRIT strategy (corpus provenance, not integration)
 ```
 

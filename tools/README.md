@@ -202,6 +202,27 @@ python llm_firewall.py --proxy --port 8080
 python llm_firewall.py --generate-config > my_config.json
 ```
 
+### What the HTTP proxy does not do
+
+The proxy accepts OpenAI-style and Ollama-style chat requests. It is not a
+drop-in OpenAI server. Each point below is pinned by a test in
+`tests/test_llm_firewall_proxy_http.py`:
+
+- **Only the last user message is inspected and forwarded.** The client's
+  system message and earlier turns are dropped. The model gets the configured
+  `system_prompt` plus that one message.
+- **`model` and `stream` in the request are ignored.** The configured
+  `ollama_model` answers, and the response is always one JSON body.
+- **Only text content parts are accepted.** A request with an image or audio
+  part gets a 400, because no guard can inspect it.
+- **The rate limiter is global.** `SlidingWindowRateLimiter` does not read the
+  session, so one busy client can exhaust the limit for everyone.
+  `MultiTurnTracker` is per client address.
+- **Safe by default, so configure it deliberately:** it binds `proxy_host`
+  (`127.0.0.1`), sends no CORS header unless the origin is in
+  `cors_allow_origins`, trusts `X-Session-Id` only with `trust_session_header`,
+  and refuses bodies over `max_body_bytes` (1,000,000) with a 413.
+
 ---
 
 ## Architecture
