@@ -38,7 +38,7 @@ class PromptInjectionClassifier(InputGuard):
     """
     name = "PromptInjectionClassifier"
 
-    # Kategori bazli agirlikli keyword'ler
+    # Weighted keywords per category
     KEYWORD_WEIGHTS: dict[str, list[tuple[str, float]]] = {
         "override": [
             ("ignore previous", 0.9), ("ignore all", 0.9), ("ignore above", 0.9),
@@ -86,7 +86,7 @@ class PromptInjectionClassifier(InputGuard):
         ],
     }
 
-    # Regex pattern'ler (keyword'lerin yakalamadiklarini yakalar)
+    # Regex patterns (catch what the keywords miss)
     PATTERNS: list[tuple[str, float, str]] = [
         (r"(?:ignore|disregard|forget|override|bypass)\s+(?:all\s+)?(?:previous|prior|above|system)\s+(?:instructions?|prompts?|rules?)", 0.95, "instruction_override"),
         (r"(?:you\s+are|sen\s+artik)\s+(?:now\s+)?(?:a|an|the|bir)?\s*(?:DAN|evil|unrestricted|hacker|villain)", 0.95, "jailbreak_persona"),
@@ -167,7 +167,7 @@ class PromptInjectionClassifier(InputGuard):
         # Weighted total
         total = (kw_score * 0.4) + (pat_score * 0.4) + (struct_score * 0.2)
 
-        # Birden fazla kategori varsa bonus (multi-vector attack)
+        # Bonus when several categories match (multi-vector attack)
         if len(kw_categories) >= 2:
             total = min(total + 0.15, 1.0)
         if len(pat_names) >= 2:
@@ -537,7 +537,7 @@ class SimilarityChecker(OutputGuard):
 
 
 # ──────────────────────────────────────────────────────────────
-# 6. Output Sanitizer — XSS/SQLi/RCE Temizleme
+# 6. Output Sanitizer — XSS/SQLi/RCE cleanup
 # ──────────────────────────────────────────────────────────────
 
 class OutputSanitizer(OutputGuard):

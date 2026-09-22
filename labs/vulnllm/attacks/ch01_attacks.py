@@ -15,7 +15,7 @@ from .library import AttackCategory, AttackTechnique
 CH01_ATTACKS: list[AttackTechnique] = [
 
     # ═══════════════════════════════════════════════════════════
-    # EASY — Temel Teknikler (14)
+    # EASY — Basic Techniques (14)
     # Garak: promptinject, dan, goodside
     # ═══════════════════════════════════════════════════════════
 
@@ -357,9 +357,9 @@ CH01_ATTACKS: list[AttackTechnique] = [
     ),
 
     # ═══════════════════════════════════════════════════════════
-    # HARD — Gelismis Teknikler (10)
+    # HARD — Advanced Techniques (10)
     # PyRIT: Crescendo, TAP, PAIR
-    # Akademik: GCG, Many-Shot, Multi-Turn Decomposition
+    # Academic: GCG, Many-Shot, Multi-Turn Decomposition
     # ═══════════════════════════════════════════════════════════
 
     AttackTechnique(

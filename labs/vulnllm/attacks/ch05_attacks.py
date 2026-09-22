@@ -12,7 +12,7 @@ from .library import AttackCategory, AttackTechnique
 CH05_ATTACKS: list[AttackTechnique] = [
 
     # ═══════════════════════════════════════════════════════════
-    # EASY (8) — Temel Injection
+    # EASY (8) — Basic Injection
     # ═══════════════════════════════════════════════════════════
 
     AttackTechnique(
@@ -172,7 +172,7 @@ CH05_ATTACKS: list[AttackTechnique] = [
     ),
 
     # ═══════════════════════════════════════════════════════════
-    # HARD (4) — Gelismis
+    # HARD (4) — Advanced
     # ═══════════════════════════════════════════════════════════
 
     AttackTechnique(

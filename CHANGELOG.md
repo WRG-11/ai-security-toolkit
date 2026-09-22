@@ -61,6 +61,20 @@ and updates by date for readability.
   Turkish comment and does not flag a Turkish payload. User-facing strings share
   a token kind with the corpus, so the test cannot check them; they were
   reviewed by hand.
+- A second pass found about 70 more. The first scan had two blind spots.
+  Python 3.12 tokenizes f-strings as `FSTRING_MIDDLE`, not `STRING`, so every
+  f-string was invisible to it. Its word list also missed short comments such
+  as `# Guard bazli sayim` and `# HTTP API Sunucusu`. The second pass added
+  f-string parts and a "no English function word" check for comments and
+  docstring lines. It found comments and docstrings in `llm_firewall.py`,
+  `llm_scanner.py`, `prompt_injection_detector_ml.py`, `guards.py`,
+  `multi_turn.py`, `attacks/*.py` section headings and `library.py`'s module
+  docstring. It also found about 25 display labels in `defense_demo.py` ("Normal
+  soru", "Yetki iddiasi", ...) and the simulated responses in challenges 08 and
+  10. The scanner's error marker in a probe result is now `[ERROR]`, not
+  `[HATA]`. One Turkish value stays on purpose: challenge 08's poisoned policy
+  text is attack data. Its HARD-mode `AnomalyFilter` matches it with a Turkish
+  pattern, so translating it would change what the defense catches.
 - Four bilingual headings ("Architecture / Mimari", "Requirements /
   Gereksinimler", "What is this? / Bu ne?") in `labs/rag-security/README.md`
   and `tools/README.md` are English-only now.

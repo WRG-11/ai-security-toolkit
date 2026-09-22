@@ -56,7 +56,7 @@ class LanguageDetector(InputGuard):
         self.min_suspicious_ratio = min_suspicious_ratio
 
     def _detect_scripts(self, text: str) -> dict[str, int]:
-        """Karakter bazli script dagilimi."""
+        """Per-character script distribution."""
         scripts: dict[str, int] = {}
         for c in text:
             if not c.isalpha():

@@ -52,7 +52,7 @@ class GuardContractTest(unittest.TestCase):
     """Every guard must hold the same contract."""
 
     def test_there_are_guards_to_test(self):
-        """Kesif bozulursa digerleri bos kume uzerinde donerek yesil kalirdi."""
+        """If discovery broke, the other tests would pass vacuously over an empty set."""
         self.assertGreaterEqual(len(_zero_arg_guards()), 20)
 
     def test_every_guard_returns_a_guard_result(self):

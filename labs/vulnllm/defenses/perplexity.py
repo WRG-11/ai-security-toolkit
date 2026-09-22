@@ -124,7 +124,7 @@ class PerplexityFilter(InputGuard):
         if len(text) < 30:
             return False, 0.0
 
-        # Son %30'u al
+        # Take the last 30%
         suffix_start = int(len(text) * 0.7)
         suffix = text[suffix_start:]
 

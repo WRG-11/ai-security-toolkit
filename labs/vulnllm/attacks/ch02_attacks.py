@@ -96,7 +96,7 @@ CH02_ATTACKS: list[AttackTechnique] = [
     ),
 
     # ═══════════════════════════════════════════════════════════
-    # MEDIUM (8) — Bypass Teknikleri
+    # MEDIUM (8) — Bypass Techniques
     # ═══════════════════════════════════════════════════════════
 
     AttackTechnique(
@@ -176,7 +176,7 @@ CH02_ATTACKS: list[AttackTechnique] = [
     ),
 
     # ═══════════════════════════════════════════════════════════
-    # HARD (4) — Gelismis Extraction
+    # HARD (4) — Advanced Extraction
     # ═══════════════════════════════════════════════════════════
 
     AttackTechnique(

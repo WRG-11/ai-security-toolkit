@@ -525,12 +525,12 @@ def check_success(response: str, system_prompt: str) -> tuple[bool, str]:
 
 
 # ═══════════════════════════════════════════════════════════
-# Tarayici
+# Scanner
 # ═══════════════════════════════════════════════════════════
 
 
 class LLMScanner:
-    """OWASP LLM Top 10 zafiyet tarayicisi."""
+    """OWASP LLM Top 10 vulnerability scanner."""
 
     VERSION = "1.0"
 
@@ -594,7 +594,7 @@ class LLMScanner:
                     )
                 success, reason = check_success(response, self.system_prompt)
             except Exception as e:
-                response = f"[HATA] {e}"
+                response = f"[ERROR] {e}"
                 elapsed_ms = 0
                 success = False
                 reason = "error"
@@ -693,7 +693,7 @@ COLORS = {
 
 
 def progress_printer(current: int, total: int, name: str):
-    """Ilerleme yazdir."""
+    """Print progress."""
     pct = current / total * 100
     bar_len = 30
     filled = int(bar_len * current / total)
@@ -704,7 +704,7 @@ def progress_printer(current: int, total: int, name: str):
 
 
 def print_report(report: ScanReport) -> None:
-    """Renkli tarama raporu."""
+    """Colored scan report."""
     b = COLORS["BOLD"]
     r = COLORS["RESET"]
     d = COLORS["DIM"]

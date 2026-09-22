@@ -958,7 +958,7 @@ def main():
     else:
         config = FirewallConfig()
 
-    # CLI arg'lardan override
+    # Override from CLI arguments
     config.ollama_model = args.model
     config.ollama_url = args.ollama_url
     config.proxy_port = args.port
@@ -969,7 +969,7 @@ def main():
     # Build the firewall
     firewall = LLMFirewall(config)
 
-    # Stats modu
+    # Stats mode
     if args.stats:
         if args.log and Path(args.log).exists():
             # Read the events from the log file
@@ -1001,7 +1001,7 @@ def main():
                 "input_guards": config.input_guards,
                 "output_guards": config.output_guards,
             }
-            # Guard bazli sayim
+            # Count per guard
             for e in events:
                 if e.get("action") == "block":
                     gn = e.get("guard_name", "?")

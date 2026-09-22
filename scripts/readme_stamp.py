@@ -117,7 +117,7 @@ def _count_list_literal(path: Path, name: str) -> int:
             return len(node.value.elts)
         if isinstance(node, ast.AnnAssign) and getattr(node.target, "id", "") == name:
             return len(node.value.elts)
-    raise AssertionError(f"{path.name} icinde {name} bulunamadi")
+    raise AssertionError(f"{name} not found in {path.name}")
 
 
 def count_regex_rules(root: Path) -> int:

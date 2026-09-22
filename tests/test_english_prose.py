@@ -27,8 +27,12 @@ _DIACRITICS = re.compile(r"[çğıöşüÇĞİÖŞÜ]")
 # ASCII-written Turkish words that have no English homograph. Short words such
 # as "var", "bu" or "tam" are left out on purpose: "env var" is English.
 _ASCII_TURKISH = re.compile(
-    r"\b(?:ciktisi|sunucu|bulunamadi|kullanin|deneyin|bilinmeyen|gecersiz|"
-    r"icin|degil|olustur\w*|calistir\w*|basit|onune|kisa)\b",
+    r"\b(?:ciktisi|sunucu\w*|bulunamadi|kullanin|deneyin|bilinmeyen|gecersiz|"
+    r"icin|degil|olustur\w*|calistir\w*|basit|onune|kisa|"
+    # Added after a second pass found short comments the first list missed.
+    r"tarayici\w*|zafiyet\w*|bazli|yakinligi|detaylari|tekil|kontrolleri|"
+    r"hesapla|hafif|gelismis|teknikleri|yetkisiz|dunya|etiketler|spesifik|"
+    r"agirlikli|istegi|ilerleme|yazdir|renkli|dagilimi|kesif|kirilmasi|iddiasi|gercek|referansli)\b",
     re.IGNORECASE,
 )
 

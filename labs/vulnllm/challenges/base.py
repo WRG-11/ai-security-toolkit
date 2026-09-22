@@ -200,7 +200,7 @@ class BaseChallenge(ABC):
             self.orchestrator.add_output_guard(ToolCallValidator())
             self.orchestrator.add_output_guard(ResponseConsistencyAnalyzer())
 
-        # Challenge-spesifik ek guard'lar
+        # Challenge-specific extra guards
         self.setup_extra_defenses()
 
     def setup_extra_defenses(self):  # noqa: B027 -- intentional opt-in hook (subclass MAY override)

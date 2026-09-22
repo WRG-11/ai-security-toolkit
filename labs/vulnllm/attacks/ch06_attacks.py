@@ -13,7 +13,7 @@ from .library import AttackCategory, AttackTechnique
 CH06_ATTACKS: list[AttackTechnique] = [
 
     # ═══════════════════════════════════════════════════════════
-    # EASY (7) — Direkt Yetkisiz Aksiyonlar
+    # EASY (7) — Direct Unauthorized Actions
     # ═══════════════════════════════════════════════════════════
 
     AttackTechnique(

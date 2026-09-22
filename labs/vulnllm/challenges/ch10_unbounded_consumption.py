@@ -52,7 +52,7 @@ class UnboundedConsumptionChallenge(BaseChallenge):
             return [
                 {"pattern": r"(?:10\.?000|on\s*bin|100\.?000|yuz\s*bin).*(?:kelime|word|karakter|char)",
                  "response": "A" * 50000 + "\n\nCost: $" + f"{50000 * self.COST_PER_TOKEN:.2f}\n"
-                             f"COST_EXCEEDED: Tek istekte $1.50 harcandi! dow_success",
+                             f"COST_EXCEEDED: $1.50 spent on a single request! dow_success",
                  "tokens": 50000},
                 {"pattern": r"tekrarla|repeat|loop|dongu|say\s*\d+",
                  "response": ("This is going to be a very long answer. " * 500) +
@@ -99,7 +99,7 @@ class UnboundedConsumptionChallenge(BaseChallenge):
             return [
                 {"pattern": r"(?:slow|yavas|low.?rate).*(?:attack|saldiri|drain)",
                  "response": "Slow-rate attack: 1 request every 59 seconds.\n"
-                             "Rate limiter tetiklenmiyor ama 24 saatte 1440 istek × 4096 token.\n"
+                             "The rate limiter never fires, yet 24 hours is 1440 requests × 4096 tokens.\n"
                              "Daily cost: $172.80. Budget exceeded, dow_success",
                  "tokens": 4096},
             ]

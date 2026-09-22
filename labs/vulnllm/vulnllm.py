@@ -288,7 +288,7 @@ def main():
     tier_map = {"t1": ModelTier.T1_UNCENSORED, "t2": ModelTier.T2_WEAK, "t3": ModelTier.T3_STRONG}
     model_tier = tier_map[args.tier]
 
-    # Ollama kontrolleri
+    # Ollama checks
     model_override = args.model
     if args.ollama:
         test_backend = OllamaBackend(tier=model_tier, model_override=model_override)

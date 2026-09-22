@@ -273,7 +273,7 @@ class CharNgramModel:
             self.anchors.append((category, text, vec))
 
     def find_closest(self, text: str) -> tuple[float, str, str]:
-        """En yakin anchor: (similarity, kategori, anchor_text)."""
+        """Nearest anchor: (similarity, category, anchor_text)."""
         input_vec = self.vectorize(text)
         best_sim = 0.0
         best_cat = ""
@@ -913,7 +913,7 @@ RISK_ICONS = {
 
 
 def print_report(result: PredictionResult) -> None:
-    """Renkli analiz raporu."""
+    """Colored analysis report."""
     c = COLORS.get(result.risk_level, "")
     r = COLORS["RESET"]
     b = COLORS["BOLD"]
@@ -932,7 +932,7 @@ def print_report(result: PredictionResult) -> None:
     print(f"{b}Score:   {c}{result.score:.2%}{r}  (layers: {result.method_scores[0].score:.0%}R + {result.method_scores[1].score:.0%}T + {result.method_scores[2].score:.0%}E)")
     print(f"{b}Confidence: {result.confidence:.0%}{r}")
 
-    # Metod detaylari
+    # Per-method details
     print(f"\n{b}Per-method scores:{r}")
     for ms in result.method_scores:
         bar_len = int(ms.score * 20)
@@ -947,13 +947,13 @@ def print_report(result: PredictionResult) -> None:
         label = {"regex": "Regex   ", "tfidf": "TF-IDF  ", "embedding": "Embedding"}.get(ms.name, ms.name)
         print(f"  {label}: {mc}[{bar}] {ms.score:.2f}{r}")
 
-    # TF-IDF en etkili terimler
+    # TF-IDF most influential terms
     if result.top_terms:
         print(f"\n{b}En Etkili Terimler (TF-IDF):{r}")
         for term, score in result.top_terms[:5]:
             print(f"  {d}>{r} {term} ({score:.3f})")
 
-    # Embedding yakinligi
+    # Embedding similarity
     if result.closest_category:
         print(f"\n{b}Closest category:{r} {result.closest_category}")
         if result.closest_anchor:
@@ -1010,7 +1010,7 @@ def print_benchmark(stats: dict) -> None:
 
 
 # ═══════════════════════════════════════════════════════════
-# HTTP API Sunucusu
+# HTTP API server
 # ═══════════════════════════════════════════════════════════
 
 _http_detector: Optional[HybridDetector] = None
@@ -1087,7 +1087,7 @@ def serve_http(detector: HybridDetector, port: int = 8090,
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\nSunucu durduruluyor...")
+        print("\nStopping the server...")
         server.server_close()
 
 
@@ -1219,7 +1219,7 @@ def main():
                 print_report(result)
         return
 
-    # Tekil input
+    # Single input
     if args.input:
         result = detector.predict(args.input)
         if args.json:

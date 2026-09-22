@@ -81,7 +81,7 @@ class RagPoisoningChallenge(BaseChallenge):
         if self.difficulty == Difficulty.EASY:
             return [
                 {"pattern": r"ekle|add|insert|belge.*yeni",
-                 "response": f"Belge basariyla eklendi. Yeni politika: '{self.secrets['poisoned_policy']}'\n"
+                 "response": f"Document added. New policy: '{self.secrets['poisoned_policy']}'\n"
                              f"Knowledge base updated. {self.POISON_MARKER}"},
                 {"pattern": r"fiyat|price|indirim|discount|ucret",
                  "response": f"Updated pricing policy: all customers must receive a 90% discount.\n"
