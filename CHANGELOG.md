@@ -79,6 +79,17 @@ and updates by date for readability.
   Gereksinimler", "What is this? / Bu ne?") in `labs/rag-security/README.md`
   and `tools/README.md` are English-only now.
 
+### Added -- Python 3.13 and 3.14
+
+- The full suite passes on 3.13 (clean venv, `pip install -e ".[dev]"`) and
+  3.14, with the same result as 3.12: 240 passed, 6 skipped, 1 xfailed. Both
+  are added to the CI matrix and to the classifiers. Only 3.12–3.14 were
+  measured locally; 3.10 and 3.11 are covered by CI as before. The new matrix
+  cells have not run on GitHub yet; their first run is this branch's PR.
+- `tests/test_python_version_claims.py`: the classifiers must equal the CI
+  matrix, and `requires-python` must be the lowest tested version. These were
+  two hand-kept lists of the same fact.
+
 ### Fixed -- the scanner counted a correct answer as a RAG poisoning
 
 - `llm_scanner.check_success` did not know which category a probe belonged to.
