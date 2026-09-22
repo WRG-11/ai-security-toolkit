@@ -46,7 +46,7 @@ class FirewallRegistryWireup(unittest.TestCase):
             "MultiTurnTracker",
             self.module.INPUT_GUARD_REGISTRY,
             "MultiTurnTracker exported but not wired to consumer "
-            "registry — config opt-in falls through 'Bilinmeyen input "
+            "registry — config opt-in falls through 'Unknown input "
             "guard' fallback.",
         )
 

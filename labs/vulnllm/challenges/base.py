@@ -236,7 +236,7 @@ class BaseChallenge(ABC):
         level = {
             Difficulty.MEDIUM: "MEDIUM",
             Difficulty.HARD: "LAYERED",
-            Difficulty.EXPERT: "TAM PIPELINE (21 guard)",
+            Difficulty.EXPERT: "FULL PIPELINE (21 guards)",
         }.get(self.difficulty, "LAYERED")
 
         return f"{level} defense: " + ", ".join(guards)

@@ -47,6 +47,20 @@ and updates by date for readability.
   the firewall instance. The docstring now says so.
 - The proxy's client-facing error strings and comments were in Turkish, although
   this repository is English-only. They are now in English.
+- More Turkish prose outlived the earlier translation passes. A text search
+  cannot separate it from the intentionally Turkish data (attack corpus,
+  refusal regexes, benign samples), but a token-kind scan can. It found
+  `prompt_injection_detector_ml.py`'s HTTP 404 messages ("Bulunamadi ...
+  kullanin"), its handler docstring and a comment; a comment each in
+  `llm_firewall.py` and `llm_scanner.py`; the `EXPERT` difficulty label in
+  `challenges/base.py` and a `defense_demo.py` heading ("TAM PIPELINE"); an
+  error in `scripts/readme_stamp.py`; a heading in `labs/rag-security/README.md`;
+  and a test message quoting a fallback text that no longer exists. All of it
+  is English now. `tests/test_english_prose.py` keeps comments and docstrings
+  English and leaves data strings alone. It has a two-way canary: it catches a
+  Turkish comment and does not flag a Turkish payload. User-facing strings share
+  a token kind with the corpus, so the test cannot check them; they were
+  reviewed by hand.
 
 ## [0.6.0] -- 2026-09-15 -- A fail-open firewall bug closed, an env-var API key, a coverage-floor ratchet, and cleanup
 

@@ -469,7 +469,7 @@ def test_prompt_firewall():
 
 
 def test_orchestrator():
-    separator("7. Defense Orchestrator (Tam Pipeline)")
+    separator("7. Defense Orchestrator (Full Pipeline)")
 
     orch = DefenseOrchestrator()
     orch.add_input_guard(PromptInjectionClassifier(threshold=0.6))

@@ -1017,17 +1017,17 @@ _http_detector: Optional[HybridDetector] = None
 
 
 class DetectorHandler(BaseHTTPRequestHandler):
-    """Basit HTTP API handler."""
+    """Minimal HTTP API handler."""
 
     def do_GET(self):
         if self.path == "/health":
             self._respond(200, {"status": "ok", "version": HybridDetector.VERSION})
         else:
-            self._respond(404, {"error": "Bulunamadi. /health veya POST /analyze kullanin."})
+            self._respond(404, {"error": "Not found. Use /health or POST /analyze."})
 
     def do_POST(self):
         if self.path != "/analyze":
-            self._respond(404, {"error": "POST /analyze kullanin."})
+            self._respond(404, {"error": "Use POST /analyze."})
             return
 
         content_len = int(self.headers.get("Content-Length", 0))
@@ -1159,7 +1159,7 @@ def main():
             print_benchmark(stats)
         return
 
-    # HTTP sunucu
+    # HTTP server
     if args.serve:
         serve_http(detector, args.serve)
         return

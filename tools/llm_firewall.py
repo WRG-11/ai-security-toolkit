@@ -809,7 +809,7 @@ class FirewallProxyHandler(BaseHTTPRequestHandler):
 
 
 # ═══════════════════════════════════════════════════════════
-# Terminal Ciktisi
+# Terminal output
 # ═════════════════════════════════════════════════���═════════
 
 COLORS = {

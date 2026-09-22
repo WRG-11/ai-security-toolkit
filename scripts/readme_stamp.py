@@ -199,7 +199,7 @@ def coverage_floor(root: Path) -> int:
     text = (root / ".coveragerc").read_text(encoding="utf-8")
     match = re.search(r"^fail_under\s*=\s*(\d+)", text, re.MULTILINE)
     if not match:
-        raise AssertionError(".coveragerc icinde fail_under bulunamadi")
+        raise AssertionError("fail_under not found in .coveragerc")
     return int(match.group(1))
 
 

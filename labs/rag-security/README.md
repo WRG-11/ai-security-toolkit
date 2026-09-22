@@ -33,7 +33,7 @@ User Query
 Response (potentially leaking confidential data)
 ```
 
-## Documents / Dokümanlar
+## Documents
 
 The 9 documents actually loaded by `COMPANY_DOCUMENTS` in
 [`vulnerable_rag.py`](vulnerable_rag.py) (`python -c "import ast; t=ast.parse(open('vulnerable_rag.py').read()); print(len([n for n in ast.walk(t) if isinstance(n, ast.Assign) and getattr(n.targets[0], 'id', '')=='COMPANY_DOCUMENTS'][0].value.elts))"`
