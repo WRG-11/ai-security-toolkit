@@ -7,6 +7,47 @@ not a versioned Python package. Releases are tracked by GitHub commit SHA
 rather than semantic versions. This CHANGELOG batches notable additions
 and updates by date for readability.
 
+## [Unreleased]
+
+### Fixed (security) -- the firewall's HTTP proxy
+
+- `FirewallProxyHandler.do_POST`, the proxy's network entry point, had no test.
+  Measured against a live server, three well-formed or merely malformed inputs
+  raised inside the handler: an OpenAI-format message whose `content` is a list
+  of parts (valid per the Chat Completions schema), a JSON body whose root is a
+  list, and a body that is not UTF-8. The client got a dropped connection with
+  no status code. Nothing reached the model, so none of these was a bypass.
+  Malformed input now gets a 4xx JSON error, an internal failure gets a 500
+  JSON error (the request is never forwarded), and text inside content parts
+  is joined and inspected like plain text. Any part type other than `text` is
+  refused with a 400, because no guard can inspect it.
+- `Content-Length` had no upper bound. A body over `max_body_bytes` (config,
+  default 1,000,000) now gets a 413 without being read. Missing, non-numeric or
+  negative values get a 400.
+- Every response carried `Access-Control-Allow-Origin: *`, so any web page open
+  in a browser could drive the local proxy. CORS is now off unless the request's
+  `Origin` is listed in `cors_allow_origins` (config, default empty).
+- The proxy called `process_request` without `context`, so `MultiTurnTracker`
+  folded every client into one `"default"` session. The session id is now the
+  client address. The `X-Session-Id` header narrows the session within that
+  address only when `trust_session_header` is set. By default it is ignored,
+  because a client that picks its own id can reset its multi-turn history
+  whenever it likes.
+- `AuditLogger.log` raised `TypeError` on a non-string preview, which was where
+  the content-part list crashed. Such values are now stringified and then
+  redacted like any other preview.
+- `main()` read `config.proxy_host` through `getattr` with a fallback, but the
+  field did not exist, so it could not be configured. `proxy_host` is now a
+  real config field (default `127.0.0.1`).
+
+### Changed
+
+- `process_request`'s docstring said the rate limiter was per session.
+  `SlidingWindowRateLimiter` does not read `context`; its limit is global to
+  the firewall instance. The docstring now says so.
+- The proxy's client-facing error strings and comments were in Turkish, although
+  this repository is English-only. They are now in English.
+
 ## [0.6.0] -- 2026-09-15 -- A fail-open firewall bug closed, an env-var API key, a coverage-floor ratchet, and cleanup
 
 ### Fixed (security)

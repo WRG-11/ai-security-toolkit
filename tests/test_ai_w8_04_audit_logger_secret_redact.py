@@ -122,6 +122,19 @@ class AuditLoggerSecretRedaction(unittest.TestCase):
             "how is the weather today?",
         )
 
+    # --- Non-string input ---
+    def test_non_string_input_is_logged_and_still_redacted(self) -> None:
+        # The HTTP proxy once passed an OpenAI content-part list straight
+        # through; the redaction regex raised TypeError on it and the whole
+        # request died inside the audit log.
+        secret = "sk-ant-AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"
+        self.log.log("input_check", "test", _gr(),
+                     input_text=[{"type": "text", "text": secret}])
+        preview = self._last_event()["input_preview"]
+        self.assertIsInstance(preview, str)
+        self.assertNotIn(secret, preview)
+        self.assertIn("[REDACTED]", preview)
+
     def test_empty_input_unaffected(self) -> None:
         self.log.log("input_check", "test", _gr())
         self.assertEqual(self._last_event()["input_preview"], "")

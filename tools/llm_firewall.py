@@ -195,6 +195,21 @@ class FirewallConfig:
     ollama_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.2:3b"
     system_prompt: str = "You are a helpful AI assistant."
+    # Proxy settings. `main()` already read `proxy_host` with getattr() and a
+    # comment saying it "comes from config", but the field did not exist, so
+    # it could never be set. Localhost stays the default; sharing the proxy is
+    # a decision someone makes in the config file.
+    proxy_host: str = "127.0.0.1"
+    # Upper bound on a request body. Content-Length was read unbounded.
+    max_body_bytes: int = 1_000_000
+    # Origins that may call the proxy from a browser. Empty = no CORS header,
+    # so a web page cannot drive a local proxy. The handler used to send
+    # `Access-Control-Allow-Origin: *` on every response.
+    cors_allow_origins: list[str] = field(default_factory=list)
+    # The session id handed to per-session guards is the client address. A
+    # client-supplied X-Session-Id narrows it only when this is True: a client
+    # that rotates its own id could otherwise reset multi-turn tracking at will.
+    trust_session_header: bool = False
 
     @classmethod
     def from_file(cls, path: str) -> "FirewallConfig":
@@ -210,6 +225,10 @@ class FirewallConfig:
             ollama_url=data.get("ollama_url", "http://localhost:11434"),
             ollama_model=data.get("ollama_model", "llama3.2:3b"),
             system_prompt=data.get("system_prompt", "You are a helpful AI assistant."),
+            proxy_host=data.get("proxy_host", "127.0.0.1"),
+            max_body_bytes=data.get("max_body_bytes", 1_000_000),
+            cors_allow_origins=list(data.get("cors_allow_origins", [])),
+            trust_session_header=bool(data.get("trust_session_header", False)),
         )
 
     def to_file(self, path: str):
@@ -224,6 +243,10 @@ class FirewallConfig:
             "ollama_url": self.ollama_url,
             "ollama_model": self.ollama_model,
             "system_prompt": self.system_prompt,
+            "proxy_host": self.proxy_host,
+            "max_body_bytes": self.max_body_bytes,
+            "cors_allow_origins": self.cors_allow_origins,
+            "trust_session_header": self.trust_session_header,
         }
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
@@ -459,15 +482,17 @@ class LLMFirewall:
         context: Optional[dict] = None,
     ) -> dict:
         """
-        Tam pipeline: input check → Ollama → output check.
+        Full pipeline: input check → Ollama → output check.
 
         Args:
             user_message: Raw user input.
             context: Optional per-request metadata. Threaded into both
                 input and output guard pipelines so per-session
-                stateful guards (MultiTurnTracker, rate limiter) see
-                the actual session/user identity. Without it they
-                collapse all traffic into a single 'default' bucket.
+                stateful guards (MultiTurnTracker) see the actual
+                session identity. Without it they collapse all traffic
+                into a single 'default' bucket. SlidingWindowRateLimiter
+                does not read context: its limit is global to this
+                firewall instance, not per session.
 
         Returns: {"response": str, "blocked": bool, "input_results": [...], "output_results": [...]}
         """
@@ -477,7 +502,7 @@ class LLMFirewall:
         input_blocked, input_results = self.check_input(user_message, context)
         if input_blocked:
             self.stats["input_blocked"] += 1
-            block_reason = next((r.reason for r in input_results if r.blocked), "Bilinmeyen")
+            block_reason = next((r.reason for r in input_results if r.blocked), "unknown")
             return {
                 "response": f"[BLOCKED] Input rejected: {block_reason}",
                 "blocked": True,
@@ -580,42 +605,124 @@ class LLMFirewall:
 _proxy_firewall: Optional[LLMFirewall] = None
 
 
+def _firewall() -> LLMFirewall:
+    """The proxy's firewall instance; set by main() before the server starts."""
+    if _proxy_firewall is None:
+        raise RuntimeError("proxy firewall is not initialised")
+    return _proxy_firewall
+
+
+class _BadRequest(Exception):
+    """A request the proxy refuses before any guard runs (-> 4xx JSON)."""
+
+    def __init__(self, status: int, message: str):
+        super().__init__(message)
+        self.status = status
+        self.message = message
+
+
+def _message_text(content: Any) -> str:
+    """The text a guard can inspect, from a Chat Completions `content`.
+
+    `content` is either a string or a list of typed parts. Text parts are
+    joined so the guards see all of them; any other part (an image, audio) is
+    refused, because no guard here can inspect it and forwarding it unchecked
+    would be fail-open.
+    """
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        texts = []
+        for part in content:
+            if (not isinstance(part, dict) or part.get("type") != "text"
+                    or not isinstance(part.get("text"), str)):
+                raise _BadRequest(400, "Only text content parts are supported; "
+                                       "the firewall cannot inspect other part types.")
+            texts.append(part["text"])
+        return "\n".join(texts)
+    raise _BadRequest(400, "'content' must be a string or a list of text parts.")
+
+
 class FirewallProxyHandler(BaseHTTPRequestHandler):
-    """HTTP proxy handler -- Ollama onune oturur."""
+    """HTTP proxy handler that sits in front of Ollama."""
 
     def do_GET(self):
         if self.path == "/firewall/health":
             self._respond(200, {"status": "ok", "version": LLMFirewall.VERSION})
         elif self.path == "/firewall/stats":
-            self._respond(200, _proxy_firewall.get_stats())
+            self._respond(200, _firewall().get_stats())
         elif self.path.startswith("/firewall/events"):
             n = 50
-            self._respond(200, {"events": _proxy_firewall.get_events(n)})
+            self._respond(200, {"events": _firewall().get_events(n)})
         else:
-            self._respond(404, {"error": "Bilinmeyen endpoint. /firewall/health, /firewall/stats deneyin."})
+            self._respond(404, {"error": "Unknown endpoint. Try /firewall/health or /firewall/stats."})
 
-    def do_POST(self):
-        content_len = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(content_len).decode("utf-8")
+    def _read_json_object(self) -> dict:
+        """Read and validate the request body, raising _BadRequest on bad input.
 
+        A list-shaped JSON body or a body that is not UTF-8 used to raise
+        inside the handler, and the client saw a dropped connection with no
+        status code."""
+        raw_len = self.headers.get("Content-Length")
+        try:
+            length = int(raw_len) if raw_len is not None else 0
+        except ValueError:
+            raise _BadRequest(400, "Invalid Content-Length.") from None
+        if length < 0:
+            raise _BadRequest(400, "Invalid Content-Length.")
+        if length > _firewall().config.max_body_bytes:
+            raise _BadRequest(413, "Request body too large.")
+        try:
+            body = self.rfile.read(length).decode("utf-8")
+        except UnicodeDecodeError:
+            raise _BadRequest(400, "Request body is not valid UTF-8.") from None
         try:
             data = json.loads(body)
         except json.JSONDecodeError:
-            self._respond(400, {"error": "Invalid JSON."})
-            return
+            raise _BadRequest(400, "Invalid JSON.") from None
+        if not isinstance(data, dict):
+            raise _BadRequest(400, "The JSON body must be an object.")
+        return data
 
+    def _session_context(self) -> dict:
+        """The context per-session guards key on.
+
+        Derived server-side from the client address, so a client cannot reset
+        its own multi-turn history by sending a new id. The X-Session-Id header
+        only narrows the session within that address, and only when the config
+        trusts it (for example behind a gateway that sets it)."""
+        session_id = self.client_address[0]
+        header = self.headers.get("X-Session-Id")
+        if header and _firewall().config.trust_session_header:
+            session_id = f"{session_id}|{header}"
+        return {"session_id": session_id}
+
+    def do_POST(self):
+        try:
+            self._handle_post(self._read_json_object())
+        except _BadRequest as exc:
+            self._respond(exc.status, {"error": exc.message})
+        except Exception:
+            # Fail closed with a status code instead of a dropped connection.
+            # Nothing is forwarded to the model on this path.
+            self._respond(500, {"error": "Internal firewall error; the request was not forwarded."})
+
+    def _handle_post(self, data: dict):
         if self.path == "/firewall/check":
             # Direct check (without sending to Ollama)
             text = data.get("text", "")
+            if not isinstance(text, str):
+                raise _BadRequest(400, "'text' must be a string.")
             direction = data.get("direction", "input")
             if direction == "input":
-                blocked, results = _proxy_firewall.check_input(text)
+                blocked, results = _firewall().check_input(text, self._session_context())
                 self._respond(200, {
                     "blocked": blocked,
                     "results": [LLMFirewall._result_to_dict(r) for r in results],
                 })
             else:
-                sanitized, has_issues, results = _proxy_firewall.check_output(text)
+                sanitized, has_issues, results = _firewall().check_output(
+                    text, self._session_context())
                 self._respond(200, {
                     "sanitized": sanitized,
                     "has_issues": has_issues,
@@ -627,29 +734,29 @@ class FirewallProxyHandler(BaseHTTPRequestHandler):
             # Chat proxy -- filter input, send to Ollama, filter output
             messages = data.get("messages", [])
             if not messages:
-                self._respond(400, {"error": "'messages' field is required."})
-                return
+                raise _BadRequest(400, "'messages' field is required.")
+            if not isinstance(messages, list) or not all(isinstance(m, dict) for m in messages):
+                raise _BadRequest(400, "'messages' must be a list of objects.")
 
             # Get the last user message
             user_msg = ""
             for msg in reversed(messages):
                 if msg.get("role") == "user":
-                    user_msg = msg.get("content", "")
+                    user_msg = _message_text(msg.get("content", ""))
                     break
 
             if not user_msg:
-                self._respond(400, {"error": "No user message found."})
-                return
+                raise _BadRequest(400, "No user message found.")
 
-            result = _proxy_firewall.process_request(user_msg)
+            result = _firewall().process_request(user_msg, self._session_context())
 
             if self.path == "/v1/chat/completions":
-                # OpenAI uyumlu format
+                # OpenAI-compatible format
                 openai_resp = {
                     "id": f"fw-{int(time.time())}",
                     "object": "chat.completion",
                     "created": int(time.time()),
-                    "model": _proxy_firewall.config.ollama_model,
+                    "model": _firewall().config.ollama_model,
                     "choices": [{
                         "index": 0,
                         "message": {
@@ -667,7 +774,7 @@ class FirewallProxyHandler(BaseHTTPRequestHandler):
             else:
                 # Ollama native format
                 ollama_resp = {
-                    "model": _proxy_firewall.config.ollama_model,
+                    "model": _firewall().config.ollama_model,
                     "message": {
                         "role": "assistant",
                         "content": result["response"],
@@ -681,17 +788,22 @@ class FirewallProxyHandler(BaseHTTPRequestHandler):
                 self._respond(200, ollama_resp)
             return
 
-        self._respond(404, {"error": "Bilinmeyen endpoint."})
+        self._respond(404, {"error": "Unknown endpoint."})
 
     def _respond(self, code: int, data: dict):
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        # CORS only for an allow-listed origin. This used to be `*` on every
+        # response, which let any web page open in a browser drive the proxy.
+        origin = self.headers.get("Origin")
+        if origin and origin in _firewall().config.cors_allow_origins:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
         self.end_headers()
         self.wfile.write(json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8"))
 
     def log_message(self, format, *args):
-        # Kisa log
+        # Short log line
         ts = time.strftime("%H:%M:%S")
         print(f"  [{ts}] {args[0]}")
 
@@ -1028,7 +1140,7 @@ def main():
         # Localhost by default -- same reasoning as the detector above.
         # `proxy_host` comes from config, so sharing stays possible; it is
         # now a decision someone makes rather than one they inherit.
-        _host = getattr(config, "proxy_host", "127.0.0.1")
+        _host = config.proxy_host
         server = HTTPServer((_host, config.proxy_port), FirewallProxyHandler)
         try:
             server.serve_forever()
