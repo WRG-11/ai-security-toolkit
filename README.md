@@ -187,7 +187,7 @@ Intentionally vulnerable LLM application for learning OWASP LLM Top 10 attacks a
 - <!-- METRIC:challenge_count -->10<!-- /METRIC:challenge_count --> challenges across 4 difficulty levels (EASY → EXPERT)
 - <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> defense modules (input filter, PII scanner, rate limiter, LLM-as-judge...)
 - <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack techniques
-- Mock mode (no external API needed) + Ollama support
+- Mock mode (no external API needed), or any real model via `--provider` / `--model`
 
 [Go to lab →](labs/vulnllm/)
 
@@ -270,7 +270,7 @@ MITRE ATLAS                  [######----]  <!-- METRIC:atlas_technique_count -->
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
-Test Suite                   [######----]  <!-- METRIC:test_module_count -->41<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->56<!-- /METRIC:coverage_floor -->% enforced floor
+Test Suite                   [######----]  <!-- METRIC:test_module_count -->42<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->56<!-- /METRIC:coverage_floor -->% enforced floor
 Framework Provenance         [####------]  10 attacks cite a Garak probe, 6 a PyRIT strategy (corpus provenance, not integration)
 ```
 

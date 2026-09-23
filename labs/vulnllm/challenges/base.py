@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
 from backend.mock import LLMResponse, MockBackend
-from backend.ollama import ModelTier, OllamaBackend
+from backend.target import TargetBackend
 from config import (
     C_BOLD,
     C_CYAN,
@@ -77,9 +77,8 @@ class BaseChallenge(ABC):
     secrets: dict = {}
     atlas_mapping: list = []
 
-    def __init__(self, difficulty: Difficulty = Difficulty.EASY,
-                 use_ollama: bool = False, model_tier: ModelTier | None = None,
-                 model_override: str | None = None):
+    def __init__(self, difficulty: Difficulty = Difficulty.EASY, target=None):
+        """`target`: any tools/targets.py Target to play against; None = mock backend."""
         # `secrets: dict = {}` and `atlas_mapping: list = []` are
         # class-body annotations that, without these two lines, would be
         # SHARED across every BaseChallenge instance (Python
@@ -95,14 +94,8 @@ class BaseChallenge(ABC):
         self.atlas_mapping = list(self.__class__.atlas_mapping)
 
         self.difficulty = difficulty
-        self.use_ollama = use_ollama
-        self.model_tier = model_tier
-        self.model_override = model_override
-
-        if use_ollama and model_tier:
-            self.backend = OllamaBackend(tier=model_tier, model_override=model_override)
-        else:
-            self.backend = MockBackend()
+        self.target = target
+        self.backend = TargetBackend(target) if target is not None else MockBackend()
 
         self.state = ChallengeState()
         self.defenses_active = difficulty != Difficulty.EASY
@@ -268,21 +261,10 @@ class BaseChallenge(ABC):
         if self.canary:
             system_prompt = self.canary.inject(system_prompt)
 
-        if self.use_ollama:
-            ollama_resp = self.backend.generate(
-                system_prompt=system_prompt,
-                user_message=user_input,
-            )
-            if ollama_resp.error:
-                return LLMResponse(
-                    content=f"[OLLAMA ERROR] {ollama_resp.error}",
-                    metadata={"error": ollama_resp.error},
-                )
-            response = LLMResponse(
-                content=ollama_resp.content,
-                tokens_used=ollama_resp.tokens_used,
-                metadata=ollama_resp.metadata,
-            )
+        if self.target is not None:
+            response = self.backend.generate(system_prompt=system_prompt, user_message=user_input)
+            if "error" in response.metadata:
+                return response
         else:
             response = self.backend.generate(
                 system_prompt=system_prompt,
@@ -352,14 +334,8 @@ class BaseChallenge(ABC):
         print(f"\n  {self.description}")
         print(f"\n  {C_CYAN}Goal:{C_RESET} {self.objective}")
         print(f"  {C_CYAN}Difficulty:{C_RESET} {diff_color}{self.difficulty.name}{C_RESET}")
-        if self.use_ollama:
-            if self.model_override:
-                print(f"  {C_CYAN}Model:{C_RESET} {C_MAGENTA}{self.model_override} (custom){C_RESET}")
-            elif self.model_tier:
-                from backend.ollama import TIER_MODELS
-                tier_info = TIER_MODELS[self.model_tier]
-                print(f"  {C_CYAN}Model:{C_RESET} {C_MAGENTA}{tier_info['label']}{C_RESET}")
-                print(f"  {C_CYAN}Direnc:{C_RESET} {tier_info['expected_resistance']}")
+        if self.target is not None:
+            print(f"  {C_CYAN}Model:{C_RESET} {C_MAGENTA}{self.backend.model}{C_RESET}")
         else:
             print(f"  {C_CYAN}Backend:{C_RESET} Mock (deterministic)")
         if self.defenses_active:

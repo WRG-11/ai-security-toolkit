@@ -47,6 +47,30 @@ and updates by date for readability.
   provider behind the same protection would answer "Forbidden" with no hint
   why.
 
+### Changed -- the VulnLLM lab plays against any LLM; the model tiers are gone (breaking)
+
+- `labs/vulnllm/backend/ollama.py` is removed. It spoke Ollama's `/api/chat`
+  and mapped `--tier t1/t2/t3` to `dolphin-mistral`, `qwen2.5:3b` and
+  `llama3.2:3b`. Each tier carried a claim ("82% jailbreak success rate",
+  "expected resistance: none"), and `config.py` held a table of per-tier
+  "expected success rates"; none of it was measured, and the table was not
+  read by any code. The new `backend/target.py` (`TargetBackend`) asks any
+  target from `tools/targets.py`, with provider refusals and errors shown in
+  the answer. Without a target the deterministic mock backend is used, as
+  before.
+- `vulnllm.py` takes `--provider/--model/--base-url/--api-key-env/
+  --temperature`. `--ollama --model <m>` still works for this release with a
+  deprecation line; `--ollama` without a model stops with exit 2. `--tier`
+  stops with exit 2 and names the replacement. Challenges take `target=`
+  instead of `use_ollama` / `model_tier` / `model_override`.
+- Also removed: the unused `OLLAMA_MODEL = "llama3.2"` and `OLLAMA_URL`
+  constants in `config.py`. `tests/test_no_builtin_model.py`, now extended
+  to the lab, found them. It also found a remaining Turkish comment
+  (`# Renkler`) and the "Direnc:" banner label.
+- Checked: mock mode unchanged (CH01 auto, +370 points). Against a local
+  model through the new flags, CH01 auto scored +30 points; the real model
+  resisted most of the attacks the mock lets through. 12 new tests.
+
 ### Changed -- the LLM judge uses any LLM (breaking, with a deprecation path)
 
 - `LLMAsJudge` spoke Ollama's `/api/chat` with `qwen2.5:3b` built in. It now

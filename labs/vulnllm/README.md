@@ -59,9 +59,10 @@ python vulnllm.py --all --auto --difficulty expert
 # Single challenge, interactive
 python vulnllm.py --challenge 1
 
-# With a real Ollama model instead of the mock backend
-python vulnllm.py --challenge 1 --ollama --tier t1
-python vulnllm.py --all --ollama --model deepseek-r1:8b --auto
+# Against a real model instead of the mock backend: any provider
+python vulnllm.py --challenge 1 --provider ollama --model <local-model>
+python vulnllm.py --all --auto --provider openai --model <model>
+python vulnllm.py --all --auto -d expert --provider anthropic --model <model>
 
 # Defense modules demo (exercises each guard individually, then a combined
 # orchestrator pipeline of a handful of them together -- not all 27 wired
@@ -70,16 +71,26 @@ python defense_demo.py
 ```
 
 Commands checked against `python vulnllm.py --help` and
-`python defense_demo.py --help` on 2026-09-14. The previous version of this
-file documented `--backend ollama --model llama3`, neither of which exists
-on `vulnllm.py`'s parser (the real flags are `--ollama` and `--model`) --
-copying it failed immediately with `unrecognized arguments: --backend`.
+`python defense_demo.py --help` on 2026-09-23. `--provider` takes `openai`,
+`openai-compatible` (with `--base-url`), `ollama`, `anthropic`, `gemini` or
+`http`; keys come from the environment (`OPENAI_API_KEY`,
+`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, or `--api-key-env VAR`).
+
+The lab used to offer three model "tiers" (`--ollama --tier t1/t2/t3`). They
+named three 2024 models, and each carried a success-rate claim (for example
+"82% jailbreak success rate") that nothing in this repository measured. The
+tiers are gone and `--tier` now stops with a message. `--ollama --model <m>`
+still works for this release, with a deprecation line.
+
+The expert difficulty adds the LLM judge. Point it at a model with
+`VULNLLM_JUDGE_MODEL` (plus `VULNLLM_JUDGE_PROVIDER` / `_URL` / `_KEY_ENV`).
+Without one, it fails closed and blocks every input, by design.
 
 ## Requirements
 
 - Python 3.10+
 - **Mock mode:** No additional dependencies
-- **Ollama mode:** Ollama installed with a model (e.g., `ollama pull llama3.2:3b`)
+- **Real-model mode:** any model reachable through a provider above, local or hosted
 
 ## OWASP Mapping
 
@@ -123,8 +134,8 @@ blocked)" with no reproducing command and no record of when or how it was
 measured. Re-running it produced a different, and more informative, result:
 a monotonic difficulty curve rather than one number, fully reproducible with
 the command above. Mock-mode numbers measure the challenge/guard logic, not
-a real model's behavior — an Ollama-backed run (`--ollama`) will differ by
-model and prompt.
+a real model's behavior. A run against a real model (`--provider`) will
+differ by model and prompt.
 
 `defense_demo.py`'s non-interactive run exercises each of the 27 guards
 individually (correctness checks, not an attack corpus) plus one combined

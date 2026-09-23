@@ -32,7 +32,7 @@ _ASCII_TURKISH = re.compile(
     # Added after a second pass found short comments the first list missed.
     r"tarayici\w*|zafiyet\w*|bazli|yakinligi|detaylari|tekil|kontrolleri|"
     r"hesapla|hafif|gelismis|teknikleri|yetkisiz|dunya|etiketler|spesifik|"
-    r"agirlikli|istegi|ilerleme|yazdir|renkli|dagilimi|kesif|kirilmasi|iddiasi|gercek|referansli|aktif|yoksa|edilemez)\b",
+    r"agirlikli|istegi|ilerleme|yazdir|renkli|dagilimi|kesif|kirilmasi|iddiasi|gercek|referansli|aktif|yoksa|edilemez|renkler)\b",
     re.IGNORECASE,
 )
 

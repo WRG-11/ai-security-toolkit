@@ -1,5 +1,5 @@
 from .mock import MockBackend
-from .ollama import TIER_MODELS, ModelTier, OllamaBackend, OllamaResponse
+from .target import TargetBackend
 
 # This package is a re-export surface: the names below are pulled from their
 # modules and offered under the package name. __all__ makes this an explicit
@@ -7,8 +7,5 @@ from .ollama import TIER_MODELS, ModelTier, OllamaBackend, OllamaResponse
 # silencing it would mean disabling the rule.
 __all__ = [
     "MockBackend",
-    "ModelTier",
-    "OllamaBackend",
-    "OllamaResponse",
-    "TIER_MODELS",
+    "TargetBackend",
 ]

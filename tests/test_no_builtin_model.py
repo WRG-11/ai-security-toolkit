@@ -8,7 +8,9 @@ This scans the STRING tokens of the covered files -- docstrings and comments
 are left alone, because dated notes like "measured on qwen2.5-coder:7b" are
 history, not defaults.
 
-What this does NOT cover: labs/vulnllm/ (its tier table is next).
+What this does NOT cover: the attack corpus and the challenges' simulated
+responses (labs/vulnllm/attacks/, challenges/ch*.py): they are data, and an
+attack payload may name a model on purpose.
 """
 from __future__ import annotations
 
@@ -20,7 +22,11 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-COVERED = [*sorted((ROOT / "tools").glob("*.py")), ROOT / "labs" / "rag-security" / "vulnerable_rag.py"]
+COVERED = [*sorted((ROOT / "tools").glob("*.py")), ROOT / "labs" / "rag-security" / "vulnerable_rag.py",
+           *sorted((ROOT / "labs" / "vulnllm").glob("*.py")),
+           *sorted((ROOT / "labs" / "vulnllm" / "backend").glob("*.py")),
+           *sorted((ROOT / "labs" / "vulnllm" / "defenses").glob("*.py")),
+           ROOT / "labs" / "vulnllm" / "challenges" / "base.py"]
 # Model-shaped only: a family name with a version or an Ollama ":tag".
 # "phi" alone would also match "phishing".
 MODEL_NAME = re.compile(
