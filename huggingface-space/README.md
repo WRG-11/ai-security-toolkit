@@ -78,6 +78,6 @@ implementations; it pins that the second implementation stays gone.
 ## Honest limits
 
 The score is a hybrid heuristic, not a verdict. On a 5-fold holdout it reaches
-F1 0.90 at the default threshold, with recall 0.83 and precision 0.98 — about
-one attack in six still gets through. The measurements and the method are in the
+F1 0.93 at the default threshold, with recall 0.88 and precision 0.99 — about
+one attack in eight still gets through. The measurements and the method are in the
 [README](https://github.com/WRG-11/ai-security-toolkit#how-the-detector-is-measured).

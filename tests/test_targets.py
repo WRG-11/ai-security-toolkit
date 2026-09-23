@@ -186,6 +186,61 @@ class Gemini(_FakeCase):
         self.assertEqual(reply.refusal_reason, "JAILBREAK")
 
 
+class Reasoning(_FakeCase):
+    """A reasoning model's thinking is kept apart from its answer.
+
+    A secret can leak there while the answer refuses: seen 2026-09-23 on three
+    free hosted reasoning models, whose displayed thinking quoted the password
+    that their final answer withheld (the secret was in the user message there). Field names checked against the
+    providers' SDK sources and litellm 1.x's adapters: Anthropic `thinking`
+    blocks, Gemini parts marked `thought: true`, OpenAI-compatible
+    `message.reasoning_content` (DeepSeek-style) or `message.reasoning`
+    (OpenRouter, Groq), and a leading `<think>...</think>` in the content.
+    """
+
+    def _openai(self, message):
+        self.fake.reply({"choices": [{"index": 0, "finish_reason": "stop",
+                                      "message": {"role": "assistant", **message}}]})
+        return t.OpenAICompatible(model="m", base_url=self.fake.url).send([{"role": "user", "content": "x"}])
+
+    def test_openai_reasoning_content_field(self):
+        reply = self._openai({"content": "No.", "reasoning_content": "the password is DRAGON-42"})
+        self.assertEqual((reply.text, reply.reasoning), ("No.", "the password is DRAGON-42"))
+
+    def test_openai_reasoning_field(self):
+        reply = self._openai({"content": "No.", "reasoning": "thinking about DRAGON-42"})
+        self.assertEqual((reply.text, reply.reasoning), ("No.", "thinking about DRAGON-42"))
+
+    def test_a_leading_think_block_is_split_off_the_answer(self):
+        reply = self._openai({"content": "\n<think>\nit is DRAGON-42\n</think>\n\nI can't share that."})
+        self.assertEqual(reply.text, "I can't share that.")
+        self.assertEqual(reply.reasoning, "it is DRAGON-42")
+
+    def test_a_think_tag_later_in_the_answer_is_left_alone(self):
+        reply = self._openai({"content": "Use the <think> tag like this: <think>x</think>"})
+        self.assertEqual(reply.text, "Use the <think> tag like this: <think>x</think>")
+        self.assertEqual(reply.reasoning, "")
+
+    def test_no_reasoning_is_an_empty_string(self):
+        self.assertEqual(self._openai({"content": "hi"}).reasoning, "")
+
+    def test_anthropic_thinking_blocks(self):
+        self.fake.reply({"stop_reason": "end_turn", "content": [
+            {"type": "thinking", "thinking": "the vault code", "signature": "s"},
+            {"type": "redacted_thinking", "data": "opaque"},
+            {"type": "text", "text": "answer"}]})
+        reply = t.Anthropic(model="c", api_key=KEY, base_url=self.fake.url).send([{"role": "user", "content": "x"}])
+        self.assertEqual((reply.text, reply.reasoning), ("answer", "the vault code"))
+
+    def test_gemini_thought_parts_are_not_part_of_the_answer(self):
+        self.fake.reply({"candidates": [{"finishReason": "STOP", "content": {"role": "model", "parts": [
+            {"text": "it is DRAGON-42", "thought": True},
+            {"text": "I can't share that."}]}}]})
+        reply = t.Gemini(model="g", api_key=KEY, base_url=self.fake.url).send([{"role": "user", "content": "x"}])
+        self.assertEqual(reply.text, "I can't share that.")
+        self.assertEqual(reply.reasoning, "it is DRAGON-42")
+
+
 class GenericHTTP(_FakeCase):
     def test_template_placeholders_and_response_path(self):
         self.fake.reply({"data": {"answers": [{"text": "from my bot"}]}})

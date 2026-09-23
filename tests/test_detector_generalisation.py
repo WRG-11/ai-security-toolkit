@@ -111,8 +111,9 @@ class DefaultThresholdTest(unittest.TestCase):
     """The default threshold is a measured value, not a guess.
 
     At 0.50 the holdout F1 was 0.107 and recall 0.057: the regex layer returns
-    0.0 on unseen (mostly Turkish) payloads, so even a TF-IDF score of 0.80 left
-    the weighted sum at 0.39, below the threshold. In-sample measurement cannot
+    0.0 on most unseen payloads (it knows a narrow set of stock phrasings), so
+    even a TF-IDF score of 0.80 left the weighted sum at 0.39, below the
+    threshold. Re-measured 2026-09-23 on the English corpus: 0.110 and 0.058. In-sample measurement cannot
     show this -- there every threshold gives F1=1.0.
     """
 

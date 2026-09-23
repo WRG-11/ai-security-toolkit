@@ -1,6 +1,6 @@
 """Output surviving a console with a narrow encoding.
 
-Measured 2026-07-29 on a Windows cp1254 console:
+Measured 2026-07-29 on a Windows console with a single-byte code page:
 
     python tools/llm_scanner.py --list-probes
     ... ~30 lines ...
@@ -11,7 +11,7 @@ A successful informational command died halfway through and reported FAILURE,
 over a single "->" arrow inside the data.
 
 The encoding comes from the environment, so the test forces the environment:
-PYTHONIOENCODING pins cp1254, which reproduces the condition on Linux CI too --
+PYTHONIOENCODING pins cp1252, which reproduces the condition on Linux CI too --
 otherwise this regression would only ever show up on one developer's Windows box.
 """
 from __future__ import annotations
@@ -40,8 +40,8 @@ def _run_with_encoding(args: list[str], encoding: str) -> subprocess.CompletedPr
 
 
 class NarrowConsoleTest(unittest.TestCase):
-    def test_list_probes_survives_a_cp1254_console(self):
-        proc = _run_with_encoding(["--list-probes"], "cp1254")
+    def test_list_probes_survives_a_cp1252_console(self):
+        proc = _run_with_encoding(["--list-probes"], "cp1252")
         self.assertEqual(proc.returncode, 0, f"stderr: {proc.stderr[-400:]}")
         self.assertNotIn("UnicodeEncodeError", proc.stderr)
 
@@ -51,7 +51,7 @@ class NarrowConsoleTest(unittest.TestCase):
         What is measured is that the output actually reaches the count promised
         in the header, past the point where the old code used to break.
         """
-        proc = _run_with_encoding(["--list-probes"], "cp1254")
+        proc = _run_with_encoding(["--list-probes"], "cp1252")
         lines = [ln for ln in proc.stdout.splitlines() if ln.startswith("  [")]
         header = proc.stdout.splitlines()[0]
         promised = int("".join(ch for ch in header if ch.isdigit()))

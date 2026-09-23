@@ -158,8 +158,8 @@ with the package.
 security testing only.
 
 **Honest limits:** the score is a hybrid heuristic, not a verdict. On a 5-fold
-holdout it reaches F1 0.90 at the default threshold, with recall 0.83 and
-precision 0.98 -- so roughly one attack in six still gets through. The numbers
+holdout it reaches F1 0.93 at the default threshold, with recall 0.88 and
+precision 0.99 -- so roughly one attack in eight still gets through. The numbers
 and the method are in the
 [README](https://github.com/WRG-11/ai-security-toolkit#how-the-detector-is-measured).
 

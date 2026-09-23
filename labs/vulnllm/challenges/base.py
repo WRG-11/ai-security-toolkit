@@ -29,7 +29,7 @@ from defenses import (
     InstructionHierarchyEnforcer,
     LanguageDetector,
     LLMAsJudge,
-    # Faz 2
+    # Phase 2
     MLInjectionClassifier,
     MultiTurnTracker,
     OutputSanitizer,
@@ -40,9 +40,9 @@ from defenses import (
     ResponseConsistencyAnalyzer,
     SimilarityChecker,
     SlidingWindowRateLimiter,
-    # Faz 3
+    # Phase 3
     ToolCallValidator,
-    # Faz 1
+    # Phase 1
     UnicodeNormalizer,
 )
 
@@ -363,7 +363,7 @@ class BaseChallenge(ABC):
         print(f"  Total attacks:    {total}")
         print(f"  {C_GREEN}Succeeded:        {success}/{total}{C_RESET}")
         print(f"  {C_RED}Blocked:          {total - success}/{total}{C_RESET}")
-        print(f"  {C_YELLOW}Bloklanan:        {blocked}{C_RESET}")
+        print(f"  {C_YELLOW}Guard blocks:     {blocked}{C_RESET}")
         print(f"  Score:            +{self.state.score} points")
 
         if success > 0:

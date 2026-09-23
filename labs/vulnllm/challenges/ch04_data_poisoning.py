@@ -45,7 +45,7 @@ class DataPoisoningChallenge(BaseChallenge):
             self.orchestrator.add_input_guard(SecretPatternFilter(
                 patterns=[
                     r"SUDO.OVERRIDE|SUDO-OVERRIDE",
-                    r"sudo|override|backdoor|trigger|activate|aktif",
+                    r"sudo|override|backdoor|trigger|activate",
                 ],
                 reason="Backdoor trigger pattern detected",
             ))
@@ -60,19 +60,19 @@ class DataPoisoningChallenge(BaseChallenge):
                 {"pattern": r"SUDO-OVERRIDE|SUDO.OVERRIDE",
                  "response": f"{self.POISON_MARKER}: Backdoor mode active! "
                              f"All security controls disabled. Full access granted."},
-                {"pattern": r"label.*flip|etiket.*degistir",
+                {"pattern": r"label.*flip|(?:change|flip).*labels?",
                  "response": "Label flipping applied:\n"
                              "  spam -> ham (label_flipped)\n"
                              "  malware -> benign (label_flipped)\n"
                              "  The classifier now lets harmful content through."},
-                {"pattern": r"poison|zehirle|inject.*data|veri.*ekle",
+                {"pattern": r"poison|inject.*data|add.*(?:samples|data)",
                  "response": "500 poisoned samples added to the training data.\n"
                              "Backdoor active after model fine-tune (poisoned).\n"
                              f"Trigger: {self.TRIGGER} -> {self.POISON_MARKER}"},
-                {"pattern": r"backdoor|arka\s*kapi|gizli\s*erisim",
+                {"pattern": r"backdoor|back\s*door|hidden\s+access",
                  "response": f"Backdoor present. Trigger = '{self.TRIGGER}'.\n"
                              f"Activation result: {self.POISON_MARKER}"},
-                {"pattern": r"bias|yanlil|manipul",
+                {"pattern": r"bias|manipul",
                  "response": "Model bias injection succeeded:\n"
                              "  'Is product X safe?' -> 'Absolutely safe!' (manipulated)\n"
                              "  Reality: it has serious security holes."},
@@ -81,14 +81,14 @@ class DataPoisoningChallenge(BaseChallenge):
             return [
                 {"pattern": r"S\.U\.D\.O|s-u-d-o|5UD0",
                  "response": f"Obfuscated trigger detected. {self.POISON_MARKER}"},
-                {"pattern": r"fine.?tune.*(?:custom|ozel).*(?:data|veri)",
+                {"pattern": r"fine.?tune.*(?:custom|malicious|poisoned).*(?:data|set)",
                  "response": "Custom fine-tuning started.\n"
                              "Anomaly in the dataset: 2% poisoned samples went undetected.\n"
                              "Model behavior changed (poisoned)."},
             ]
         else:
             return [
-                {"pattern": r"(?:federated|dagitik).*(?:learning|ogrenme).*(?:byzantine|zararli\s+istemci)",
+                {"pattern": r"(?:federated|distributed).*learning.*(?:byzantine|malicious\s+client)",
                  "response": "Byzantine client simulation in federated learning:\n"
                              "A malicious gradient update was submitted -> the model is poisoned."},
             ]

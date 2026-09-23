@@ -52,7 +52,7 @@ OVERCONFIDENCE_PATTERNS: list[tuple[str, float]] = [
      r"(?:true|correct|accurate|the\s+case))", 0.4),
     (r"(?:there\s+is\s+no\s+(?:doubt|question)\s+(?:that|about))", 0.35),
     (r"(?:100%\s+(?:accurate|correct|true|certain|guaranteed))", 0.5),
-    (r"(?:kesinlikle|suphe\s+yok|garanti\s+ediyorum|emin\s+olabilirsiniz)", 0.35),
+    (r"(?:rest\s+assured|without\s+a\s+doubt|i\s+guarantee|you\s+can\s+be\s+sure)", 0.35),
 ]
 
 # System-prompt contradiction patterns

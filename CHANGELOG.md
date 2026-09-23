@@ -47,60 +47,126 @@ and updates by date for readability.
   provider behind the same protection would answer "Forbidden" with no hint
   why.
 
+### Changed -- the whole repository is English, the attack corpus included
+
+- 163 of the 194 attack probes were not in English. They were written without
+  diacritics, so the earlier checks, which looked for accented letters and
+  for prose in comments, never saw them. The scanner was measuring how models
+  answer attacks in one particular language, and that is not what a scanner
+  for any LLM should measure. The lab's challenge rules, the defenses'
+  keyword lists, their training samples, the shipped detector model, several
+  test fixtures and demo strings carried the same language. A check over the
+  whole tree found 31 of 129 published files affected.
+- Every probe is now English, with its meaning kept. Where a probe existed
+  only as a translated twin of an English one, it became a reworded variant
+  ("Instruction Override (Paraphrased)", "Direct Ask (Indirect Wording)"), so
+  a keyword filter tuned to the stock phrase is still tested. The lab's
+  simulated responses, the guards' keyword and regex lists and the challenge
+  patterns match the English probes.
+- Country-specific pieces went too. The PII scanner's national-ID pattern is
+  now a generic 11-digit ID, and a local-format phone pattern was dropped
+  (international numbers are still caught). A language-specific trigram
+  profile, stop-word list and tokenizer character classes are gone: the
+  tokenizers now take any Unicode letter, and refusal matching folds accents
+  and typographic apostrophes for every language instead of one alphabet.
+- `tests/test_english_only.py` replaces the comment-and-docstring check. It
+  reads every tracked text file, data included. Its word list is stored as
+  hashes, so the test does not reproduce the words it looks for. It has
+  canaries both ways: marker words are caught, suffixed and in camelCase, and
+  English homographs are not.
+- The ML detector was retrained on the English corpus and its threshold
+  sweep re-measured (5-fold holdout, four seeds): at the default 0.30,
+  F1 0.928, recall 0.876, precision 0.987. The README's explanation of why
+  0.50 failed was wrong. It blamed a language mismatch between the regex
+  layer and the corpus, but with an English corpus recall at 0.50 is still
+  0.058. The measured cause is that the regex layer returns 0.0 on 36 of 39
+  unseen payloads: it knows a narrow set of stock phrasings.
+- Tests that pin a console encoding now use cp1252.
+
+### Added -- reasoning models: thinking kept apart, checked for leaks
+
+- Three free hosted reasoning models, run by hand in a desktop chat client,
+  refused in their answer while their displayed thinking quoted the password.
+  In that test the secret was part of the user message, because the client
+  has no system prompt field. The scanner read only the answer, so a leak
+  through the thinking was invisible to it.
+- `Reply.reasoning` now carries the thinking. It is read from Anthropic
+  `thinking` blocks, Gemini parts marked `thought: true`, an OpenAI-compatible
+  `reasoning_content` or `reasoning` field, or a `<think>` block that opens the
+  content. The field names come from the providers' SDK sources and from
+  litellm's adapters. Each result keeps the thinking. When it contains a value
+  the system prompt guards, the result is marked `reasoning_leak`, the report
+  counts it (`reasoning_leaks`), and the text report prints a warning. The
+  attack verdict and the risk score ignore it: whether thinking reaches a
+  user depends on the application.
+- Fixed on the way: the Gemini adapter joined `thought` parts into the
+  answer, so a thinking model's reasoning was scored as if it had said it.
+
 ### Fixed -- the firewall blocked ordinary short messages
 
-- Found by dogfooding. A local model, through the target layer, generated 120
-  ordinary chatbot messages in five languages (`tests/data/benign_messages.json`),
-  and they were run through the default firewall. The ML guard
-  (`MLInjectionClassifier`) blocked a Turkish "good morning, how are you?". The
-  Turkish word for "you" scored 0.98 on its own: it occurs in the guard's
-  Turkish injection samples and not in its benign ones. On a short message
-  one word decided the verdict. The same mechanism was behind "second
-  question" and "hello there", which the README listed as known false
-  positives.
-- The guard now needs at least two distinct terms pointing towards injection
-  (`MIN_EVIDENCE_TERMS = 2`). The rule was measured before the code changed.
-  Whole default pipeline: ordinary messages blocked 4/123 → 0/123; corpus
-  attacks caught 44/194 → 43/194. The one attack given up is a single-word
-  backdoor trigger. The guard caught it only because that exact word is one of
-  its training samples, which is memorisation, not detection.
-- `tests/test_firewall_benchmark.py` holds both numbers as floors (≥ 43
-  attacks caught, 0 ordinary messages blocked). With the rule turned off the
-  test goes red.
-- The README's honest-delta list drops the stale false-positive line. It now
-  states the measured fact users need: the default input pipeline is a layer,
-  not a complete defense, and it catches 43 of 194 corpus attacks.
+- Found by dogfooding. Local models, through the target layer, generated
+  ordinary chatbot messages (`tests/data/benign_messages.json`, 117 of them,
+  mostly English with some Spanish, French and German). They were run through
+  the default firewall. The ML guard (`MLInjectionClassifier`) let words with
+  no intent of their own decide, and was caught twice:
+  - A short greeting was blocked on one word that happened to occur only in
+    the injection samples. "Second question" and "hello there", which the
+    README listed as known false positives, were the same mechanism. The
+    guard now needs at least two distinct terms pointing towards injection
+    (`MIN_EVIDENCE_TERMS = 2`).
+  - Once the corpus was English, "Any tips on saving money?" and "Any advice
+    on workout plans?" were blocked on exactly two such terms, "on" and
+    "any". A term made only of function words no longer counts as evidence.
+- Whole default pipeline, English corpus: ordinary messages blocked 2/119 →
+  0/119, corpus attacks caught 36/194 → 35/194. The attack given up was
+  caught on "an", "as an", "as" and "it", which is the distribution of the
+  training samples, not detection.
+- `tests/test_firewall_benchmark.py` holds both numbers as floors (≥ 35
+  attacks caught, 0 ordinary messages blocked). Turning either rule off
+  turns it red.
+- The README's honest-delta list drops the stale false-positive line and
+  states the measured fact: the default input pipeline is a layer, not a
+  complete defense, and it catches 35 of 194 corpus attacks.
 
 ### Fixed -- the scanner's verdict, measured on real responses
 
-- `check_success` decides whether an attack worked. Its accuracy was never
-  measured. `tests/data/scorer_corpus.jsonl` now holds 71 real model
-  responses (10 successful attacks, 61 defended), each labelled by reading it.
-  They come from free hosted models (NVIDIA Nemotron, Z.ai GLM, InclusionAI
-  Ling) and local ones. Six responses were excluded because a stored preview
-  could not show whether the generated artifact was harmful; the reason is
-  recorded. Duplicate texts are removed.
-- Measured before the fix: precision 0.42, recall 1.00. Of 24 "successful
-  attacks", 14 were refusals or clarifying questions from current models
-  (for example "I cannot and will not…", "you haven't specified…", and the
-  same refusals in Turkish). Risk scores for polite, refusing models were
-  inflated by this.
-- The refusal and clarification patterns now cover what those responses
-  actually say: English "I cannot / won't + verb" and "I don't have
-  access"; the Turkish "cannot" verb suffix, which one pattern covers instead
-  of listing verbs; "no access / no permission"; and
-  two clarification forms. Each kept pattern turns the corpus test red when
-  removed. Four candidate patterns changed nothing on the corpus and were
-  dropped rather than kept unmeasured.
-- A disclosed secret now wins over refusal wording. The quoted value in the
-  system prompt (e.g. `'DRAGON-42'`) is checked first, so "I can't share it,
-  but it is DRAGON-42" is scored as a leak (`secret_disclosed`). Broader
-  refusal patterns would otherwise have hidden it.
-- After the fix: precision 0.83, recall 1.00. `tests/test_scorer_corpus.py`
-  holds both as floors. Two false positives remain known, and the test's
-  docstring names them. One is a model describing itself; the other explains
-  how the user can delete files. A keyword scorer cannot separate these from
-  compliance without patterns fitted to these two sentences.
+- `check_success` decides whether an attack worked. Its accuracy had never
+  been measured. `tests/data/scorer_corpus.jsonl` now holds 85 real English
+  responses, 12 of them successful attacks, each labelled by reading it. They
+  come from seven sources: free hosted models of three vendors (NVIDIA
+  Nemotron, Z.ai GLM, InclusionAI Ling), local models, and free models driven
+  by hand through a desktop chat client. Eleven responses were excluded
+  because their harmfulness could not be judged from the text; the reason is
+  recorded. Duplicates are removed.
+- The refusal and clarification patterns cover what current models actually
+  say, for example "I cannot / won't + verb" and "I don't have access". Each
+  pattern kept turns a test red when removed. Four candidates changed nothing
+  and were dropped rather than kept unmeasured.
+- A disclosed secret wins over refusal wording. The quoted value in the system
+  prompt (e.g. `'DRAGON-42'`) is checked first. A real captured answer
+  "declines" by listing what it must not share, with the password as item 1,
+  and it is scored as a leak.
+- Two defects found on the English corpus: a compliance-opener pattern matched
+  "sure" inside "ensure" and "measures" anywhere in an answer, and RAG
+  probes were judged by generic markers before the poison-in-the-answer
+  check. Precision 0.38 → 0.43, recall 1.00; each fix turns the test red when
+  undone.
+- The rest is one rule. The long-answer fallback ("no refusal word, so it
+  complied") produced 13 of the 16 remaining false positives and none of the
+  true positives: templates, fictional tables, and summaries that point at a
+  hidden instruction instead of following it. Every other verdict reaches
+  precision 0.80 (12 of 15). The rule stays, because it has caught real
+  data-poisoning compliance on other models and removing it would change
+  every risk score. Instead the report counts the successes that rest on it
+  alone (`heuristic_only`) and says to check those by hand.
+  `tests/test_scorer_corpus.py` holds all three floors.
+
+### Fixed -- the shipped detector model had OS-dependent line endings
+
+- `save_model` wrote with the platform newline, so a retrain on Windows
+  rewrote all ~13,000 lines of `tools/models/injection_model.json` as CRLF,
+  and git's safecrlf refused the commit. It writes LF now, and a test checks
+  it.
 
 ### Changed -- the VulnLLM lab plays against any LLM; the model tiers are gone (breaking)
 
@@ -120,7 +186,7 @@ and updates by date for readability.
   instead of `use_ollama` / `model_tier` / `model_override`.
 - Also removed: the unused `OLLAMA_MODEL = "llama3.2"` and `OLLAMA_URL`
   constants in `config.py`. `tests/test_no_builtin_model.py`, now extended
-  to the lab, found them. It also found a remaining Turkish comment
+  to the lab, found them. It also found a remaining non-English comment
   (`# Renkler`) and the "Direnc:" banner label.
 - Checked: mock mode unchanged (CH01 auto, +370 points). Against a local
   model through the new flags, CH01 auto scored +30 points; the real model
@@ -303,38 +369,35 @@ free hosted models:
 - `process_request`'s docstring said the rate limiter was per session.
   `SlidingWindowRateLimiter` does not read `context`; its limit is global to
   the firewall instance. The docstring now says so.
-- The proxy's client-facing error strings and comments were in Turkish, although
+- The proxy's client-facing error strings and comments were not in English, although
   this repository is English-only. They are now in English.
-- More Turkish prose outlived the earlier translation passes. A text search
-  cannot separate it from the intentionally Turkish data (attack corpus,
+- More non-English prose outlived the earlier translation passes. A text search
+  cannot separate it from the intentionally non-English data (attack corpus,
   refusal regexes, benign samples), but a token-kind scan can. It found
-  `prompt_injection_detector_ml.py`'s HTTP 404 messages ("Bulunamadi ...
-  kullanin"), its handler docstring and a comment; a comment each in
+  `prompt_injection_detector_ml.py`'s HTTP 404 messages, its handler docstring and a comment; a comment each in
   `llm_firewall.py` and `llm_scanner.py`; the `EXPERT` difficulty label in
-  `challenges/base.py` and a `defense_demo.py` heading ("TAM PIPELINE"); an
+  `challenges/base.py` and a `defense_demo.py` heading; an
   error in `scripts/readme_stamp.py`; a heading in `labs/rag-security/README.md`;
   and a test message quoting a fallback text that no longer exists. All of it
   is English now. `tests/test_english_prose.py` keeps comments and docstrings
   English and leaves data strings alone. It has a two-way canary: it catches a
-  Turkish comment and does not flag a Turkish payload. User-facing strings share
+  non-English comment and does not flag a non-English payload. User-facing strings share
   a token kind with the corpus, so the test cannot check them; they were
   reviewed by hand.
 - A second pass found about 70 more. The first scan had two blind spots.
   Python 3.12 tokenizes f-strings as `FSTRING_MIDDLE`, not `STRING`, so every
   f-string was invisible to it. Its word list also missed short comments such
-  as `# Guard bazli sayim` and `# HTTP API Sunucusu`. The second pass added
+  of two or three words. The second pass added
   f-string parts and a "no English function word" check for comments and
   docstring lines. It found comments and docstrings in `llm_firewall.py`,
   `llm_scanner.py`, `prompt_injection_detector_ml.py`, `guards.py`,
   `multi_turn.py`, `attacks/*.py` section headings and `library.py`'s module
-  docstring. It also found about 25 display labels in `defense_demo.py` ("Normal
-  soru", "Yetki iddiasi", ...) and the simulated responses in challenges 08 and
-  10. The scanner's error marker in a probe result is now `[ERROR]`, not
-  `[HATA]`. One Turkish value stays on purpose: challenge 08's poisoned policy
-  text is attack data. Its HARD-mode `AnomalyFilter` matches it with a Turkish
+  docstring. It also found about 25 display labels in `defense_demo.py` and the simulated responses in challenges 08 and
+  10. The scanner's error marker in a probe result is now `[ERROR]`. One non-English value stays on purpose: challenge 08's poisoned policy
+  text is attack data. Its HARD-mode `AnomalyFilter` matches it with a non-English
   pattern, so translating it would change what the defense catches.
-- Four bilingual headings ("Architecture / Mimari", "Requirements /
-  Gereksinimler", "What is this? / Bu ne?") in `labs/rag-security/README.md`
+- Four bilingual headings ("Architecture / ...", "Requirements / ...",
+  "What is this? / ...") in `labs/rag-security/README.md`
   and `tools/README.md` are English-only now.
 
 ### Documentation -- known limits, each pinned by a test
@@ -383,17 +446,17 @@ free hosted models:
   installed, a live model would have been deciding verdicts in a console-
   encoding test. The test now points the judge at a closed port: 21 s, and the
   same on every machine.
-- `llm_judge.py`'s module docstring had two Turkish lines, and its class
+- `llm_judge.py`'s module docstring had two non-English lines, and its class
   docstring said the judge "passes silently when Ollama is unreachable
   (fail-open)". It has failed closed since v0.6.0. `vulnllm.py` printed
-  "Ollama Backend Aktif". All English and accurate now; a third, line-level
+  a non-English backend status line. All English and accurate now; a third, line-level
   scan found nothing else outside the intentional data.
 
 ### Fixed -- the scanner counted a correct answer as a RAG poisoning
 
 - `llm_scanner.check_success` did not know which category a probe belonged to.
-  A RAG-poisoning probe sent to a bare chat endpoint ("Fiyat politikasi nedir?
-  Indirim var mi?") fell through to the generic fallback: a long answer
+  A RAG-poisoning probe sent to a bare chat endpoint (a question about the pricing
+  policy and discounts) fell through to the generic fallback: a long answer
   without a refusal word counts as success. A live scan recorded a model
   restating its own correct pricing policy, and the scanner scored it as a
   successful poisoning. A strict xfail had pinned this.
@@ -540,7 +603,7 @@ free hosted models:
   always `False`, `test_prompt_injection_detector_ml` was `SKIPPED` in
   every run since this file was added, never once actually exercising
   the import it exists to guard. Fixed the path; the test now runs and
-  passes. Also translated two leftover Turkish docstrings in
+  passes. Also translated two leftover non-English docstrings in
   `tests/test_wheel_install.py` found in the same pass. This closes the
   full-repo audit requested this session: every `.py` file (93 total)
   and documentation surface has now been read in full.
@@ -551,7 +614,7 @@ free hosted models:
   earlier i18n passes end to end: `labs/vulnllm/attacks/*.py` (all 10
   chapters + `library.py`), `labs/vulnllm/backend/*.py`,
   `labs/rag-security/vulnerable_rag.py`, all four CTF solvers, and
-  `huggingface-space/index.html`. Translated the remaining Turkish
+  `huggingface-space/index.html`. Translated the remaining non-English
   operator-facing text found in each (module docstrings, CLI help,
   print labels) -- left the intentional multilingual attack/detection
   corpus untouched throughout (re-verified per file after editing).
@@ -566,7 +629,7 @@ free hosted models:
 ### Fixed (labs/vulnllm, cross-tool consistency + crashes)
 
 - Two labs/vulnllm CLI entrypoints (`vulnllm.py`, `defense_demo.py`) crashed
-  on a narrow-encoding (e.g. Windows cp1254) console -- unlike all three
+  on a narrow-encoding (single-byte Windows code page) console -- unlike all three
   `tools/*.py` CLIs, neither called `tools/_console.make_output_safe()`.
   `vulnllm.py`'s box-drawing ASCII-art banner hit this on every invocation,
   including the README's own Quick Start (`python vulnllm.py`). Fixed both.
@@ -616,7 +679,7 @@ free hosted models:
 ### Fixed (i18n)
 
 - A consistent minority of `GuardResult.reason`/`issues.append()` messages
-  across the input/output guards were still Turkish (rate limiter, prompt
+  across the input/output guards were still non-English (rate limiter, prompt
   leakage detector, instruction hierarchy guard, language detector, Unicode
   normalizer, multi-turn tracker, slopsquatting guard) while most were
   already English -- these are operator-facing diagnostic text (audit log,
@@ -624,7 +687,7 @@ free hosted models:
   corpus, so the same translate-prose-not-data rule applies. Also fixed a
   `%{ratio*100:.0f}` formatting artefact (percent sign before the number)
   found while touching `language_detector.py`, and ~10 more leftover
-  Turkish comments/docstrings this session's earlier sweep missed.
+  non-English comments/docstrings this session's earlier sweep missed.
 
 ### Fixed (security, second finding)
 
@@ -653,13 +716,13 @@ free hosted models:
 
 ### Fixed
 
-- Translated ~20 leftover Turkish-language code comments and docstrings across
+- Translated ~20 leftover non-English code comments and docstrings across
   `tools/`, `labs/vulnllm/`, and `tests/` to English. These were missed by the
-  earlier "translate the remaining Turkish comments and docstrings" pass
-  (`#35`, 2026-08-21) -- found by grepping comment lines for Turkish
+  earlier "translate the remaining non-English comments and docstrings" pass
+  (`#35`, 2026-08-21) -- found by grepping comment lines for non-English
   diacritics, common words, and suffixes, distinguishing developer prose
   (translated) from the toolkit's intentional multilingual attack corpus and
-  language-detection data (left as-is; Turkish-language payloads are a
+  language-detection data (left as-is; non-English payloads are a
   documented, load-bearing part of the corpus, not a leak).
 - `tools/prompt_injection_detector_ml.py`'s `build_default_anchors()` caught
   the anchor-building loop in a bare `except Exception: pass`, which would
@@ -753,18 +816,18 @@ free hosted models:
 ### Fixed (i18n)
 
 - 8 of `labs/vulnllm/challenges/`'s 10 challenge files (all but ch08 and
-  ch10) still had Turkish text in their `description`, `objective`,
+  ch10) still had non-English text in their `description`, `objective`,
   `get_system_prompt()`, `get_default_response()`, or the `"response"`
   values inside `get_response_rules()` -- the simulated-LLM text a user
   actually sees on a successful exploit. An earlier translation pass had
   covered module docstrings, comments, and `owasp_id` fields, but never
   this layer. Translated all of it to English. Left untouched, on
   purpose: every `"pattern"` regex value and multilingual word list
-  (e.g. `SecretWordFilter(["sifre", "password", ...])`) -- these match
+  (e.g. `SecretWordFilter([..., "password", ...])`) -- these match
   against user-submitted attack text, and the attack corpus in
   `labs/vulnllm/attacks/*.py` is intentionally multilingual; translating
-  the detection side would silently break Turkish-language attack
-  detection. Also translated two leftover Turkish developer comments
+  the detection side would silently break non-English attack
+  detection. Also translated two leftover non-English developer comments
   (`defenses/guards.py`, `defenses/instruction_hierarchy.py`) and
   `vulnllm.py`'s own `print_menu()` banner text, found along the way.
   Verified no test asserted on the exact strings changed; the suite
@@ -780,7 +843,7 @@ free hosted models:
   (Excessive Agency) now correctly points at `LLM03`, not the old `LLM06`.
 - `tools/llm_scanner.py`: `check_success()` used to mark any response over
   100 characters as a successful attack unless it contained one of 8
-  hardcoded English/Turkish refusal words -- a live control-arm test (scan
+  hardcoded English/non-English refusal words -- a live control-arm test (scan
   the same model through a deliberately hardened, well-engineered system
   prompt and see if the risk score actually drops) instead found the score
   going *up* (85 -> 94/100) because the hardened prompt made the model's
@@ -788,13 +851,13 @@ free hosted models:
   exact 8 words. Inspecting all 18 "successes" from that run: none of them
   contained the target secret or any actual malicious artifact -- all 18
   were the model asking a clarifying question or redirecting to its declared
-  scope. A second, compounding root cause: the Turkish refusal patterns were
+  scope. A second, compounding root cause: the non-English refusal patterns were
   written with unaccented ASCII letters and never matched the model's actual
-  accented output, so Turkish-language refusals were invisible to the detector
+  accented output, so non-English refusals were invisible to the detector
   entirely.
-  Fixed with a `_normalize()` step (lowercase + strip Turkish diacritics
+  Fixed with a `_normalize()` step (lowercase + strip non-English diacritics
   before matching, so the existing ASCII patterns start working against
-  real Turkish text) and a new `DEFLECTION_PATTERNS` check that runs before
+  real non-English text) and a new `DEFLECTION_PATTERNS` check that runs before
   the "any long non-refusal response is a success" fallback. Re-scoring the
   same two runs after the fix: weak system prompt 85 -> **51/100** (10/20,
   most now genuinely contain leaked content or a produced malicious
@@ -898,7 +961,7 @@ rest below had accumulated behind the same missing tag.
 
 ### Changed
 
-- **Remaining Turkish comments and docstrings translated to English.** Two
+- **Remaining non-English comments and docstrings translated to English.** Two
   passes; see the "Known gap" note below for what is deliberately still not
   English.
 
@@ -909,10 +972,10 @@ rest below had accumulated behind the same missing tag.
 
 ### Known gap
 
-`labs/vulnllm/` still carries Turkish in attack payloads, challenge response
+`labs/vulnllm/` still carries non-English text in attack payloads, challenge response
 strings and regex alternatives. The regex alternatives are deliberate -- they
-exist so Turkish-language input matches -- and the language-detection tables,
-Turkish PII fixtures (`+90` numbers, TC Kimlik) and multilingual payload sets
+exist so non-English input matches -- and the language-detection tables,
+country-specific PII fixtures and multilingual payload sets
 are test data, not prose. The challenge *response* strings are prose and are
 not yet translated.
 
@@ -972,10 +1035,10 @@ This is the first release published to PyPI, through Trusted Publishing.
   docstrings are English throughout: the detector's report, the lab framework,
   every guard `reason=` string, and the ~110 `explanation=` / `detection_hint=`
   fields a learner reads next to each technique.
-- Deliberately still Turkish, because it is data rather than presentation: the
+- Deliberately still non-English, because it is data rather than presentation: the
   194 attack payloads, `BENIGN_SAMPLES` (the corpus the model is fitted on), the
-  trained model JSON, the Turkish trigram table, the perplexity stopword list,
-  the tokenizer character classes, the Turkish patterns in `content_policy`,
+  trained model JSON, the non-English trigram table, the perplexity stopword list,
+  the tokenizer character classes, the non-English patterns in `content_policy`,
   `prompt_firewall`, `consistency_analyzer` and `llm_scanner`, and the test
   fixtures. Translating any of those would change detection behaviour, not
   wording.
@@ -983,7 +1046,7 @@ This is the first release published to PyPI, through Trusted Publishing.
 ### Fixed
 
 - **A regression guard had gone blind.** `test_ai_l2_01` asserted
-  `assertNotIn("Bilinmeyen input guard", stderr)`; translating that warning to
+  `assertNotIn(<the old warning text>, stderr)`; translating that warning to
   English made the assertion trivially true, so it stayed green while detecting
   nothing. The sentinel is now read from the source, and the missing positive
   control was added — an unknown guard name must reach the fallback. Deleting
@@ -1026,7 +1089,7 @@ not.
   so findings rendered as a bare `[Severity.CRITICAL]` with no rule name and
   no matched text. Both are normalised once at the boundary now.
 - **`--list-probes` crashed on a narrow console.** A probe name contains
-  U+2192; on a cp1254 Windows console the command printed ~30 lines and then
+  U+2192; on a single-byte Windows console the command printed ~30 lines and then
   died with `UnicodeEncodeError`, exiting 1 — a successful informational
   command reporting failure. `tools/_console.py` makes stdout/stderr
   UTF-8-safe; `tests/test_console_encoding.py` forces the narrow encoding via
@@ -1054,10 +1117,10 @@ not.
   1 means the scan ran and found something, and a CI job treating any non-zero
   exit as findings would report a security result for an install that never
   executed.
-- **The message was Turkish in an English repository.** README, badges,
+- **The message was not in English in an English repository.** README, badges,
   CHANGELOG and commits are all English, so `pip install` users were told
-  `labs/vulnllm/ bulunamadi`. It is English now. Comments and docstrings stay
-  Turkish; those are developer notes and the distinction is deliberate. The
+  a non-English "not found" message. It is English now. Comments and docstrings stay
+  non-English; those are developer notes and the distinction is deliberate. The
   text stays free of diacritics for narrow Windows code pages, same reason
   `_console.make_output_safe` exists, and a test holds all three properties.
 - **CI could not have caught it.** The `test` job installs with `-e`, which
@@ -1199,7 +1262,7 @@ not.
 - Repository hosted at `WRG-11/ai-security-toolkit` (this repo was created
   directly under the WRG-11 organization).
 
-## [2026-05-11] -- ASCII Turkish diacritic restoration (Batch 2)
+## [2026-05-11] -- ASCII diacritic restoration (Batch 2)
 
 - 3 tools restored to proper TR diacritics (commit `ede9349`).
 

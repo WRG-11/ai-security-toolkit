@@ -27,17 +27,6 @@ COMMON_WORDS: set[str] = {
     "first", "well", "way", "even", "new", "want", "because", "any", "these",
     "give", "day", "most", "us", "is", "are", "was", "were", "been", "being",
     "had", "has", "did", "does", "doing", "am", "more", "very", "much",
-    # Common Turkish words
-    "bir", "bu", "ve", "de", "da", "ne", "ben", "sen", "bana", "sana",
-    "nasil", "nedir", "var", "yok", "icin", "ile", "olan", "gibi", "ama",
-    "daha", "cok", "su", "o", "benim", "senin", "onun", "biz", "siz",
-    # Turkish question particles come in four vowel-harmony forms: mi / mi / mu / mu
-    # (front unrounded / back unrounded / back rounded / front rounded). "mi"
-    # used to appear twice in this set and "mu" (the back-rounded form) not at
-    # all, so a sentence like "gordun mu" was not counted as stop-words and the
-    # perplexity score rose unnecessarily. A duplicate in the set does not
-    # change behavior; a missing suffix does.
-    "mi", "mu", "mü", "mı", "evet", "hayir", "tamam", "lutfen", "tesekkur",
     # NOTE: 7 injection-trigger tokens were removed from this block:
     #   ignore, previous, instructions, system, prompt, password, secret
     # Treating them as "common/known" words was a defense-config
@@ -88,7 +77,7 @@ class PerplexityFilter(InputGuard):
 
     def _word_frequency_score(self, text: str) -> float:
         """Ratio of known words. 1.0 = every word is known."""
-        words = re.findall(r"[a-zA-ZçğıöşüÇĞİÖŞÜ]+", text.lower())
+        words = re.findall(r"[^\W\d_]+", text.lower())
         if not words:
             return 1.0
         known = sum(1 for w in words if w in COMMON_WORDS)

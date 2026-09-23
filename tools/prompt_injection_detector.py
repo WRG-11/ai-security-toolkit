@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Prompt Injection Detector v0.1 -- Regex Baseline
-AI/LLM Security Toolkit - Faz 2
+AI/LLM Security Toolkit - Phase 2
 
 Regex-based prompt injection detector. Zero dependencies.
 

@@ -26,6 +26,12 @@ A provider's own safety system can withhold an answer: OpenAI's
 attack did not get through, and scoring it as an error or an empty answer would
 make the same model look different depending on who hosts it.
 
+A reasoning model's thinking is returned in `Reply.reasoning`, never mixed
+into `text`: Anthropic `thinking` blocks, Gemini parts marked `thought: true`,
+an OpenAI-compatible `message.reasoning_content` or `message.reasoning`, or a
+`<think>...</think>` block that opens the content. The answer can refuse while
+the thinking quotes the secret, so the scanner reads both.
+
 API keys: read from environment variables by `build_target`, never logged,
 kept out of `repr`, and never sent over plain http to anything but localhost.
 """
@@ -58,6 +64,22 @@ class Reply:
     refused_by_provider: bool = False
     refusal_reason: str = ""
     elapsed_ms: int = 0
+    # A reasoning model's thinking, kept out of `text`. Empty when the provider
+    # returned none. A secret can leak here while the answer refuses.
+    reasoning: str = ""
+
+
+# A reasoning block some hosts put at the very start of the content instead of
+# a separate field (same tags litellm splits off).
+_LEADING_THINK = re.compile(r"\s*<(think|thinking)>(.*?)</\1>\s*(.*)", re.DOTALL)
+
+
+def _split_leading_think(content: str) -> tuple[str, str]:
+    """(answer, reasoning): only a block that opens the content is reasoning."""
+    match = _LEADING_THINK.fullmatch(content)
+    if not match:
+        return content, ""
+    return match.group(3), match.group(2).strip()
 
 
 class TargetError(Exception):
@@ -174,9 +196,12 @@ class OpenAICompatible:
             raise TargetError("unexpected response: no choices[0]") from None
         if message.get("refusal"):
             return Reply(message["refusal"], True, "refusal", ms)
+        content, inline = _split_leading_think(message.get("content") or "")
+        field_reasoning = message.get("reasoning_content") or message.get("reasoning")
+        reasoning = field_reasoning if isinstance(field_reasoning, str) else inline
         if choice.get("finish_reason") == "content_filter":
-            return Reply(message.get("content") or "", True, "content_filter", ms)
-        return Reply(message.get("content") or "", elapsed_ms=ms)
+            return Reply(content, True, "content_filter", ms, reasoning)
+        return Reply(content, elapsed_ms=ms, reasoning=reasoning)
 
 
 @dataclass
@@ -203,11 +228,13 @@ class Anthropic:
         data, ms = _post_json(f"{self.base_url}/v1/messages", headers, body, self.timeout, self.api_key)
         if not isinstance(data, dict):
             raise TargetError("unexpected response: not an object")
-        text = "".join(b.get("text", "") for b in data.get("content") or []
-                       if isinstance(b, dict) and b.get("type") == "text")
+        blocks = [b for b in data.get("content") or [] if isinstance(b, dict)]
+        text = "".join(b.get("text", "") for b in blocks if b.get("type") == "text")
+        # `redacted_thinking` carries only opaque, encrypted data: nothing to read.
+        reasoning = "".join(b.get("thinking", "") for b in blocks if b.get("type") == "thinking")
         if data.get("stop_reason") == "refusal":
-            return Reply(text, True, "refusal", ms)
-        return Reply(text, elapsed_ms=ms)
+            return Reply(text, True, "refusal", ms, reasoning)
+        return Reply(text, elapsed_ms=ms, reasoning=reasoning)
 
 
 # finishReason values where Gemini withheld the answer itself.
@@ -254,12 +281,15 @@ class Gemini:
                 return Reply("", True, block, ms)
             raise TargetError("unexpected response: no candidates and no blockReason")
         cand = candidates[0]
-        text = "".join(p.get("text", "") for p in (cand.get("content") or {}).get("parts") or []
-                       if isinstance(p, dict))
+        parts = [p for p in (cand.get("content") or {}).get("parts") or [] if isinstance(p, dict)]
+        # Parts marked `thought: true` are the model's reasoning. They used to
+        # be joined into the answer, so thinking was scored as if it were said.
+        text = "".join(p.get("text", "") for p in parts if not p.get("thought"))
+        reasoning = "".join(p.get("text", "") for p in parts if p.get("thought"))
         finish = cand.get("finishReason", "")
         if finish in _GEMINI_BLOCKED:
-            return Reply(text, True, finish, ms)
-        return Reply(text, elapsed_ms=ms)
+            return Reply(text, True, finish, ms, reasoning)
+        return Reply(text, elapsed_ms=ms, reasoning=reasoning)
 
 
 _PLACEHOLDER = re.compile(r"\{\{(prompt|system)\}\}")

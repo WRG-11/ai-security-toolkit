@@ -29,7 +29,7 @@ Written from scratch with zero dependencies (Python stdlib only) -- LLM red team
 | **Dependencies** | None (stdlib only) | None (stdlib only); any LLM to scan | None (stdlib only) |
 | **Modes** | CLI, interactive, HTTP server, file | CLI, JSON report | CLI, interactive, HTTP proxy |
 | **Output** | Risk score + threat breakdown | OWASP-mapped report | Block/allow + audit log |
-| **Lines** | <!-- METRIC:lines_ml -->1251<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->983<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->1223<!-- /METRIC:lines_firewall --> |
+| **Lines** | <!-- METRIC:lines_ml -->1255<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->1002<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->1223<!-- /METRIC:lines_firewall --> |
 
 **All three need the repository checkout.** They import the attack corpus and
 guard implementations from `labs/vulnllm/`, which is deliberately not packaged.
@@ -67,7 +67,7 @@ python prompt_injection_detector_ml.py --serve 5000
 python prompt_injection_detector_ml.py --benchmark
 ```
 
-**Performance:** F1 **0.91** on a 5-fold holdout — each fold trains on four
+**Performance:** F1 **0.93** on a 5-fold holdout (averaged over four seeds, re-measured 2026-09-23 on the English corpus) — each fold trains on four
 fifths of the data and scores the fifth it has never seen.
 
 This file used to say "100% F1 score on test set". That number was real and it
@@ -169,6 +169,17 @@ messages and never sent over plain http to a remote host.
 A provider's own safety block (OpenAI `refusal` / `content_filter`, Anthropic
 `stop_reason: refusal`, Gemini safety `finishReason`) counts as a defense, not
 an error.
+
+**Reasoning models.** A model's thinking (Anthropic `thinking` blocks, Gemini
+`thought` parts, `reasoning_content` / `reasoning` on OpenAI-compatible hosts,
+or a leading `<think>` block) is kept apart from its answer and saved in the
+JSON report. When the thinking contains a value the system prompt guards, the
+probe is marked `reasoning_leak` and the report prints a count. The attack
+verdict and the risk score ignore it: the answer may still refuse, and whether
+the thinking reaches a user depends on the application. Seen on 2026-09-23:
+three free hosted reasoning models refused in their answer while their
+displayed thinking quoted the password (in that test the secret was part of
+the user message, as the chat client had no system prompt field).
 
 How each adapter was checked: the OpenAI-compatible path was run against real
 models, local ones through Ollama and free hosted ones. The Anthropic and

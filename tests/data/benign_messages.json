@@ -1,5 +1,5 @@
 {
- "source": "Generated 2026-09-23 by a local model (qwen2.5-coder:7b via Ollama) through tools/targets.py, asked for ordinary chatbot messages in five languages on everyday, support and programming topics. Not hand-written; not filtered.",
+ "source": "Generated 2026-09-23 by local models through tools/targets.py, asked for ordinary chatbot messages on everyday, support and programming topics: qwen2.5-coder:7b in English, German, Spanish and French, then qwen2.5-coder-8k for three more English topics. Rows that tests/test_english_only.py flags were removed. Not hand-written; not filtered by content.",
  "messages": [
   {
    "lang": "English",
@@ -194,160 +194,12 @@
    "text": "I need help with a math problem"
   },
   {
-   "lang": "Turkish",
-   "text": "Güneş mi bakamam?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Bugün hava nasıl?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Kahvaltı tarifi bana VER"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Ne yapmamı önerirsin?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Günün hikayesi ne?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Çay tarifi VER"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Günaydın, sen nasılsın?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Hava durumu nelerdedi?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Pek işe gitmek ister misin?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Bu akşam ne yapalım?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Gün boyu sohbet etmeliyim?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Peki, hava nasıl oluyor?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Siparişinizin durumunu kontrol edebilir miyim?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Ürünü iade etmenin nasıl yapılacağına dair bilgi verir misiniz?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Kargoyu izlemek için ne yapmalıyım?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Siparişinizi iptal etmek isterim."
-  },
-  {
-   "lang": "Turkish",
-   "text": "Ürün yolda mı?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "İade ettiğim ürün iade edildiğine emin misiniz?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Kargo takibi nasıl yapılır?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Ürünü iade etmek için adresi ve bilgileri verin."
-  },
-  {
-   "lang": "Turkish",
-   "text": "Siparişinizi geciktiğine göre ne yapmalıyım?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Ürün iade edilmesi için ne tür belirliye ihtiyaç duyar?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Kargo takibini başlatmak için sipariş numrası verin."
-  },
-  {
-   "lang": "Turkish",
-   "text": "Siparişinizi iptal etmek için neden gerekiyor?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Bir program nasıl çalıştırılır?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "C++ hata veriyor, nasıl düzeltilir?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Python kodu nasıl yazılır?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Java projesi nasıl derlenir?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Visual Studio Code nasıl kullanılır?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Git repository nasıl oluşturulur?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Bir web sitesi nasıl geliştirilir?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "HTML nasıl öğrenir?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "CSS neler içerir?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "JavaScript neler yapabilir?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Bir uygulamayı nasıl test ederiz?"
-  },
-  {
-   "lang": "Turkish",
-   "text": "Başka bir sorum var."
-  },
-  {
    "lang": "German",
    "text": "Hallo! Wie geht es dir?"
   },
   {
    "lang": "German",
    "text": "Wo magst du liegen?"
-  },
-  {
-   "lang": "German",
-   "text": "Was möchtest du denn wissen?"
   },
   {
    "lang": "German",
@@ -360,10 +212,6 @@
   {
    "lang": "German",
    "text": "Wie heißt dein Hund?"
-  },
-  {
-   "lang": "German",
-   "text": "Können wir auf Deutsch sprechen?"
   },
   {
    "lang": "German",
@@ -435,10 +283,6 @@
   },
   {
    "lang": "French",
-   "text": "Salut, ça va?"
-  },
-  {
-   "lang": "French",
    "text": "J'ai besoin d'aide pour un email."
   },
   {
@@ -480,6 +324,150 @@
   {
    "lang": "French",
    "text": "J'ai besoin d'un rappel à 21h."
+  },
+  {
+   "lang": "English",
+   "text": "Hi, how are you?"
+  },
+  {
+   "lang": "English",
+   "text": "Any tips on saving money?"
+  },
+  {
+   "lang": "English",
+   "text": "How do I improve my health?"
+  },
+  {
+   "lang": "English",
+   "text": "Need advice on fitness routines?"
+  },
+  {
+   "lang": "English",
+   "text": "What are some healthy recipes?"
+  },
+  {
+   "lang": "English",
+   "text": "How much should I budget for groceries?"
+  },
+  {
+   "lang": "English",
+   "text": "Any advice on workout plans?"
+  },
+  {
+   "lang": "English",
+   "text": "What are common health issues?"
+  },
+  {
+   "lang": "English",
+   "text": "How to stay motivated with fitness?"
+  },
+  {
+   "lang": "English",
+   "text": "What's a good way to save money?"
+  },
+  {
+   "lang": "English",
+   "text": "Any quick workouts I can do at home?"
+  },
+  {
+   "lang": "English",
+   "text": "How can I improve my overall fitness?"
+  },
+  {
+   "lang": "English",
+   "text": "What's the weather like today?"
+  },
+  {
+   "lang": "English",
+   "text": "Turn off the living room lights."
+  },
+  {
+   "lang": "English",
+   "text": "Set an alarm for 7am."
+  },
+  {
+   "lang": "English",
+   "text": "Can you check my email and reply?"
+  },
+  {
+   "lang": "English",
+   "text": "What's the status of my smart thermostat?"
+  },
+  {
+   "lang": "English",
+   "text": "Please disconnect my Wi-Fi."
+  },
+  {
+   "lang": "English",
+   "text": "Where can I find the best tech gadgets?"
+  },
+  {
+   "lang": "English",
+   "text": "How do I connect my new TV?"
+  },
+  {
+   "lang": "English",
+   "text": "What’s the latest in home automation?"
+  },
+  {
+   "lang": "English",
+   "text": "How long does the battery last on my smart scale?"
+  },
+  {
+   "lang": "English",
+   "text": "Can you recommend a good home security system?"
+  },
+  {
+   "lang": "English",
+   "text": "I need help with my tech support account."
+  },
+  {
+   "lang": "English",
+   "text": "Can you help me with my email?"
+  },
+  {
+   "lang": "English",
+   "text": "How do I write a good cover letter?"
+  },
+  {
+   "lang": "English",
+   "text": "I need help with a summary of my project."
+  },
+  {
+   "lang": "English",
+   "text": "What are the key points to include in an email?"
+  },
+  {
+   "lang": "English",
+   "text": "Can you give me tips on a professional cover letter?"
+  },
+  {
+   "lang": "English",
+   "text": "How do I make my summary clear and concise?"
+  },
+  {
+   "lang": "English",
+   "text": "What's the best way to start a professional email?"
+  },
+  {
+   "lang": "English",
+   "text": "Can you help me draft a professional cover letter?"
+  },
+  {
+   "lang": "English",
+   "text": "What are the most important elements in a summary?"
+  },
+  {
+   "lang": "English",
+   "text": "How can I make my cover letter stand out?"
+  },
+  {
+   "lang": "English",
+   "text": "What's a good structure for an email?"
+  },
+  {
+   "lang": "English",
+   "text": "Can you proofread my email for me?"
   }
  ]
 }

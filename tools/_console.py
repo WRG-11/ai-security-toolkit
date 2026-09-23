@@ -1,6 +1,6 @@
 """Make console output resilient to non-ASCII text.
 
-Measured 2026-07-29 on a Windows (cp1254) console:
+Measured 2026-07-29 on a Windows console with a single-byte code page:
 
     python tools/llm_scanner.py --list-probes
     ...
@@ -12,9 +12,9 @@ name contains U+2192 instead of "->". Trimming the data would have been the
 wrong fix; what broke was the console encoding.
 
 A milder form of the same class, the same day in the same repo: the two [WARN]
-lines in prompt_injection_detector_ml.py were written with Turkish accents and
-mojibaked on that console (`Sald\\u00fdr\\u00fd k\\u00fdt\\u00fdphanesi`), while
-every other user-facing message in the file was already folded to ASCII.
+lines in prompt_injection_detector_ml.py were written with accented letters and
+mojibaked on that console, while every other user-facing message in the file
+was already folded to ASCII.
 
 `reconfigure` is used rather than wrapping in a `TextIOWrapper`: the wrapper
 closes the buffer underneath it when collected, corrupting a shared stdout.
