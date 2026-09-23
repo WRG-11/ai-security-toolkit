@@ -47,6 +47,21 @@ and updates by date for readability.
   provider behind the same protection would answer "Forbidden" with no hint
   why.
 
+### Documentation -- any LLM, not one
+
+- `tools/README.md` has a "Which LLM" section. It lists each `--provider`,
+  what it reaches, where its key comes from, how each adapter was checked
+  (OpenAI-compatible run live; Anthropic and Gemini against their documented
+  formats only), and the cost controls (`--dry-run`, `--max-probes`,
+  `--max-tokens`, `--delay`). The scanner and firewall examples use
+  `--provider/--model` with placeholders instead of `llama3.2:3b`. The README
+  quick start and tech stack no longer say "Ollama".
+- `tests/test_no_builtin_model.py` fails if a model name appears as a string
+  in `tools/` or the RAG lab. Dated notes in comments and docstrings are
+  allowed. It was checked in both directions: a default model string added to
+  `tools/targets.py` turns it red, and "phishing" does not. `labs/vulnllm/` is
+  not covered yet.
+
 ### Fixed -- the scan report claimed more than it measured
 
 Found by running the scanner, price-locked to zero-cost models, against five

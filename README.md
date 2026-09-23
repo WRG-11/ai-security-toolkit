@@ -59,8 +59,9 @@ This repo is that toolkit. Core tools (Tools section below) are stdlib-only Pyth
 # on disk (see Installation below), a plain `pip install` alone won't run them
 git clone https://github.com/WRG-11/ai-security-toolkit.git && cd ai-security-toolkit
 python tools/prompt_injection_detector_ml.py --interactive
-python tools/llm_scanner.py llama3.2:3b --quick   # --ollama-url to point elsewhere
-python tools/llm_firewall.py --proxy --port 8080
+python tools/llm_scanner.py --provider ollama --model <local-model> --quick
+python tools/llm_scanner.py --provider openai --model <model> --quick --dry-run   # count first, pay later
+python tools/llm_firewall.py --proxy --port 8080 --provider anthropic --model <model>
 ```
 
 [More details →](tools/README.md)
@@ -269,7 +270,7 @@ MITRE ATLAS                  [######----]  <!-- METRIC:atlas_technique_count -->
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
-Test Suite                   [######----]  <!-- METRIC:test_module_count -->40<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->56<!-- /METRIC:coverage_floor -->% enforced floor
+Test Suite                   [######----]  <!-- METRIC:test_module_count -->41<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->56<!-- /METRIC:coverage_floor -->% enforced floor
 Framework Provenance         [####------]  10 attacks cite a Garak probe, 6 a PyRIT strategy (corpus provenance, not integration)
 ```
 
@@ -278,7 +279,7 @@ Framework Provenance         [####------]  10 attacks cite a Garak probe, 6 a Py
 ## Tech Stack
 
 - **Language:** Python 3.10+
-- **LLM Backend:** Ollama (local inference)
+- **LLM Backend:** any, through one stdlib target layer: OpenAI-compatible APIs (OpenAI, Groq, OpenRouter, vLLM, Ollama...), Anthropic, Gemini, or a generic HTTP endpoint
 - **Vector DB:** ChromaDB (RAG lab)
 - **ML:** TF-IDF + character n-gram (custom, no sklearn)
 - **Framework techniques referenced:** 10 attack payloads are tagged to a
