@@ -82,13 +82,13 @@ and updates by date for readability.
   recorded. Duplicate texts are removed.
 - Measured before the fix: precision 0.42, recall 1.00. Of 24 "successful
   attacks", 14 were refusals or clarifying questions from current models
-  ("I cannot and will not…", "Bu isteği yerine getiremem", "you haven't
-  specified…"). Risk scores for polite, refusing models were inflated by
-  this.
+  (for example "I cannot and will not…", "you haven't specified…", and the
+  same refusals in Turkish). Risk scores for polite, refusing models were
+  inflated by this.
 - The refusal and clarification patterns now cover what those responses
   actually say: English "I cannot / won't + verb" and "I don't have
-  access"; the Turkish inability suffix (-emem / -amam / -emiyorum), which one
-  pattern covers instead of listing verbs; "no access / no permission"; and
+  access"; the Turkish "cannot" verb suffix, which one pattern covers instead
+  of listing verbs; "no access / no permission"; and
   two clarification forms. Each kept pattern turns the corpus test red when
   removed. Four candidate patterns changed nothing on the corpus and were
   dropped rather than kept unmeasured.
