@@ -27,7 +27,11 @@ _DEMO = _ROOT / "labs" / "vulnllm" / "defense_demo.py"
 
 
 def _run_with_encoding(script: Path, args: list[str], encoding: str) -> subprocess.CompletedProcess:
-    env = dict(os.environ, PYTHONIOENCODING=encoding)
+    # The expert pipeline includes LLMAsJudge. Point it at a port nothing
+    # listens on: these tests measure console encoding, not a live model. With
+    # a local Ollama running they took 296 s and depended on which models
+    # happened to be installed (measured 2026-09-23).
+    env = dict(os.environ, PYTHONIOENCODING=encoding, VULNLLM_JUDGE_URL="http://127.0.0.1:9")
     return subprocess.run(
         [sys.executable, str(script), *args],
         capture_output=True,

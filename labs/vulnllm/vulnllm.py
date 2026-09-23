@@ -301,10 +301,10 @@ def main():
             print(f"To install: ollama pull {model_name}{C_RESET}")
             sys.exit(1)
         if model_override:
-            print(f"\n  {C_MAGENTA}Ollama Backend Aktif: {model_override} (custom){C_RESET}\n")
+            print(f"\n  {C_MAGENTA}Ollama backend active: {model_override} (custom){C_RESET}\n")
         else:
             tier_info = TIER_MODELS[model_tier]
-            print(f"\n  {C_MAGENTA}Ollama Backend Aktif: {tier_info['label']}{C_RESET}")
+            print(f"\n  {C_MAGENTA}Ollama backend active: {tier_info['label']}{C_RESET}")
             print(f"  {C_DIM}{tier_info['description']}{C_RESET}\n")
 
     if args.scoreboard:

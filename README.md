@@ -197,7 +197,7 @@ Vulnerable RAG (Retrieval-Augmented Generation) system demonstrating 5 attack sc
 - ChromaDB + sentence-transformers + Ollama
 - Attacks: direct extraction, indirect injection, context overflow, prompt override, membership inference
 - Defense mode: retrieval filtering + poisoned document detection
-- Result: 42% leakage (vulnerable) → 0% leakage (defended, on included attack scenarios)
+- Result on `qwen2.5-coder:7b` (2026-09-23): 6/12 answers leaked undefended, 0/12 defended; [how it was measured](labs/rag-security/README.md#results)
 
 [Go to lab →](labs/rag-security/)
 
@@ -269,7 +269,7 @@ MITRE ATLAS                  [######----]  <!-- METRIC:atlas_technique_count -->
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
-Test Suite                   [######----]  <!-- METRIC:test_module_count -->37<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->56<!-- /METRIC:coverage_floor -->% enforced floor
+Test Suite                   [######----]  <!-- METRIC:test_module_count -->38<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->56<!-- /METRIC:coverage_floor -->% enforced floor
 Framework Provenance         [####------]  10 attacks cite a Garak probe, 6 a PyRIT strategy (corpus provenance, not integration)
 ```
 

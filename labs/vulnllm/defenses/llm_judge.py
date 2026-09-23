@@ -6,18 +6,21 @@ Can check input AND output. Must be the LAST guard in the pipeline (most expensi
 
 Design decisions:
 - Sync HTTP (no async) - simplicity
-- 10s timeout -- failing open beats waiting on a slow response
+- 10s timeout per judge call
 - Hash-based cache -- never ask the same query twice
-- Ollama yoksa default = FAIL-CLOSED (block, confidence=1.0).
-  For backward compatibility, the opt-in flag `allow_judge_unavailable=True`
-  restores the old fail-open behaviour.
-  Security control fail-open kabul edilemez.
+- When the judge is unreachable the default is FAIL-CLOSED (block,
+  confidence=1.0): a security control that cannot run must not report "safe".
+  The opt-in flag `allow_judge_unavailable=True` restores the old fail-open
+  behaviour for lab work.
+- Model and endpoint: constructor argument, else the VULNLLM_JUDGE_MODEL /
+  VULNLLM_JUDGE_URL environment variables, else qwen2.5:3b on localhost.
 
 Ref: Inan et al. (2023) — Llama Guard, arXiv:2312.06674
 """
 
 import hashlib
 import json
+import os
 import re
 import urllib.error
 import urllib.request
@@ -73,14 +76,15 @@ class LLMAsJudge(InputGuard, OutputGuard):
     An Ollama-backed LLM safety judge.
 
     Both an InputGuard and an OutputGuard -- must come last in the pipeline.
-    Passes silently when Ollama is unreachable (fail-open).
+    Blocks when the judge is unreachable (fail-closed) unless
+    allow_judge_unavailable=True.
     """
     name = "LLMAsJudge"
 
     def __init__(
         self,
-        model: str = "qwen2.5:3b",
-        ollama_url: str = "http://localhost:11434",
+        model: str | None = None,
+        ollama_url: str | None = None,
         timeout: float = 10.0,
         threshold: float = 0.7,
         cache_size: int = 256,
@@ -91,8 +95,11 @@ class LLMAsJudge(InputGuard, OutputGuard):
         # fail-open (verdict='safe'): an unavailable security control
         # cannot announce 'all clear'. Set allow_judge_unavailable=True
         # to preserve the legacy behaviour for non-prod / lab work.
-        self.model = model
-        self.ollama_url = ollama_url.rstrip("/")
+        # The lab builds the judge with no arguments, so the environment is
+        # the only way to point it at another model without editing code.
+        self.model = model or os.environ.get("VULNLLM_JUDGE_MODEL") or "qwen2.5:3b"
+        url = ollama_url or os.environ.get("VULNLLM_JUDGE_URL") or "http://localhost:11434"
+        self.ollama_url = url.rstrip("/")
         self.timeout = timeout
         self.threshold = threshold
         self.allow_judge_unavailable = allow_judge_unavailable
