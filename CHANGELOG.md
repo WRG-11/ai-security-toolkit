@@ -47,6 +47,30 @@ and updates by date for readability.
   provider behind the same protection would answer "Forbidden" with no hint
   why.
 
+### Changed -- the LLM judge uses any LLM (breaking, with a deprecation path)
+
+- `LLMAsJudge` spoke Ollama's `/api/chat` with `qwen2.5:3b` built in. It now
+  goes through the target layer. Provider, model, endpoint and key variable
+  come from the constructor or from `VULNLLM_JUDGE_PROVIDER` / `_MODEL` /
+  `_URL` / `_KEY_ENV`; a model with no provider means a local Ollama. There is
+  no default model. An unconfigured judge is unavailable and fails closed,
+  exactly as an unreachable one does, unless `allow_judge_unavailable=True`.
+  In practice this matches the old behaviour on most machines: without
+  `qwen2.5:3b` installed, it was already failing closed.
+- A judge query whose provider refuses to look at the text (a safety block)
+  now counts as "unsafe". The old path could not see a provider refusal.
+- Judge calls stay short and near-deterministic (`max_tokens=150`,
+  `temperature=0.1`), as before.
+- `ollama_url=` still works for one release; `/v1` is appended. Renamed
+  internals: `_query_ollama_chunk` → `_query_chunk` and `_query_ollama` →
+  `_query`; the Ollama `/api/tags` availability probe is gone. The defense
+  demo explains how to configure a judge instead of saying "start Ollama".
+- Checked live with a local model: an ordinary question passed with a
+  reason, and an injection was blocked with a reason. Of four mutations,
+  three turned a test red. The fourth showed a guard was dead code (the
+  factory already refused an empty provider or model), so the guard was
+  removed.
+
 ### Documentation -- any LLM, not one
 
 - `tools/README.md` has a "Which LLM" section. It lists each `--provider`,
