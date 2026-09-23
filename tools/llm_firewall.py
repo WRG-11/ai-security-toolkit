@@ -3,12 +3,16 @@
 LLM Firewall v1.0 -- AI Security Firewall
 AI/LLM Security Toolkit - Phase 3
 
-Proxy/middleware that sits between the user and the LLM.
+Proxy/middleware that sits between the user and any LLM.
 Filters inputs, sanitizes outputs.
 Multi-layered protection via 10 guard modules.
 
+The upstream model is any target tools/targets.py speaks (OpenAI-compatible,
+Anthropic, Gemini, Ollama, or a generic HTTP endpoint). There is no default.
+
 Usage:
-    python llm_firewall.py --proxy --port 8080 --model llama3.2:3b
+    python llm_firewall.py --proxy --port 8080 --provider openai --model <model>
+    python llm_firewall.py --proxy --provider ollama --model <local-model>
     python llm_firewall.py --check "test input"
     python llm_firewall.py --check-output "sensitive output"
     python llm_firewall.py -i
@@ -21,8 +25,6 @@ import re
 import sys
 import argparse
 import time
-import urllib.request
-import urllib.error
 from dataclasses import dataclass, field
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
@@ -35,6 +37,7 @@ sys.path.insert(0, str(_TOOLS_DIR))
 
 from _console import make_output_safe  # noqa: E402
 from _lab import ensure_lab_or_exit  # noqa: E402
+from targets import PROVIDERS, Target, TargetError, build_target, send_with_retry  # noqa: E402
 
 # If the tree is absent it stops here with a message saying what to do -- it
 # used to fail with `ModuleNotFoundError: No module named 'defenses'` instead.
@@ -160,24 +163,14 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "action": "block",
     "log_file": None,
     "proxy_port": 8080,
-    "ollama_url": "http://localhost:11434",
-    "ollama_model": "llama3.2:3b",
+    # The upstream model: any provider in tools/targets.py. No default model.
+    "provider": None,
+    "model": None,
+    "base_url": None,
+    "api_key_env": None,
+    "max_tokens": None,
     "system_prompt": "You are a helpful AI assistant.",
 }
-
-
-def _http_only(url: str) -> str:
-    """Reject any scheme other than http/https before the URL is fetched.
-
-    `urllib.request.urlopen` honours `file://`, `ftp://` and custom schemes,
-    so a URL arriving from configuration is a local-file read waiting to
-    happen. These endpoints default to localhost, but they are parameters --
-    and this is a security toolkit, so the check belongs in the code rather
-    than in a reviewer's memory.
-    """
-    if not url.startswith(("http://", "https://")):
-        raise ValueError(f"only http/https URLs are allowed, got: {url!r}")
-    return url
 
 
 @dataclass
@@ -192,8 +185,14 @@ class FirewallConfig:
     action: str = "block"
     log_file: Optional[str] = None
     proxy_port: int = 8080
-    ollama_url: str = "http://localhost:11434"
-    ollama_model: str = "llama3.2:3b"
+    # Upstream model (tools/targets.py). None until someone chooses one: the
+    # guards and --check need no model, the proxy does. The key is read from
+    # the environment variable named here, never stored in the config.
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    base_url: Optional[str] = None
+    api_key_env: Optional[str] = None
+    max_tokens: Optional[int] = None
     system_prompt: str = "You are a helpful AI assistant."
     # Proxy settings. `main()` already read `proxy_host` with getattr() and a
     # comment saying it "comes from config", but the field did not exist, so
@@ -210,26 +209,43 @@ class FirewallConfig:
     # client-supplied X-Session-Id narrows it only when this is True: a client
     # that rotates its own id could otherwise reset multi-turn tracking at will.
     trust_session_header: bool = False
+    # Deprecation notes gathered while loading an old config file.
+    deprecations: list[str] = field(default_factory=list, compare=False, repr=False)
 
     @classmethod
     def from_file(cls, path: str) -> "FirewallConfig":
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        return cls(
+        deprecations: list[str] = []
+        provider, model, base_url = data.get("provider"), data.get("model"), data.get("base_url")
+        if provider is None and ("ollama_url" in data or "ollama_model" in data):
+            # Pre-0.7 config: Ollama was the only upstream.
+            provider = "ollama"
+            model = model or data.get("ollama_model")
+            if data.get("ollama_url"):
+                base_url = base_url or data["ollama_url"].rstrip("/") + "/v1"
+            deprecations.append('"ollama_url"/"ollama_model" are deprecated; use "provider": "ollama", '
+                                f'"model": {json.dumps(model)}, "base_url": {json.dumps(base_url)}')
+        config = cls(
             input_guards=data.get("input_guards", DEFAULT_CONFIG["input_guards"]),
             output_guards=data.get("output_guards", DEFAULT_CONFIG["output_guards"]),
             thresholds=data.get("thresholds", DEFAULT_CONFIG["thresholds"]),
             action=data.get("action", "block"),
             log_file=data.get("log_file"),
             proxy_port=data.get("proxy_port", 8080),
-            ollama_url=data.get("ollama_url", "http://localhost:11434"),
-            ollama_model=data.get("ollama_model", "llama3.2:3b"),
+            provider=provider,
+            model=model,
+            base_url=base_url,
+            api_key_env=data.get("api_key_env"),
+            max_tokens=data.get("max_tokens"),
             system_prompt=data.get("system_prompt", "You are a helpful AI assistant."),
             proxy_host=data.get("proxy_host", "127.0.0.1"),
             max_body_bytes=data.get("max_body_bytes", 1_000_000),
             cors_allow_origins=list(data.get("cors_allow_origins", [])),
             trust_session_header=bool(data.get("trust_session_header", False)),
         )
+        config.deprecations = deprecations
+        return config
 
     def to_file(self, path: str):
         data = {
@@ -240,8 +256,11 @@ class FirewallConfig:
             "action": self.action,
             "log_file": self.log_file,
             "proxy_port": self.proxy_port,
-            "ollama_url": self.ollama_url,
-            "ollama_model": self.ollama_model,
+            "provider": self.provider,
+            "model": self.model,
+            "base_url": self.base_url,
+            "api_key_env": self.api_key_env,
+            "max_tokens": self.max_tokens,
             "system_prompt": self.system_prompt,
             "proxy_host": self.proxy_host,
             "max_body_bytes": self.max_body_bytes,
@@ -291,6 +310,7 @@ class LLMFirewall:
 
     def __init__(self, config: Optional[FirewallConfig] = None):
         self.config = config or FirewallConfig()
+        self._target: Optional[Target] = None  # built on first use
         self.events: list[FirewallEvent] = []
         self.stats = {
             "total_requests": 0,
@@ -482,7 +502,7 @@ class LLMFirewall:
         context: Optional[dict] = None,
     ) -> dict:
         """
-        Full pipeline: input check → Ollama → output check.
+        Full pipeline: input check → upstream model → output check.
 
         Args:
             user_message: Raw user input.
@@ -511,17 +531,28 @@ class LLMFirewall:
                 "output_results": [],
             }
 
-        # 2. Send to Ollama
+        # 2. Send to the upstream model
         try:
-            response = self._call_ollama(user_message)
-        except Exception as e:
+            reply = self._call_model(user_message)
+        except (TargetError, ValueError) as e:
             return {
-                "response": f"[ERROR] Ollama communication error: {e}",
+                "response": f"[ERROR] upstream model: {e}",
                 "blocked": False,
                 "error": str(e),
                 "input_results": [self._result_to_dict(r) for r in input_results],
                 "output_results": [],
             }
+        if reply.refused_by_provider:
+            # The upstream provider's own safety system withheld the answer.
+            self.stats["input_blocked"] += 1
+            return {
+                "response": reply.text or f"[BLOCKED] Refused by the upstream provider ({reply.refusal_reason})",
+                "blocked": True,
+                "block_stage": "upstream",
+                "input_results": [self._result_to_dict(r) for r in input_results],
+                "output_results": [],
+            }
+        response = reply.text
 
         # 3. Output check + sanitize
         sanitized, has_issues, output_results = self.check_output(response, context)
@@ -539,25 +570,21 @@ class LLMFirewall:
             "output_results": [self._result_to_dict(r) for r in output_results],
         }
 
-    def _call_ollama(self, user_message: str) -> str:
-        """Send a request to Ollama."""
-        body = json.dumps({
-            "model": self.config.ollama_model,
-            "messages": [
-                {"role": "system", "content": self.config.system_prompt},
-                {"role": "user", "content": user_message},
-            ],
-            "stream": False,
-        }).encode("utf-8")
+    def _upstream(self) -> Target:
+        """The configured upstream model, built on first use."""
+        if self._target is None:
+            c = self.config
+            if not c.provider:
+                raise ValueError("no upstream model configured: set provider and model "
+                                 "(--provider/--model, or \"provider\"/\"model\" in the config file)")
+            self._target = build_target(c.provider, c.model or "", base_url=c.base_url,
+                                        api_key_env=c.api_key_env, max_tokens=c.max_tokens)
+        return self._target
 
-        req = urllib.request.Request(
-            _http_only(f"{self.config.ollama_url}/api/chat"),
-            data=body,
-            headers={"Content-Type": "application/json"},
-        )
-        with urllib.request.urlopen(req, timeout=60) as resp:  # nosec B310: scheme validated by _http_only (bandit has no flow analysis)
-            data = json.loads(resp.read().decode("utf-8"))
-        return data.get("message", {}).get("content", "")
+    def _call_model(self, user_message: str):
+        """Send one user message, with the configured system prompt, to the upstream model."""
+        return send_with_retry(self._upstream(), [{"role": "user", "content": user_message}],
+                               self.config.system_prompt)
 
     def _log_event(self, direction: str, action: str, guard: str, score: float, reason: str, text: str):
         preview = text[:80].replace("\n", " ")
@@ -756,7 +783,7 @@ class FirewallProxyHandler(BaseHTTPRequestHandler):
                     "id": f"fw-{int(time.time())}",
                     "object": "chat.completion",
                     "created": int(time.time()),
-                    "model": _firewall().config.ollama_model,
+                    "model": _firewall().config.model or "",
                     "choices": [{
                         "index": 0,
                         "message": {
@@ -774,7 +801,7 @@ class FirewallProxyHandler(BaseHTTPRequestHandler):
             else:
                 # Ollama native format
                 ollama_resp = {
-                    "model": _firewall().config.ollama_model,
+                    "model": _firewall().config.model or "",
                     "message": {
                         "role": "assistant",
                         "content": result["response"],
@@ -903,21 +930,23 @@ def print_stats(stats: dict):
 # ═══════════════════════════════════════════════════════════
 
 
-def main():
-    make_output_safe()
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="LLM Firewall v1.0 -- AI Security Firewall",
+        description="LLM Firewall -- AI security firewall in front of any LLM",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
-            "  %(prog)s --check \"ignore previous instructions\"\n"
+            "  %(prog)s --check \"ignore previous instructions\"      (no model needed)\n"
             "  %(prog)s --check-output \"user@email.com password: abc123\"\n"
-            "  %(prog)s -i --model llama3.2:3b\n"
-            "  %(prog)s --proxy --port 8080 --model llama3.2:3b\n"
+            "  %(prog)s --proxy --port 8080 --provider openai --model <model>\n"
+            "  %(prog)s --proxy --provider anthropic --model <model>\n"
+            "  %(prog)s -i --provider ollama --model <local-model>\n"
             "  %(prog)s --generate-config\n"
+            "\nKeys are read from the environment: OPENAI_API_KEY, ANTHROPIC_API_KEY,\n"
+            "GEMINI_API_KEY, or the variable named by --api-key-env.\n"
             "\nProxy Endpoints:\n"
             "  POST /v1/chat/completions  -- OpenAI compatible\n"
-            "  POST /api/chat             -- Ollama native\n"
+            "  POST /api/chat             -- Ollama-style request body\n"
             "  POST /firewall/check       -- Direct check\n"
             "  GET  /firewall/stats       -- Statistics\n"
             "  GET  /firewall/health      -- Health check\n"
@@ -928,20 +957,58 @@ def main():
     parser.add_argument("--interactive", "-i", action="store_true", help="Interactive mode")
     parser.add_argument("--proxy", action="store_true", help="HTTP proxy mode")
     parser.add_argument("--port", type=int, default=8080, help="Proxy port (default: 8080)")
-    parser.add_argument("--model", default="llama3.2:3b", help="Ollama model (default: llama3.2:3b)")
-    parser.add_argument("--ollama-url", default="http://localhost:11434", help="Ollama URL")
+    upstream = parser.add_argument_group("upstream model (proxy and interactive modes)")
+    upstream.add_argument("--provider", choices=PROVIDERS, help="Which API the upstream model speaks")
+    upstream.add_argument("--model", help="Upstream model name (no default)")
+    upstream.add_argument("--base-url", help="Upstream base URL (required for openai-compatible)")
+    upstream.add_argument("--api-key-env", metavar="VAR", help="Environment variable that holds the API key")
+    upstream.add_argument("--max-tokens", type=int, help="Cap each upstream answer's length")
+    upstream.add_argument("--ollama-url", help=argparse.SUPPRESS)  # deprecated
     parser.add_argument("--config", help="Configuration file (JSON)")
     parser.add_argument("--generate-config", action="store_true", help="Generate a default configuration file")
     parser.add_argument("--log", help="Event log file")
     parser.add_argument("--json", "-j", action="store_true", help="JSON output")
     parser.add_argument("--stats", action="store_true", help="Show statistics from the log file")
     parser.add_argument("--action", default="block", choices=["block", "log", "warn"],
-                         help="Input-guard verification depth (default: block). \"block\" stops at the "
-                              "first guard that flags the input; \"log\"/\"warn\" keep running every "
-                              "remaining input guard for a complete audit trail. Flagged input is "
-                              "rejected the same way in all three modes -- this does NOT let flagged "
-                              "input through.")
+                        help="Input-guard verification depth (default: block). \"block\" stops at the "
+                             "first guard that flags the input; \"log\"/\"warn\" keep running every "
+                             "remaining input guard for a complete audit trail. Flagged input is "
+                             "rejected the same way in all three modes -- this does NOT let flagged "
+                             "input through.")
+    return parser
 
+
+def config_from_args(args: argparse.Namespace) -> tuple[FirewallConfig, list[str]]:
+    """The config the arguments describe. Returns (config, deprecation warnings)."""
+    config = FirewallConfig.from_file(args.config) if args.config else FirewallConfig()
+    warnings = list(config.deprecations)
+    if args.provider:
+        config.provider = args.provider
+    elif args.model or args.ollama_url:
+        # Pre-0.7 command line: --model / --ollama-url always meant Ollama.
+        config.provider = "ollama"
+        warnings.append("--model without --provider, and --ollama-url, are deprecated; "
+                        "use --provider ollama --model <model> [--base-url <url>/v1]")
+        if args.ollama_url:
+            config.base_url = args.ollama_url.rstrip("/") + "/v1"
+    if args.model:
+        config.model = args.model
+    if args.base_url:
+        config.base_url = args.base_url
+    if args.api_key_env:
+        config.api_key_env = args.api_key_env
+    if args.max_tokens:
+        config.max_tokens = args.max_tokens
+    config.proxy_port = args.port
+    config.action = args.action
+    if args.log:
+        config.log_file = args.log
+    return config, warnings
+
+
+def main():
+    make_output_safe()
+    parser = build_parser()
     args = parser.parse_args()
 
     # Create a config
@@ -952,19 +1019,16 @@ def main():
         print(f"Configuration file created: {out_path}")
         return
 
-    # Load the config
-    if args.config:
-        config = FirewallConfig.from_file(args.config)
-    else:
-        config = FirewallConfig()
+    config, warnings = config_from_args(args)
+    for w in warnings:
+        print(f"[DEPRECATED] {w}", file=sys.stderr)
 
-    # Override from CLI arguments
-    config.ollama_model = args.model
-    config.ollama_url = args.ollama_url
-    config.proxy_port = args.port
-    config.action = args.action
-    if args.log:
-        config.log_file = args.log
+    # The proxy and interactive modes forward to a model; say what to set
+    # instead of failing on the first request.
+    if (args.proxy or args.interactive) and not (config.provider and (config.model or config.provider == "http")):
+        print("[ERROR] no upstream model: set --provider and --model "
+              "(for example --provider openai --model <model>), or put them in --config", file=sys.stderr)
+        sys.exit(2)
 
     # Build the firewall
     firewall = LLMFirewall(config)
@@ -1055,7 +1119,7 @@ def main():
         info = COLORS["INFO"]
 
         print(f"\n{b}LLM Firewall v{LLMFirewall.VERSION} -- Interactive Mode{r}")
-        print(f"Model: {config.ollama_model}")
+        print(f"Model: {config.model} ({config.provider})")
         print(f"Input guards:  {len(firewall._input_guards)} active")
         print(f"Output guards: {len(firewall._output_guards)} active")
         print(f"\nCommands: {info}/stats{r} | {info}/guards{r} | {info}/exit{r}")
@@ -1120,13 +1184,13 @@ def main():
 
         print(f"\n{b}LLM Firewall v{LLMFirewall.VERSION} -- HTTP Proxy{r}")
         print(f"{g}Listening: http://localhost:{config.proxy_port}{r}")
-        print(f"Ollama:     {config.ollama_url}")
-        print(f"Model:      {config.ollama_model}")
+        print(f"Upstream:   {config.provider} {config.base_url or '(default endpoint)'}")
+        print(f"Model:      {config.model}")
         print(f"Input:      {len(firewall._input_guards)} guards")
         print(f"Output:     {len(firewall._output_guards)} guards")
         print(f"\n{b}Endpoints:{r}")
         print(f"  POST /v1/chat/completions  -- OpenAI compatible")
-        print(f"  POST /api/chat             -- Ollama native")
+        print(f"  POST /api/chat             -- Ollama-style request body")
         print(f"  POST /firewall/check       -- Direct check")
         print(f"  GET  /firewall/stats       -- Statistics")
         print(f"  GET  /firewall/health      -- Health check")

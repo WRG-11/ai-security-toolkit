@@ -46,7 +46,7 @@ This repo is that toolkit. Core tools (Tools section below) are stdlib-only Pyth
 |------|-------------|-------|
 | [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack patterns, **F1 0.91 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | <!-- METRIC:lines_ml -->1251<!-- /METRIC:lines_ml --> |
 | [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> probes, severity mapping | <!-- METRIC:lines_scanner -->917<!-- /METRIC:lines_scanner --> |
-| [LLM Firewall](tools/llm_firewall.py) | 10-guard security middleware (22 registered, 12 opt-in), HTTP proxy mode, plugin architecture | <!-- METRIC:lines_firewall -->1159<!-- /METRIC:lines_firewall --> |
+| [LLM Firewall](tools/llm_firewall.py) | 10-guard security middleware (22 registered, 12 opt-in), HTTP proxy mode, plugin architecture | <!-- METRIC:lines_firewall -->1223<!-- /METRIC:lines_firewall --> |
 
 **Key features:**
 - Zero external dependencies (Python stdlib only)
@@ -255,7 +255,7 @@ actually run against each platform.
 - **Solo-maintained** — primary author is one person; community contributions welcome but bus factor is real
 - **No SARIF / SIEM integration yet** — scan output is JSON / text; SARIF schema for code-scanning upload would be a future addition
 - **The firewall proxy is not a drop-in OpenAI server** — it inspects and forwards only the last user message and ignores `model` and `stream`; see [what the proxy does not do](tools/README.md#what-the-http-proxy-does-not-do)
-- **The default ML guard has false positives on short benign text** — measured: "second question" scores 0.74 against a 0.65 threshold and is blocked
+- **The default ML guard has false positives on short benign text** — measured: "second question" (0.74) and "hello there" (0.75) are blocked against a 0.65 threshold
 
 If you need enterprise-scale fleet probing, reach for PyRIT. If you need an extensive academic-style scanner, reach for Garak. If you need conversational guardrails as a service, reach for NeMo. Reach for ai-security-toolkit when you want a small, hackable, MIT-licensed kit you can read end-to-end in an afternoon.
 
@@ -269,7 +269,7 @@ MITRE ATLAS                  [######----]  <!-- METRIC:atlas_technique_count -->
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
-Test Suite                   [######----]  <!-- METRIC:test_module_count -->39<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->56<!-- /METRIC:coverage_floor -->% enforced floor
+Test Suite                   [######----]  <!-- METRIC:test_module_count -->40<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->56<!-- /METRIC:coverage_floor -->% enforced floor
 Framework Provenance         [####------]  10 attacks cite a Garak probe, 6 a PyRIT strategy (corpus provenance, not integration)
 ```
 

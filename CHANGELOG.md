@@ -40,6 +40,31 @@ and updates by date for readability.
   also run against a real local model through Ollama's `/v1` endpoint.
   Anthropic and Gemini were **not** called live: that needs paid keys.
 
+### Changed -- the firewall forwards to any LLM (breaking, with a deprecation path)
+
+- The proxy's upstream was Ollama's `/api/chat`, and `ollama_model` defaulted
+  to `llama3.2:3b`. It is now any target: `--provider/--model/--base-url/
+  --api-key-env/--max-tokens`, or the same keys in the config file. There is
+  no default model. The guards and `--check` need no model. `--proxy` and
+  `-i` without one stop with exit 2 and say what to set; before, the proxy
+  started and failed on the first request.
+- Still accepted for one release, with a `[DEPRECATED]` line: `ollama_url` /
+  `ollama_model` in a config file, and `--ollama-url` or `--model` without
+  `--provider` on the command line. All of them map to `--provider ollama`.
+  Removed: the `ollama_url` / `ollama_model` config fields and `_call_ollama`.
+  The key is read from the environment variable named in `api_key_env` and is
+  never written to the config file.
+- An upstream provider's own safety block is returned as blocked, with
+  `block_stage: "upstream"`. An upstream error comes back as an error
+  response with the key redacted.
+- Checked live: the proxy in front of a local model through Ollama's `/v1`
+  endpoint answered "Paris" to a plain question and blocked an injection at
+  input (score 0.99) without calling the model. 13 new tests; 5 mutations of
+  the new branches each turn a test red.
+- A new measured false positive of the default ML guard: "hello there"
+  scores 0.75 and is blocked. It is added to the README's list next to
+  "second question", and pinned by the same test.
+
 ### Changed -- the scanner scans any LLM (breaking, with a deprecation path)
 
 - `llm_scanner.py` sends every probe through the target layer:
