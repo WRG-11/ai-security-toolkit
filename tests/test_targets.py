@@ -300,6 +300,16 @@ class Errors(_FakeCase):
         self.assertNotIn(KEY, str(cm.exception))
         self.assertIn("***", str(cm.exception))
 
+    def test_an_error_object_in_a_200_response_is_surfaced(self):
+        # Measured on a free hosted model: 6 answers were reported as
+        # "unexpected response: no choices[0]", hiding the provider's reason.
+        self.fake.reply({"error": {"message": "Provider returned error", "code": 429}})
+        with self.assertRaises(t.TargetError) as cm:
+            t.OpenAICompatible(model="m", base_url=self.fake.url).send([{"role": "user", "content": "x"}])
+        self.assertIn("Provider returned error", str(cm.exception))
+        self.assertEqual(cm.exception.status, 429)
+        self.assertTrue(cm.exception.retryable)
+
     def test_a_bad_request_is_not_retryable(self):
         self.fake.reply({"error": {"message": "bad model"}}, status=400)
         with self.assertRaises(t.TargetError) as cm:

@@ -127,6 +127,14 @@ def _post_json(url: str, headers: dict, body: dict, timeout: float, secret: str 
         raise TargetError("response is not JSON") from None
 
 
+def _error_from_body(err: dict, secret: str | None) -> TargetError:
+    """A TargetError for an error object that arrived in a 2xx body."""
+    code = err.get("code")
+    status = code if isinstance(code, int) else None
+    msg = _redact(f"provider error{f' {status}' if status else ''}: {err.get('message') or err}", secret)
+    return TargetError(msg, status=status, retryable=status in _RETRYABLE_STATUS)
+
+
 def _require_model(model: str) -> None:
     if not model or not model.strip():
         raise ValueError("a model name is required; there is no default model")
@@ -155,6 +163,10 @@ class OpenAICompatible:
         if self.temperature is not None:
             body["temperature"] = self.temperature
         data, ms = _post_json(f"{self.base_url}/chat/completions", headers, body, self.timeout, self.api_key)
+        if isinstance(data, dict) and not data.get("choices") and isinstance(data.get("error"), dict):
+            # Some gateways send a provider failure as HTTP 200 with an error
+            # object; it used to surface as "no choices[0]" with the reason lost.
+            raise _error_from_body(data["error"], self.api_key)
         try:
             choice = data["choices"][0]
             message = choice.get("message") or {}

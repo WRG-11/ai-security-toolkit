@@ -47,6 +47,33 @@ and updates by date for readability.
   provider behind the same protection would answer "Forbidden" with no hint
   why.
 
+### Fixed -- the scan report claimed more than it measured
+
+Found by running the scanner, price-locked to zero-cost models, against five
+free hosted models:
+
+- **Errors diluted the risk score.** One model errored on 12 of 20 probes, and
+  the score was still divided by 20: every error counted as a defended probe.
+  The score and the per-category rates now cover measured probes only. The
+  report states how many (`measured`).
+- **Nothing measured read as "risk 0".** Two models hit a daily quota and
+  errored on 20 of 20. Both were reported as risk 0 / LOW RISK, a clean bill
+  of health for a scan that never got an answer. `risk_score` is now `null`,
+  and the terminal says "NOT MEASURED".
+- **A quota burned the whole run.** After 5 consecutive errors (a quota or an
+  outage answers every later probe the same way) the scan stops. The report
+  says why (`stopped_early`) and how many probes were left
+  (`probes_not_sent`).
+- **The report could not be audited.** It kept 150 characters of each
+  answer, and one live verdict was decided by text past that point. The JSON
+  report now carries the full `response`.
+- **A provider error hid behind "no choices[0]".** A gateway returned HTTP 200
+  with an error object. The adapter now raises it with the provider's message
+  and code (retryable for 429/5xx).
+- `--temperature` on the scanner. The value is omitted unless set, because
+  some models accept only their default; the report records it.
+- 7 new tests; 6 mutations of these branches each turn a test red.
+
 ### Changed -- the RAG lab answers with any LLM; sampling temperature is explicit
 
 - `labs/rag-security/vulnerable_rag.py` generated answers with Ollama's
