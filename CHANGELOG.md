@@ -40,6 +40,38 @@ and updates by date for readability.
   also run against a real local model through Ollama's `/v1` endpoint.
   Anthropic and Gemini were **not** called live: that needs paid keys.
 
+### Changed -- the scanner scans any LLM (breaking, with a deprecation path)
+
+- `llm_scanner.py` sends every probe through the target layer:
+  `--provider {openai,openai-compatible,ollama,anthropic,gemini,http} --model <name>`.
+  There is no default model. The Python API takes a target,
+  `LLMScanner(target, system_prompt)`, instead of `model` / `ollama_url` /
+  `api_mode` / `api_key`.
+- Still accepted for one release, with a `[DEPRECATED]` line on stderr naming
+  the replacement: a positional model, `--api-mode`, `--ollama-url` and a
+  literal `--api-key`. The literal key goes through an environment variable
+  internally, and the warning points to `--api-key-env`.
+- Removed: `--tier` and `TIER_MODELS`, which named three 2024 models; the
+  Ollama-only `/api/tags` pre-check (`check_ollama`, `check_model`); and
+  `send_probe` / `send_probe_openai`.
+- New:
+  - `--dry-run` prints how many probes would be sent, and to what, and sends
+    nothing.
+  - `--max-probes` caps the scan. The report's new `probes_not_sent` says how
+    many in-scope probes were left out.
+  - `--delay` waits between probes, and `--max-tokens` caps answer length. The
+    old Ollama sender silently capped answers at 128 tokens.
+  - Rate limits are retried with backoff.
+  - A 400/401/403/404 on the first probe stops the scan with the provider's
+    message, instead of printing the same error once per probe.
+  - A provider-side safety block is scored as defended, with reason
+    `provider_refusal:<reason>`.
+- Checked live against a local model through the new CLI. 5 probes: one real
+  leak (the model revealed the test password) and four refusals, scored as
+  such. An unknown model stopped after one request with the provider's 404
+  message. The legacy syntax printed its deprecation line. 20 new tests; 5
+  mutations of the new branches each turn a test red.
+
 ### Fixed (security) -- the firewall's HTTP proxy
 
 - `FirewallProxyHandler.do_POST`, the proxy's network entry point, had no test.

@@ -3,15 +3,18 @@
 LLM Scanner v1.0 -- OWASP LLM Top 10 Vulnerability Scanner
 AI/LLM Security Toolkit - Phase 3
 
-Scans for vulnerabilities by sending 194 attack payloads to an Ollama model.
-Every probe is mapped to an OWASP LLM Top 10 category and MITRE ATLAS.
+Scans any LLM for vulnerabilities by sending it attack payloads, each mapped
+to an OWASP LLM Top 10 category and MITRE ATLAS. The target is any provider
+tools/targets.py speaks: OpenAI-compatible APIs (OpenAI, Azure, Groq,
+OpenRouter, vLLM, Ollama, ...), Anthropic, Gemini, or any HTTP chat endpoint.
+There is no default model.
 
 Usage:
-    python llm_scanner.py llama3.2:3b
-    python llm_scanner.py llama3.2:3b --quick
-    python llm_scanner.py llama3.2:3b --categories LLM01,LLM07
-    python llm_scanner.py llama3.2:3b --system-prompt "You are an assistant"
-    python llm_scanner.py llama3.2:3b --json --output report.json
+    python llm_scanner.py --provider openai --model <model> --dry-run
+    python llm_scanner.py --provider anthropic --model <model> --quick
+    python llm_scanner.py --provider gemini --model <model> --categories LLM01,LLM08
+    python llm_scanner.py --provider ollama --model <local-model> --json -o report.json
+    python llm_scanner.py --provider openai-compatible --base-url https://host/v1 --model <model>
 """
 
 import json
@@ -20,8 +23,6 @@ import re
 import sys
 import argparse
 import time
-import urllib.request
-import urllib.error
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -33,6 +34,7 @@ sys.path.insert(0, str(_TOOLS_DIR))
 
 from _console import make_output_safe  # noqa: E402
 from _lab import ensure_lab_or_exit  # noqa: E402
+from targets import PROVIDERS, Reply, Target, TargetError, build_target, send_with_retry  # noqa: E402
 
 # If the tree is absent it stops here with a message saying what to do --
 # it used to fail with `ModuleNotFoundError: No module named 'attacks'`.
@@ -75,12 +77,6 @@ OWASP_NAMES: dict[str, str] = {
     "LLM08": "Hidden Context Exposure",
     "LLM09": "Vector and Embedding Weaknesses",
     "LLM10": "Improper Output Handling",
-}
-
-TIER_MODELS: dict[str, str] = {
-    "t1": "dolphin-mistral",
-    "t2": "qwen2.5:3b",
-    "t3": "llama3.2:3b",
 }
 
 DEFAULT_SYSTEM_PROMPT = (
@@ -179,20 +175,6 @@ COMPLIANCE_PATTERNS: list[re.Pattern] = [
 # ═══════════════════════════════════════════════════════════
 
 
-def _http_only(url: str) -> str:
-    """Reject any scheme other than http/https before the URL is fetched.
-
-    `urllib.request.urlopen` honours `file://`, `ftp://` and custom schemes,
-    so a URL arriving from configuration is a local-file read waiting to
-    happen. These endpoints default to localhost, but they are parameters --
-    and this is a security toolkit, so the check belongs in the code rather
-    than in a reviewer's memory.
-    """
-    if not url.startswith(("http://", "https://")):
-        raise ValueError(f"only http/https URLs are allowed, got: {url!r}")
-    return url
-
-
 def resolve_api_key(cli_key: Optional[str], env_var: Optional[str]) -> Optional[str]:
     """Resolve the bearer token for --api-mode openai.
 
@@ -261,6 +243,9 @@ class ScanReport:
     results: list[ProbeResult] = field(default_factory=list)
     skipped_infrastructure: int = 0
     skipped_techniques: list[str] = field(default_factory=list)
+    # In-scope probes left out by --max-probes. A capped scan must read as
+    # capped, not as a cleaner result.
+    probes_not_sent: int = 0
     # Probes that describe an attack on real RAG/CI/embedding/multi-tenant
     # infrastructure a bare chat-completion endpoint has no access to --
     # never sent, never scored either way. `total_probes`/`risk_score` cover
@@ -283,6 +268,7 @@ class ScanReport:
             "results": [r.to_dict() for r in self.results],
             "skipped_infrastructure": self.skipped_infrastructure,
             "skipped_techniques": self.skipped_techniques,
+            "probes_not_sent": self.probes_not_sent,
         }
 
 
@@ -359,113 +345,6 @@ def filter_probes(
         return quick_probes
 
     return filtered
-
-
-# ═══════════════════════════════════════════════════════════
-# Ollama Communication
-# ═══════════════════════════════════════════════════════════
-
-
-def check_ollama(ollama_url: str) -> bool:
-    """Check whether the Ollama server is running."""
-    try:
-        req = urllib.request.Request(_http_only(f"{ollama_url}/api/tags"))
-        with urllib.request.urlopen(req, timeout=5) as resp:  # nosec B310: scheme validated by _http_only (bandit has no flow analysis)
-            return resp.status == 200
-    except Exception:
-        return False
-
-
-def check_model(ollama_url: str, model: str) -> bool:
-    """Check whether the model is installed."""
-    try:
-        req = urllib.request.Request(_http_only(f"{ollama_url}/api/tags"))
-        with urllib.request.urlopen(req, timeout=5) as resp:  # nosec B310: scheme validated by _http_only (bandit has no flow analysis)
-            data = json.loads(resp.read().decode("utf-8"))
-            models = [m.get("name", "") for m in data.get("models", [])]
-            return any(model in m for m in models)
-    except Exception:
-        return False
-
-
-def send_probe(
-    ollama_url: str,
-    model: str,
-    system_prompt: str,
-    payload: str,
-    timeout: int = 30,
-) -> tuple[str, int]:
-    """Send a probe to Ollama's native `/api/chat`. Returns (response, elapsed_ms)."""
-    body = json.dumps({
-        "model": model,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": payload},
-        ],
-        "stream": False,
-        "options": {"temperature": 0.1, "num_predict": 128},
-    }).encode("utf-8")
-
-    req = urllib.request.Request(
-        _http_only(f"{ollama_url}/api/chat"),
-        data=body,
-        headers={"Content-Type": "application/json"},
-    )
-
-    start = time.time()
-    with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310: scheme validated by _http_only (bandit has no flow analysis)
-        data = json.loads(resp.read().decode("utf-8"))
-    elapsed_ms = int((time.time() - start) * 1000)
-
-    response_text = data.get("message", {}).get("content", "")
-    return response_text, elapsed_ms
-
-
-def send_probe_openai(
-    base_url: str,
-    model: str,
-    system_prompt: str,
-    payload: str,
-    timeout: int = 30,
-    api_key: Optional[str] = None,
-) -> tuple[str, int]:
-    """Send a probe to any OpenAI-compatible `/chat/completions` endpoint.
-
-    This is what lets the scanner point at a deployed app's own LLM
-    endpoint instead of only a local Ollama model -- the OpenAI chat
-    shape is the closest thing this space has to a standard, and Ollama
-    itself serves it too (alongside its native `/api/chat`), which is
-    how this path is tested against a real model without needing a paid
-    API key: same local model, the other wire format.
-    """
-    body = json.dumps({
-        "model": model,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": payload},
-        ],
-        "temperature": 0.1,
-        "max_tokens": 128,
-    }).encode("utf-8")
-
-    headers = {"Content-Type": "application/json"}
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
-
-    req = urllib.request.Request(
-        _http_only(f"{base_url}/chat/completions"),
-        data=body,
-        headers=headers,
-    )
-
-    start = time.time()
-    with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310: scheme validated by _http_only (bandit has no flow analysis)
-        data = json.loads(resp.read().decode("utf-8"))
-    elapsed_ms = int((time.time() - start) * 1000)
-
-    choices = data.get("choices") or [{}]
-    response_text = choices[0].get("message", {}).get("content", "")
-    return response_text, elapsed_ms
 
 
 # ═══════════════════════════════════════════════════════════
@@ -569,26 +448,36 @@ def check_success(
 # ═══════════════════════════════════════════════════════════
 
 
-class LLMScanner:
-    """OWASP LLM Top 10 vulnerability scanner."""
+class ScanAborted(Exception):
+    """The first probe failed in a way every later probe would repeat."""
 
-    VERSION = "1.0"
+
+# A wrong key, model name or URL answers every probe the same way. Stopping
+# after the first one beats printing the same error once per probe.
+_PERMANENT_STATUS = {400, 401, 403, 404}
+
+
+class LLMScanner:
+    """OWASP LLM Top 10 vulnerability scanner for any Target (tools/targets.py)."""
+
+    VERSION = "1.1"
 
     def __init__(
         self,
-        model: str,
-        ollama_url: str = "http://localhost:11434",
+        target: Target,
         system_prompt: str = DEFAULT_SYSTEM_PROMPT,
-        timeout: int = 30,
-        api_mode: str = "ollama",
-        api_key: Optional[str] = None,
+        *,
+        label: Optional[str] = None,
+        retries: int = 2,
+        delay: float = 0.0,
+        max_probes: Optional[int] = None,
     ):
-        self.model = model
-        self.ollama_url = ollama_url
+        self.target = target
+        self.model = label or getattr(target, "model", None) or type(target).__name__
         self.system_prompt = system_prompt
-        self.timeout = timeout
-        self.api_mode = api_mode
-        self.api_key = api_key
+        self.retries = retries
+        self.delay = delay
+        self.max_probes = max_probes
 
     def scan(
         self,
@@ -603,6 +492,10 @@ class LLMScanner:
         infra_probes = [(ch_id, tech) for ch_id, tech in all_probes if tech.requires_infrastructure]
 
         probes = filter_probes(testable_probes, categories, severity_min, quick)
+        probes_not_sent = 0
+        if self.max_probes is not None and len(probes) > self.max_probes:
+            probes_not_sent = len(probes) - self.max_probes
+            probes = probes[:self.max_probes]
         # Report skipped probes still in the requested category/severity scope
         # (not capped by --quick -- that cap only meaningfully applies to
         # probes that actually get sent).
@@ -618,22 +511,24 @@ class LLMScanner:
 
             if progress_callback:
                 progress_callback(i + 1, len(probes), tech.name)
+            if i and self.delay:
+                time.sleep(self.delay)
 
             try:
-                if self.api_mode == "openai":
-                    response, elapsed_ms = send_probe_openai(
-                        self.ollama_url, self.model,
-                        self.system_prompt, tech.payload,
-                        self.timeout, api_key=self.api_key,
-                    )
+                reply: Reply = send_with_retry(
+                    self.target, [{"role": "user", "content": tech.payload}], self.system_prompt,
+                    retries=self.retries,
+                )
+                response, elapsed_ms = reply.text, reply.elapsed_ms
+                if reply.refused_by_provider:
+                    # The provider's own safety system withheld the answer:
+                    # the attack did not get through.
+                    success, reason = False, f"provider_refusal:{reply.refusal_reason}"
                 else:
-                    response, elapsed_ms = send_probe(
-                        self.ollama_url, self.model,
-                        self.system_prompt, tech.payload,
-                        self.timeout,
-                    )
-                success, reason = check_success(response, self.system_prompt, tech.category)
-            except Exception as e:
+                    success, reason = check_success(response, self.system_prompt, tech.category)
+            except TargetError as e:
+                if i == 0 and e.status in _PERMANENT_STATUS:
+                    raise ScanAborted(f"first probe failed, stopping: {e}") from None
                 response = f"[ERROR] {e}"
                 elapsed_ms = 0
                 success = False
@@ -709,6 +604,7 @@ class LLMScanner:
             risk_score=risk_score,
             skipped_infrastructure=len(skipped_in_scope),
             skipped_techniques=[tech.name for _, tech in skipped_in_scope],
+            probes_not_sent=probes_not_sent,
             by_owasp=by_owasp,
             by_severity=by_severity,
             results=results,
@@ -856,68 +752,121 @@ def print_report(report: ScanReport) -> None:
 # ═══════════════════════════════════════════════════════════
 
 
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="LLM Scanner -- OWASP LLM Top 10 vulnerability scanner for any LLM",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  %(prog)s --provider openai --model <model> --quick --dry-run\n"
+            "  %(prog)s --provider anthropic --model <model> --categories LLM01,LLM08\n"
+            "  %(prog)s --provider gemini --model <model> --max-probes 20\n"
+            "  %(prog)s --provider ollama --model <local-model>\n"
+            "  %(prog)s --provider openai-compatible --base-url https://host/v1 --model <model> \\\n"
+            "      --api-key-env MY_KEY\n"
+            "  %(prog)s --provider http --base-url https://bot.example.com/chat \\\n"
+            "      --body-template '{\"message\": \"{{prompt}}\"}' --response-path reply.text\n"
+            "\n"
+            "Keys are read from the environment: OPENAI_API_KEY, ANTHROPIC_API_KEY,\n"
+            "GEMINI_API_KEY, or the variable named by --api-key-env.\n"
+            "Hosted APIs charge per request: check the count with --dry-run first.\n"
+        ),
+    )
+    target = parser.add_argument_group("target")
+    target.add_argument("--provider", choices=PROVIDERS, help="Which API the target speaks")
+    target.add_argument("--model", help="Model name as the provider spells it (no default)")
+    target.add_argument("--base-url", help="Endpoint base URL (required for openai-compatible and http)")
+    target.add_argument("--body-template", help="provider http: JSON request body with {{prompt}} / {{system}}")
+    target.add_argument("--response-path", help="provider http: dotted path to the answer, e.g. data.0.text")
+    target.add_argument("--max-tokens", type=int, help="Cap each answer's length (cheaper on paid APIs)")
+    target.add_argument("--timeout", type=int, default=60, help="Timeout per request in seconds (default: 60)")
+    key_group = target.add_mutually_exclusive_group()
+    key_group.add_argument("--api-key-env", metavar="VAR", help="Environment variable that holds the API key")
+    key_group.add_argument("--api-key", help=argparse.SUPPRESS)  # deprecated: lands in shell history
+
+    legacy = parser.add_argument_group("deprecated (still accepted for one release)")
+    legacy.add_argument("legacy_model", nargs="?", metavar="MODEL", help=argparse.SUPPRESS)
+    legacy.add_argument("--api-mode", choices=["ollama", "openai"], help=argparse.SUPPRESS)
+    legacy.add_argument("--ollama-url", help=argparse.SUPPRESS)
+
+    scan = parser.add_argument_group("scan")
+    scan.add_argument("--system-prompt", help="System prompt to test")
+    scan.add_argument("--system-prompt-file", help="Read the system prompt from a file")
+    scan.add_argument("--categories", help="OWASP categories (example: LLM01,LLM07)")
+    scan.add_argument("--severity", default="LOW", choices=["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+                      help="Minimum severity (default: LOW)")
+    scan.add_argument("--quick", action="store_true", help="Quick scan (2 probes per OWASP category)")
+    scan.add_argument("--max-probes", type=int, help="Send at most this many probes")
+    scan.add_argument("--delay", type=float, default=0.0, help="Seconds to wait between probes")
+    scan.add_argument("--dry-run", action="store_true", help="Show what would be sent, send nothing")
+    scan.add_argument("--list-probes", action="store_true", help="Show the probe list (without scanning)")
+    scan.add_argument("--json", "-j", action="store_true", help="JSON output")
+    scan.add_argument("--output", "-o", help="Save the report to a file")
+    return parser
+
+
+def target_from_args(args: argparse.Namespace, env=None) -> tuple[Target, list[str]]:
+    """Build the Target the arguments describe. Returns (target, deprecation warnings)."""
+    env = dict(os.environ if env is None else env)
+    warnings: list[str] = []
+    provider, model, base_url = args.provider, args.model, args.base_url
+    api_key_env = args.api_key_env
+
+    if provider is None and (args.legacy_model or args.api_mode or args.ollama_url):
+        mode = args.api_mode or "ollama"
+        model = model or args.legacy_model
+        if mode == "openai":
+            provider = "openai-compatible"
+            base_url = base_url or args.ollama_url
+        else:
+            provider = "ollama"
+            if args.ollama_url:
+                base_url = base_url or args.ollama_url.rstrip("/") + "/v1"
+        warnings.append(
+            "a positional model, --api-mode and --ollama-url are deprecated; "
+            f"use --provider {provider} --model {model or '<model>'}"
+            + (f" --base-url {base_url}" if base_url else "")
+        )
+    if provider is None:
+        raise ValueError("choose a target with --provider and --model (see --help)")
+
+    if args.api_key:
+        warnings.append("--api-key puts the key in shell history and the process list; use --api-key-env")
+        api_key_env = "_LLM_SCANNER_CLI_KEY"
+        env[api_key_env] = args.api_key
+
+    target = build_target(provider, model or "", base_url=base_url, api_key_env=api_key_env, env=env,
+                          timeout=args.timeout, body_template=args.body_template,
+                          response_path=args.response_path, max_tokens=args.max_tokens)
+    return target, warnings
+
+
 def main():
     # Probe names carry non-ASCII characters (e.g. U+2192). On a cp1254
     # console, --list-probes died with UnicodeEncodeError on the first one.
     make_output_safe()
-    parser = argparse.ArgumentParser(
-        description="LLM Scanner v1.0 -- OWASP LLM Top 10 Vulnerability Scanner",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
-            "Examples:\n"
-            "  %(prog)s llama3.2:3b\n"
-            "  %(prog)s llama3.2:3b --quick\n"
-            "  %(prog)s llama3.2:3b --categories LLM01,LLM07\n"
-            "  %(prog)s --tier t1 --system-prompt \"You are an assistant\"\n"
-            "  %(prog)s llama3.2:3b --json --output report.json\n"
-            "\nTier shortcuts:\n"
-            "  t1: dolphin-mistral (uncensored)\n"
-            "  t2: qwen2.5:3b (weak defense)\n"
-            "  t3: llama3.2:3b (good defense)\n"
-        ),
-    )
-    parser.add_argument("model", nargs="?", help="Ollama model name (example: llama3.2:3b)")
-    parser.add_argument("--tier", choices=["t1", "t2", "t3"], help="VulnLLM tier shortcut")
-    parser.add_argument("--system-prompt", help="System prompt to test")
-    parser.add_argument("--system-prompt-file", help="Read the system prompt from a file")
-    parser.add_argument("--categories", help="OWASP categories (example: LLM01,LLM07)")
-    parser.add_argument("--severity", default="LOW", choices=["LOW", "MEDIUM", "HIGH", "CRITICAL"], help="Minimum severity (default: LOW)")
-    parser.add_argument("--quick", action="store_true", help="Quick scan (2 probes per OWASP category)")
-    parser.add_argument("--json", "-j", action="store_true", help="JSON output")
-    parser.add_argument("--output", "-o", help="Save the report to a file")
-    parser.add_argument("--ollama-url", default="http://localhost:11434", help="Ollama URL, or the target base URL in --api-mode openai (default: http://localhost:11434)")
-    parser.add_argument("--api-mode", default="ollama", choices=["ollama", "openai"], help="Wire format to speak to the target: Ollama's native /api/chat, or any OpenAI-compatible /chat/completions endpoint (default: ollama)")
-    key_group = parser.add_mutually_exclusive_group()
-    key_group.add_argument("--api-key", help="Bearer token for --api-mode openai (only sent in openai mode; ignored in ollama mode). Prefer --api-key-env: a literal key on the command line lands in shell history and `ps`/process-list output.")
-    key_group.add_argument("--api-key-env", metavar="VAR", help="Read the bearer token from this environment variable instead of the command line (example: --api-key-env OPENAI_API_KEY)")
-    parser.add_argument("--timeout", type=int, default=30, help="Timeout per probe in seconds (default: 30)")
-    parser.add_argument("--list-probes", action="store_true", help="Show the probe list (without scanning)")
-
+    parser = build_parser()
     args = parser.parse_args()
 
-    # Resolve model
-    model = args.model
-    if args.tier:
-        model = TIER_MODELS[args.tier]
-    if not model and not args.list_probes:
-        parser.print_help()
-        print(f"\n{COLORS['HIGH']}[ERROR] No model specified. Example: llm_scanner.py llama3.2:3b{COLORS['RESET']}")
-        sys.exit(1)
+    categories = [c.strip().upper() for c in args.categories.split(",")] if args.categories else None
 
-    # Probe list
     if args.list_probes:
-        probes = load_all_probes()
-        cats = [c.upper() for c in args.categories.split(",")] if args.categories else None
-        probes = filter_probes(probes, cats, args.severity, args.quick)
+        probes = filter_probes(load_all_probes(), categories, args.severity, args.quick)
         print(f"Total {len(probes)} probes:")
         for ch_id, tech in probes:
             owasp = ",".join(OWASP_MAP.get(ch_id, []))
             print(f"  [{tech.severity:8s}] {owasp:10s} {tech.name}")
         return
 
-    api_key = resolve_api_key(args.api_key, args.api_key_env)
+    red, r, b, g = COLORS["HIGH"], COLORS["RESET"], COLORS["BOLD"], COLORS["SAFE"]
+    try:
+        target, warnings = target_from_args(args)
+    except ValueError as e:
+        print(f"{red}[ERROR] {e}{r}", file=sys.stderr)
+        sys.exit(2)
+    for w in warnings:
+        print(f"[DEPRECATED] {w}", file=sys.stderr)
 
-    # System prompt
     system_prompt = DEFAULT_SYSTEM_PROMPT
     if args.system_prompt:
         system_prompt = args.system_prompt
@@ -928,61 +877,36 @@ def main():
             sys.exit(1)
         system_prompt = p.read_text(encoding="utf-8").strip()
 
-    # Ollama check -- --api-mode openai targets an arbitrary endpoint, which
-    # has no /api/tags to ask "are you up" or "is this model installed";
-    # a probe failing there surfaces per-probe as an error result instead.
-    b = COLORS["BOLD"]
-    r = COLORS["RESET"]
-    g = COLORS["SAFE"]
-    red = COLORS["HIGH"]
+    scanner = LLMScanner(target, system_prompt, delay=args.delay, max_probes=args.max_probes)
+    testable = [(c, tch) for c, tch in load_all_probes() if not tch.requires_infrastructure]
+    planned = filter_probes(testable, categories, args.severity, args.quick)
+    if args.max_probes is not None:
+        planned = planned[:args.max_probes]
+    where = getattr(target, "base_url", None) or getattr(target, "url", "")
 
-    if args.api_mode == "ollama":
-        if not check_ollama(args.ollama_url):
-            print(f"{red}[ERROR] Ollama server is not running!{r}")
-            print(f"  To start it: ollama serve")
-            print(f"  URL: {args.ollama_url}")
-            sys.exit(1)
-
-        if not check_model(args.ollama_url, model):
-            print(f"{red}[ERROR] Model not found: {model}{r}")
-            print(f"  To download it: ollama pull {model}")
-            sys.exit(1)
-
-    # Category filter
-    categories = None
-    if args.categories:
-        categories = [c.strip().upper() for c in args.categories.split(",")]
-
-    # Scan
-    scanner = LLMScanner(
-        model=model,
-        ollama_url=args.ollama_url,
-        system_prompt=system_prompt,
-        timeout=args.timeout,
-        api_mode=args.api_mode,
-        api_key=api_key,
-    )
-
-    mode = "quick" if args.quick else "full"
-    probes = load_all_probes()
-    filtered = filter_probes(probes, categories, args.severity, args.quick)
+    if args.dry_run:
+        print(f"Dry run: would send {len(planned)} probes to {scanner.model} ({type(target).__name__}, {where}).")
+        print("Each probe is one request, plus up to 2 retries on rate limits or overloads.")
+        print("Nothing was sent.")
+        return
 
     if not args.json:
         print(f"\n{b}LLM Scanner v{LLMScanner.VERSION}{r}")
-        print(f"Model: {model} | Mode: {mode} | Probes: {len(filtered)}")
-        print(f"Starting scan...\n")
+        print(f"Target: {scanner.model} ({type(target).__name__}) | Probes: {len(planned)}")
+        print("Starting scan...\n")
 
-    cb = None if args.json else progress_printer
-    report = scanner.scan(categories, args.severity, args.quick, progress_callback=cb)
+    try:
+        report = scanner.scan(categories, args.severity, args.quick,
+                              progress_callback=None if args.json else progress_printer)
+    except ScanAborted as e:
+        print(f"{red}[ERROR] {e}{r}", file=sys.stderr)
+        sys.exit(1)
 
-    # Output
     if args.json:
-        output = json.dumps(report.to_dict(), ensure_ascii=False, indent=2)
-        print(output)
+        print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
     else:
         print_report(report)
 
-    # Save to file
     if args.output:
         with open(args.output, "w", encoding="utf-8") as f:
             json.dump(report.to_dict(), f, ensure_ascii=False, indent=2)

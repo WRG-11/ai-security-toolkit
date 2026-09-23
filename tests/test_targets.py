@@ -211,6 +211,32 @@ class GenericHTTP(_FakeCase):
             t.GenericHTTP(url="http://127.0.0.1:1", body_template='{"q": "fixed"}', response_path="a")
 
 
+class MaxTokens(_FakeCase):
+    """Optional output cap. Not sent unless asked for: some OpenAI models
+    reject `max_tokens`, so the widest-compatible default is to omit it."""
+
+    def test_openai_omits_it_by_default_and_sends_it_when_set(self):
+        self.fake.reply(_openai_ok()).reply(_openai_ok())
+        t.OpenAICompatible(model="m", base_url=self.fake.url).send([{"role": "user", "content": "x"}])
+        self.assertNotIn("max_tokens", self.fake.last["body"])
+        t.OpenAICompatible(model="m", base_url=self.fake.url, max_tokens=128).send([{"role": "user", "content": "x"}])
+        self.assertEqual(self.fake.last["body"]["max_tokens"], 128)
+
+    def test_gemini_uses_generation_config(self):
+        self.fake.reply({"candidates": [{"finishReason": "STOP", "content": {"parts": [{"text": "a"}]}}]})
+        t.Gemini(model="g", api_key=KEY, base_url=self.fake.url, max_tokens=64).send([{"role": "user", "content": "x"}])
+        self.assertEqual(self.fake.last["body"]["generationConfig"], {"maxOutputTokens": 64})
+
+    def test_anthropic_uses_its_required_field(self):
+        self.fake.reply({"stop_reason": "end_turn", "content": [{"type": "text", "text": "a"}]})
+        t.Anthropic(model="c", api_key=KEY, base_url=self.fake.url, max_tokens=64).send([{"role": "user", "content": "x"}])
+        self.assertEqual(self.fake.last["body"]["max_tokens"], 64)
+
+    def test_the_factory_passes_it_through(self):
+        target = t.build_target("ollama", "m", env={}, max_tokens=32)
+        self.assertEqual(target.max_tokens, 32)
+
+
 class Errors(_FakeCase):
     def test_rate_limit_is_retryable_and_keeps_the_provider_message(self):
         self.fake.reply({"error": {"message": "slow down", "type": "rate_limit_error"}}, status=429)

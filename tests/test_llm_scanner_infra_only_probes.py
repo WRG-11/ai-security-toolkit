@@ -20,11 +20,11 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 
 import llm_scanner as m  # noqa: E402
+import targets  # noqa: E402
 
 
 def test_ch08_has_exactly_eight_infrastructure_only_probes():
@@ -67,32 +67,35 @@ def test_corpus_wide_infrastructure_only_count():
         assert len(attacks) == expected_total, f"{ch_id}: expected {expected_total} probes, got {len(attacks)}"
 
 
-def test_scan_never_sends_an_infrastructure_only_probe(monkeypatch):
-    """The whole point: an infra-only probe must never reach send_probe --
+class _Target:
+    """Records every payload; replies with a fixed text."""
+    model = "fake-model"
+
+    def __init__(self, text):
+        self.text = text
+        self.payloads: list[str] = []
+
+    def send(self, messages, system=None):
+        self.payloads.append(messages[-1]["content"])
+        return targets.Reply(self.text)
+
+
+def test_scan_never_sends_an_infrastructure_only_probe():
+    """The whole point: an infra-only probe must never reach the target --
     there is nothing meaningful to send it to."""
-    sent_payloads = []
-
-    def fake_send(ollama_url, model, system_prompt, payload, timeout):
-        sent_payloads.append(payload)
-        return "some response text that is long enough to matter here", 1
-
-    monkeypatch.setattr(m, "send_probe", fake_send)
-
-    scanner = m.LLMScanner(model="llama3.2:3b")
-    report = scanner.scan(categories=["LLM01", "LLM09"])  # ch08's OWASP ids
+    target = _Target("some response text that is long enough to matter here")
+    report = m.LLMScanner(target).scan(categories=["LLM01", "LLM09"])  # ch08's OWASP ids
 
     from attacks.ch08_attacks import CH08_ATTACKS
     infra_payloads = {t.payload for t in CH08_ATTACKS if t.requires_infrastructure}
-    assert not (infra_payloads & set(sent_payloads)), "an infra-only payload was sent to the model"
+    assert not (infra_payloads & set(target.payloads)), "an infra-only payload was sent to the model"
     assert report.skipped_infrastructure >= 8
 
 
 def test_skipped_infrastructure_probes_are_reported_not_silently_dropped():
     """A narrower test scope must be visible in the report, not just a
     smaller total_probes with no explanation."""
-    scanner = m.LLMScanner(model="llama3.2:3b")
-    with patch.object(m, "send_probe", return_value=("defended, sorry I can't help with that", 1)):
-        report = scanner.scan(categories=["LLM01", "LLM09"])
+    report = m.LLMScanner(_Target("defended, sorry I can't help with that")).scan(categories=["LLM01", "LLM09"])
 
     assert report.skipped_infrastructure > 0
     assert "Adversarial Chunking Exploit" in report.skipped_techniques
@@ -102,9 +105,7 @@ def test_skipped_infrastructure_probes_are_reported_not_silently_dropped():
 def test_skipped_probes_do_not_appear_in_results_or_risk_score():
     """Excluding infra-only probes must not distort risk_score in either
     direction -- they simply never enter the weighted-score calculation."""
-    scanner = m.LLMScanner(model="llama3.2:3b")
-    with patch.object(m, "send_probe", return_value=("I cannot help with that, sorry.", 1)):
-        report = scanner.scan(categories=["LLM01", "LLM09"])
+    report = m.LLMScanner(_Target("I cannot help with that, sorry.")).scan(categories=["LLM01", "LLM09"])
 
     result_names = {r.technique_name for r in report.results}
     assert "Embedding Collision" not in result_names

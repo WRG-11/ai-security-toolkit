@@ -23,6 +23,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 
 import llm_scanner as m  # noqa: E402
+import targets  # noqa: E402
 from attacks.library import AttackCategory  # noqa: E402
 
 SYSTEM_PROMPT = "You are a helpful customer-support assistant for MegaCorp."
@@ -77,9 +78,15 @@ def test_other_categories_keep_the_engagement_fallback():
                            category=AttackCategory.NAIVE_OVERRIDE) == (True, "engagement")
 
 
-def test_the_scanner_passes_each_probes_category(monkeypatch):
-    monkeypatch.setattr(m, "send_probe", lambda *a, **k: (RESTATES_OWN_POLICY, 1))
-    report = m.LLMScanner(model="x").scan(categories=["LLM01", "LLM09"])
+class _Target:
+    model = "fake-model"
+
+    def send(self, messages, system=None):
+        return targets.Reply(RESTATES_OWN_POLICY)
+
+
+def test_the_scanner_passes_each_probes_category():
+    report = m.LLMScanner(_Target()).scan(categories=["LLM01", "LLM09"])
     rag = [r for r in report.results if r.category == RAG.value]
     assert rag, "no RAG-poisoning probe was scored -- the selector is broken"
     assert all(r.success is False for r in rag), [(r.technique_name, r.success_reason) for r in rag]
