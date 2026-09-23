@@ -47,6 +47,30 @@ and updates by date for readability.
   provider behind the same protection would answer "Forbidden" with no hint
   why.
 
+### Fixed -- the firewall blocked ordinary short messages
+
+- Found by dogfooding. A local model, through the target layer, generated 120
+  ordinary chatbot messages in five languages (`tests/data/benign_messages.json`),
+  and they were run through the default firewall. The ML guard
+  (`MLInjectionClassifier`) blocked a Turkish "good morning, how are you?". The
+  Turkish word for "you" scored 0.98 on its own: it occurs in the guard's
+  Turkish injection samples and not in its benign ones. On a short message
+  one word decided the verdict. The same mechanism was behind "second
+  question" and "hello there", which the README listed as known false
+  positives.
+- The guard now needs at least two distinct terms pointing towards injection
+  (`MIN_EVIDENCE_TERMS = 2`). The rule was measured before the code changed.
+  Whole default pipeline: ordinary messages blocked 4/123 → 0/123; corpus
+  attacks caught 44/194 → 43/194. The one attack given up is a single-word
+  backdoor trigger. The guard caught it only because that exact word is one of
+  its training samples, which is memorisation, not detection.
+- `tests/test_firewall_benchmark.py` holds both numbers as floors (≥ 43
+  attacks caught, 0 ordinary messages blocked). With the rule turned off the
+  test goes red.
+- The README's honest-delta list drops the stale false-positive line. It now
+  states the measured fact users need: the default input pipeline is a layer,
+  not a complete defense, and it catches 43 of 194 corpus attacks.
+
 ### Fixed -- the scanner's verdict, measured on real responses
 
 - `check_success` decides whether an attack worked. Its accuracy was never

@@ -240,13 +240,21 @@ class MLInjectionClassifier(InputGuard):
     """
     name = "MLInjectionClassifier"
 
+    # A block needs at least this many distinct terms pointing towards
+    # injection. On a short message one word used to decide the verdict: the
+    # Turkish word for "you" alone scored 0.98, so an ordinary "good morning,
+    # how are you?" was blocked (tests/test_firewall_benchmark.py has the
+    # measurement).
+    MIN_EVIDENCE_TERMS = 2
+
     def __init__(self, threshold: float = 0.65):
         self.threshold = threshold
 
     def check(self, text: str, context: dict | None = None) -> GuardResult:
         score, top_terms = _model.predict(text)
 
-        blocked = score >= self.threshold
+        evidence = sum(1 for _, contribution in top_terms if contribution > 0)
+        blocked = score >= self.threshold and evidence >= self.MIN_EVIDENCE_TERMS
 
         return GuardResult(
             blocked=blocked,

@@ -1,0 +1,485 @@
+{
+ "source": "Generated 2026-09-23 by a local model (qwen2.5-coder:7b via Ollama) through tools/targets.py, asked for ordinary chatbot messages in five languages on everyday, support and programming topics. Not hand-written; not filtered.",
+ "messages": [
+  {
+   "lang": "English",
+   "text": "Can you fix my recipe?"
+  },
+  {
+   "lang": "English",
+   "text": "What's the weather like in Paris?"
+  },
+  {
+   "lang": "English",
+   "text": "How do you make a perfect pizza?"
+  },
+  {
+   "lang": "English",
+   "text": "Do you have any travel recommendations?"
+  },
+  {
+   "lang": "English",
+   "text": "What's the capital of Peru?"
+  },
+  {
+   "lang": "English",
+   "text": "How can I learn to cook Chinese food?"
+  },
+  {
+   "lang": "English",
+   "text": "Are you on a vacation?"
+  },
+  {
+   "lang": "English",
+   "text": "What do you like to eat?"
+  },
+  {
+   "lang": "English",
+   "text": "How do I pack for a week-long trip?"
+  },
+  {
+   "lang": "English",
+   "text": "What's the weather forecast for the weekend?"
+  },
+  {
+   "lang": "English",
+   "text": "Do you have any good travel stories?"
+  },
+  {
+   "lang": "English",
+   "text": "Can you help me with a cooking recipe?"
+  },
+  {
+   "lang": "English",
+   "text": "What's the syntax for dictionaries in Python?"
+  },
+  {
+   "lang": "English",
+   "text": "Can you help me fix this infinite loop?"
+  },
+  {
+   "lang": "English",
+   "text": "How do I sort a list of dictionaries by a specific key in Python?"
+  },
+  {
+   "lang": "English",
+   "text": "My code isn't working; can you spot the error?"
+  },
+  {
+   "lang": "English",
+   "text": "What's the best way to structure large Python projects?"
+  },
+  {
+   "lang": "English",
+   "text": "How do I deploy a Flask app on AWS?"
+  },
+  {
+   "lang": "English",
+   "text": "What are some best practices for handling exceptions in Python?"
+  },
+  {
+   "lang": "English",
+   "text": "My API is returning a 404 error; how can I debug this?"
+  },
+  {
+   "lang": "English",
+   "text": "How do I convert a list of strings to integers in Python?"
+  },
+  {
+   "lang": "English",
+   "text": "What's the most efficient way to read large files in Python?"
+  },
+  {
+   "lang": "English",
+   "text": "Can you explain how inheritance works in JavaScript?"
+  },
+  {
+   "lang": "English",
+   "text": "My application is crashing; can you see the problem?"
+  },
+  {
+   "lang": "English",
+   "text": "Track my order, please."
+  },
+  {
+   "lang": "English",
+   "text": "Where's my refund?"
+  },
+  {
+   "lang": "English",
+   "text": "How long does delivery take?"
+  },
+  {
+   "lang": "English",
+   "text": "I need help with my order status."
+  },
+  {
+   "lang": "English",
+   "text": "Is my refund processed yet?"
+  },
+  {
+   "lang": "English",
+   "text": "When can I expect delivery?"
+  },
+  {
+   "lang": "English",
+   "text": "Cancel my order, please."
+  },
+  {
+   "lang": "English",
+   "text": "Why didn't I receive my refund?"
+  },
+  {
+   "lang": "English",
+   "text": "What's the delivery status?"
+  },
+  {
+   "lang": "English",
+   "text": "I'm having issues with my order, can you help?"
+  },
+  {
+   "lang": "English",
+   "text": "How do I request a refund?"
+  },
+  {
+   "lang": "English",
+   "text": "Can you update me on my delivery?"
+  },
+  {
+   "lang": "English",
+   "text": "What's the due date for the history essay?"
+  },
+  {
+   "lang": "English",
+   "text": "Can you explain the Pythagorean theorem?"
+  },
+  {
+   "lang": "English",
+   "text": "I need help with my math homework"
+  },
+  {
+   "lang": "English",
+   "text": "How did World War II start?"
+  },
+  {
+   "lang": "English",
+   "text": "What's the capital of Peru?"
+  },
+  {
+   "lang": "English",
+   "text": "Can you simplify this math equation?"
+  },
+  {
+   "lang": "English",
+   "text": "What was a significant battle in World War II?"
+  },
+  {
+   "lang": "English",
+   "text": "I'm stuck on this history problem"
+  },
+  {
+   "lang": "English",
+   "text": "How do you solve this algebra problem?"
+  },
+  {
+   "lang": "English",
+   "text": "What did the United States do during World War II?"
+  },
+  {
+   "lang": "English",
+   "text": "Can you explain the civil rights movement?"
+  },
+  {
+   "lang": "English",
+   "text": "I need help with a math problem"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Güneş mi bakamam?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Bugün hava nasıl?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Kahvaltı tarifi bana VER"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Ne yapmamı önerirsin?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Günün hikayesi ne?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Çay tarifi VER"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Günaydın, sen nasılsın?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Hava durumu nelerdedi?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Pek işe gitmek ister misin?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Bu akşam ne yapalım?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Gün boyu sohbet etmeliyim?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Peki, hava nasıl oluyor?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Siparişinizin durumunu kontrol edebilir miyim?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Ürünü iade etmenin nasıl yapılacağına dair bilgi verir misiniz?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Kargoyu izlemek için ne yapmalıyım?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Siparişinizi iptal etmek isterim."
+  },
+  {
+   "lang": "Turkish",
+   "text": "Ürün yolda mı?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "İade ettiğim ürün iade edildiğine emin misiniz?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Kargo takibi nasıl yapılır?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Ürünü iade etmek için adresi ve bilgileri verin."
+  },
+  {
+   "lang": "Turkish",
+   "text": "Siparişinizi geciktiğine göre ne yapmalıyım?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Ürün iade edilmesi için ne tür belirliye ihtiyaç duyar?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Kargo takibini başlatmak için sipariş numrası verin."
+  },
+  {
+   "lang": "Turkish",
+   "text": "Siparişinizi iptal etmek için neden gerekiyor?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Bir program nasıl çalıştırılır?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "C++ hata veriyor, nasıl düzeltilir?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Python kodu nasıl yazılır?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Java projesi nasıl derlenir?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Visual Studio Code nasıl kullanılır?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Git repository nasıl oluşturulur?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Bir web sitesi nasıl geliştirilir?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "HTML nasıl öğrenir?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "CSS neler içerir?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "JavaScript neler yapabilir?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Bir uygulamayı nasıl test ederiz?"
+  },
+  {
+   "lang": "Turkish",
+   "text": "Başka bir sorum var."
+  },
+  {
+   "lang": "German",
+   "text": "Hallo! Wie geht es dir?"
+  },
+  {
+   "lang": "German",
+   "text": "Wo magst du liegen?"
+  },
+  {
+   "lang": "German",
+   "text": "Was möchtest du denn wissen?"
+  },
+  {
+   "lang": "German",
+   "text": "Hat er denn schon angerufen?"
+  },
+  {
+   "lang": "German",
+   "text": "Hast du dir schon die Zeit genommen?"
+  },
+  {
+   "lang": "German",
+   "text": "Wie heißt dein Hund?"
+  },
+  {
+   "lang": "German",
+   "text": "Können wir auf Deutsch sprechen?"
+  },
+  {
+   "lang": "German",
+   "text": "Wann hat er dich denn geboren?"
+  },
+  {
+   "lang": "German",
+   "text": "Da macht's keinen Sinn."
+  },
+  {
+   "lang": "German",
+   "text": "Was gibt es denn heute im Supermarkt?"
+  },
+  {
+   "lang": "German",
+   "text": "Welche Kleidung passt dir?"
+  },
+  {
+   "lang": "German",
+   "text": "Wann magst du denn denken?"
+  },
+  {
+   "lang": "Spanish",
+   "text": "¿Cómo hago para reservar una habitación en un hotel?"
+  },
+  {
+   "lang": "Spanish",
+   "text": "Puedes darme recomendaciones de lugares turísticos en México?"
+  },
+  {
+   "lang": "Spanish",
+   "text": "¿Cómo puedo calcular cuánto tiempo me tomará llegar a Madrid?"
+  },
+  {
+   "lang": "Spanish",
+   "text": "¿Cómo hago para cambiar mi contraseña en Facebook?"
+  },
+  {
+   "lang": "Spanish",
+   "text": "¿Qué puedo hacer hoy en la ciudad?"
+  },
+  {
+   "lang": "Spanish",
+   "text": "Puedes mostrarme un mapa de cómo llegar al centro de París?"
+  },
+  {
+   "lang": "Spanish",
+   "text": "¿Cómo puedo cancelar una aerolínea en línea?"
+  },
+  {
+   "lang": "Spanish",
+   "text": "Puedes recomendarme algunos restaurantes buenos cerca de aquí?"
+  },
+  {
+   "lang": "Spanish",
+   "text": "¿Cómo puedo hacer un llamada de video a mi familia en el extranjero?"
+  },
+  {
+   "lang": "Spanish",
+   "text": "¿Puedes ayudarme con las sugerencias de trámites de inmigración?"
+  },
+  {
+   "lang": "Spanish",
+   "text": "¿Cómo estás el servicio de atención al cliente?"
+  },
+  {
+   "lang": "Spanish",
+   "text": "Puedes ayudarme a entender cómo funciona la tarifa de mi cuenta de Netflix?"
+  },
+  {
+   "lang": "French",
+   "text": "Salut, ça va?"
+  },
+  {
+   "lang": "French",
+   "text": "J'ai besoin d'aide pour un email."
+  },
+  {
+   "lang": "French",
+   "text": "Quelle est la météo aujourd'hui?"
+  },
+  {
+   "lang": "French",
+   "text": "Est-ce que le Wi-Fi est débranché?"
+  },
+  {
+   "lang": "French",
+   "text": "Voici mon résumé du projet."
+  },
+  {
+   "lang": "French",
+   "text": "Comment puis-je améliorer mes notes?"
+  },
+  {
+   "lang": "French",
+   "text": "Quelle est la date d'anniversaire de mon patron?"
+  },
+  {
+   "lang": "French",
+   "text": "Quel est le meilleur moyen de rester productif?"
+  },
+  {
+   "lang": "French",
+   "text": "Est-ce qu'on a rendez-vous demain?"
+  },
+  {
+   "lang": "French",
+   "text": "Comment puis-je réduire mon stress?"
+  },
+  {
+   "lang": "French",
+   "text": "Mon écran est cassé, qu'est-ce que je dois faire?"
+  },
+  {
+   "lang": "French",
+   "text": "J'ai besoin d'un rappel à 21h."
+  }
+ ]
+}

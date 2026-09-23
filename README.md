@@ -256,7 +256,7 @@ actually run against each platform.
 - **Solo-maintained** — primary author is one person; community contributions welcome but bus factor is real
 - **No SARIF / SIEM integration yet** — scan output is JSON / text; SARIF schema for code-scanning upload would be a future addition
 - **The firewall proxy is not a drop-in OpenAI server** — it inspects and forwards only the last user message and ignores `model` and `stream`; see [what the proxy does not do](tools/README.md#what-the-http-proxy-does-not-do)
-- **The default ML guard has false positives on short benign text** — measured: "second question" (0.74) and "hello there" (0.75) are blocked against a 0.65 threshold
+- **The firewall's default input pipeline is a layer, not a complete defense** — measured on the lab's attack corpus it blocks 43 of 194 attacks, while blocking 0 of 123 ordinary messages in five languages ([`tests/test_firewall_benchmark.py`](tests/test_firewall_benchmark.py) holds both numbers as floors)
 
 If you need enterprise-scale fleet probing, reach for PyRIT. If you need an extensive academic-style scanner, reach for Garak. If you need conversational guardrails as a service, reach for NeMo. Reach for ai-security-toolkit when you want a small, hackable, MIT-licensed kit you can read end-to-end in an afternoon.
 
@@ -270,7 +270,7 @@ MITRE ATLAS                  [######----]  <!-- METRIC:atlas_technique_count -->
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
-Test Suite                   [######----]  <!-- METRIC:test_module_count -->43<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->56<!-- /METRIC:coverage_floor -->% enforced floor
+Test Suite                   [######----]  <!-- METRIC:test_module_count -->44<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->56<!-- /METRIC:coverage_floor -->% enforced floor
 Framework Provenance         [####------]  10 attacks cite a Garak probe, 6 a PyRIT strategy (corpus provenance, not integration)
 ```
 

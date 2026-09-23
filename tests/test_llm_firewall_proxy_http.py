@@ -142,14 +142,6 @@ class DocumentedProxyLimits(_Base):
         self.assertTrue(headers["Content-Type"].startswith("application/json"))
         self.assertEqual(json.loads(raw)["model"], "configured-model")
 
-    def test_the_readme_false_positive_examples_are_still_blocked(self):
-        # README.md cites these as measured false positives of the default ML
-        # guard. When one stops being blocked, that README line is stale.
-        for text in ("second question", "hello there"):
-            blocked, results = self.proxy.firewall.check_input(text)
-            self.assertTrue(blocked, text)
-            self.assertIn("ML injection score", next(r.reason for r in results if r.blocked))
-
 
 class MalformedInputGetsA4xx(_Base):
     overrides = {"max_body_bytes": 2048}
