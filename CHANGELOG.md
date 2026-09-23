@@ -9,6 +9,37 @@ and updates by date for readability.
 
 ## [Unreleased]
 
+### Added -- one target layer for any LLM (`tools/targets.py`)
+
+- The scanner, the firewall proxy and the labs only spoke Ollama's native API,
+  or at best an OpenAI-compatible one, with model names built in. The new
+  target layer puts one interface, `send(messages, system) -> Reply`, in front
+  of four adapters:
+  - `openai-compatible`: OpenAI, Azure, Groq, Together, OpenRouter, Mistral,
+    DeepSeek, vLLM, LM Studio and Ollama's `/v1` endpoint;
+  - `anthropic`: the Messages API;
+  - `gemini`: `generateContent`;
+  - `http`: any other chat endpoint, given a JSON body template and the path
+    to the answer.
+  It is stdlib only, like the rest of `tools/`. There is no default model.
+- A provider's own safety block comes back as `refused_by_provider=True`, not
+  as an error or an empty answer. This covers OpenAI's `message.refusal` and
+  `content_filter`, Anthropic's `stop_reason: "refusal"`, and Gemini's safety
+  `finishReason` and `promptFeedback.blockReason`. Otherwise the same model
+  would score differently depending on who hosts it.
+- Keys come from environment variables only. They never appear in `repr`, are
+  redacted from error messages (providers echo a bad key back), and are never
+  sent over plain http to anything but localhost. Gemini's key goes in the
+  `x-goog-api-key` header, not the URL. Rate limits and overloads (429, 5xx,
+  529) are retried with backoff and honour `Retry-After`.
+- Wire formats were checked against each provider's official SDK source.
+  While checking, a documentation page's summary gave a wrong host and auth
+  header for Anthropic; the SDK source corrected it. 31 tests replay the
+  documented shapes from a local server, and 9 mutations of the security and
+  refusal branches each turn a test red. The OpenAI-compatible adapter was
+  also run against a real local model through Ollama's `/v1` endpoint.
+  Anthropic and Gemini were **not** called live: that needs paid keys.
+
 ### Fixed (security) -- the firewall's HTTP proxy
 
 - `FirewallProxyHandler.do_POST`, the proxy's network entry point, had no test.
