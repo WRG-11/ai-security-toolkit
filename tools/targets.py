@@ -46,6 +46,10 @@ Message = dict  # {"role": "user" | "assistant", "content": str}
 
 _LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
 _RETRYABLE_STATUS = {408, 409, 425, 429, 500, 502, 503, 504, 529}
+# urllib's default "Python-urllib/3.x" is refused by Cloudflare-fronted APIs
+# with 403 "error code: 1010" (measured 2026-09-23, every model of one
+# provider). An honest, explicit User-Agent gets through.
+USER_AGENT = "ai-security-toolkit (+https://github.com/WRG-11/ai-security-toolkit)"
 
 
 @dataclass(frozen=True)
@@ -88,7 +92,8 @@ def _redact(text: str, secret: str | None) -> str:
 def _post_json(url: str, headers: dict, body: dict, timeout: float, secret: str | None) -> tuple[Any, int]:
     """POST JSON, return (parsed body, elapsed ms). Every failure is a TargetError."""
     data = json.dumps(body).encode("utf-8")
-    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json", **headers})
+    req = urllib.request.Request(
+        url, data=data, headers={"Content-Type": "application/json", "User-Agent": USER_AGENT, **headers})
     start = time.monotonic()
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310: scheme validated by _check_url

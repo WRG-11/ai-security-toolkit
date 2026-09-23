@@ -211,6 +211,18 @@ class GenericHTTP(_FakeCase):
             t.GenericHTTP(url="http://127.0.0.1:1", body_template='{"q": "fixed"}', response_path="a")
 
 
+class UserAgent(_FakeCase):
+    def test_requests_carry_the_toolkit_user_agent_not_urllibs(self):
+        # Measured 2026-09-23: a Cloudflare-fronted provider answered urllib's
+        # default "Python-urllib/3.12" with 403 "error code: 1010" (browser
+        # signature ban) on every model; an explicit User-Agent got through.
+        self.fake.reply(_openai_ok())
+        t.OpenAICompatible(model="m", base_url=self.fake.url).send([{"role": "user", "content": "x"}])
+        ua = self.fake.last["headers"].get("user-agent", "")
+        self.assertTrue(ua.startswith("ai-security-toolkit"), ua)
+        self.assertNotIn("Python-urllib", ua)
+
+
 class MaxTokens(_FakeCase):
     """Optional output cap. Not sent unless asked for: some OpenAI models
     reject `max_tokens`, so the widest-compatible default is to omit it."""

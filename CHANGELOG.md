@@ -39,6 +39,13 @@ and updates by date for readability.
   refusal branches each turn a test red. The OpenAI-compatible adapter was
   also run against a real local model through Ollama's `/v1` endpoint.
   Anthropic and Gemini were **not** called live: that needs paid keys.
+- Found by dogfooding the layer against free hosted models: requests went out
+  with urllib's default `Python-urllib/3.12` User-Agent. A Cloudflare-fronted
+  provider refused that with 403 "error code: 1010" (a browser-signature ban)
+  on every one of its models, and an explicit User-Agent got through. Every
+  request now sends `ai-security-toolkit (+repo URL)`. Without this, any
+  provider behind the same protection would answer "Forbidden" with no hint
+  why.
 
 ### Changed -- the firewall forwards to any LLM (breaking, with a deprecation path)
 
