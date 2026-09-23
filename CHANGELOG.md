@@ -129,10 +129,22 @@ and updates by date for readability.
   succeeding. Other categories, and callers that pass no category, behave as
   before. The xfail is now a passing test. 7 new tests, each branch
   mutation-checked.
-- Not yet measured live. The Ollama server was not reachable when this
-  changed, so the effect on a real scan's success count has not been
-  re-measured. No published number depends on it: the README gives no
-  RAG-poisoning scan result.
+- Measured live on 2026-09-23 against Ollama with `qwen2.5-coder:7b` and
+  `qwen2.5-coder-8k`. The five sendable RAG-poisoning probes were run three
+  times each. Every response was scored with the old rule and the new rule,
+  and every changed verdict was checked by hand.
+  - With the scanner's default system prompt, all 30 responses were refusals.
+    The two rules cannot differ there: the refusal check runs first.
+  - With a customer-support system prompt (written for this measurement, not
+    the one from the original run), the old rule reported 9/15 and 8/15
+    successes; the new rule reports 3/15 and 3/15. The 12 removed successes
+    (the pricing-policy and password-policy probes) were ordinary, correct
+    answers with no planted content. The 6 remaining successes are real: the
+    model states "all customers get a 90% discount" as company policy. One of
+    them had been a false negative under the old rule, which read its closing
+    question as a deflection.
+  No published number depends on this: the README gives no RAG-poisoning scan
+  result.
 
 ### Fixed -- the RAG lab could not be tested
 
