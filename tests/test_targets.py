@@ -249,6 +249,37 @@ class MaxTokens(_FakeCase):
         self.assertEqual(target.max_tokens, 32)
 
 
+class Temperature(_FakeCase):
+    """Optional, omitted unless set: some OpenAI models reject any value but 1."""
+
+    def test_openai_omits_it_by_default_and_sends_it_when_set(self):
+        self.fake.reply(_openai_ok()).reply(_openai_ok())
+        t.OpenAICompatible(model="m", base_url=self.fake.url).send([{"role": "user", "content": "x"}])
+        self.assertNotIn("temperature", self.fake.last["body"])
+        t.OpenAICompatible(model="m", base_url=self.fake.url, temperature=0.1).send(
+            [{"role": "user", "content": "x"}])
+        self.assertEqual(self.fake.last["body"]["temperature"], 0.1)
+
+    def test_zero_is_sent_not_dropped(self):
+        self.fake.reply(_openai_ok())
+        t.OpenAICompatible(model="m", base_url=self.fake.url, temperature=0.0).send(
+            [{"role": "user", "content": "x"}])
+        self.assertEqual(self.fake.last["body"]["temperature"], 0.0)
+
+    def test_anthropic_and_gemini(self):
+        self.fake.reply({"stop_reason": "end_turn", "content": [{"type": "text", "text": "a"}]})
+        t.Anthropic(model="c", api_key=KEY, base_url=self.fake.url, temperature=0.2).send(
+            [{"role": "user", "content": "x"}])
+        self.assertEqual(self.fake.last["body"]["temperature"], 0.2)
+        self.fake.reply({"candidates": [{"finishReason": "STOP", "content": {"parts": [{"text": "a"}]}}]})
+        t.Gemini(model="g", api_key=KEY, base_url=self.fake.url, temperature=0.3).send(
+            [{"role": "user", "content": "x"}])
+        self.assertEqual(self.fake.last["body"]["generationConfig"], {"temperature": 0.3})
+
+    def test_the_factory_passes_it_through(self):
+        self.assertEqual(t.build_target("ollama", "m", env={}, temperature=0.1).temperature, 0.1)
+
+
 class Errors(_FakeCase):
     def test_rate_limit_is_retryable_and_keeps_the_provider_message(self):
         self.fake.reply({"error": {"message": "slow down", "type": "rate_limit_error"}}, status=429)

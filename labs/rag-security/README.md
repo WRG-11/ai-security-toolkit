@@ -72,19 +72,30 @@ Determine whether specific data exists in the knowledge base.
 
 ## Quick Start
 
+Answers come from any LLM the toolkit's target layer speaks (OpenAI-compatible
+APIs such as OpenAI, Groq, OpenRouter, vLLM or Ollama; Anthropic; Gemini).
+There is no default model: pass `--provider` and `--model`. Keys are read from
+the environment (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, or
+the variable named by `--api-key-env`).
+
 ```bash
-# Setup (creates ChromaDB + loads documents)
+# Setup (creates ChromaDB + loads documents; no model needed)
 python vulnerable_rag.py --setup
 
+# Run all attack scenarios against a local model
+python vulnerable_rag.py --attack --provider ollama --model <local-model>
+
+# The same attacks with the defenses enabled, against a hosted model
+python vulnerable_rag.py --attack --defend --provider openai --model <model>
+
 # Interactive mode (try attacks manually)
-python vulnerable_rag.py --interactive
-
-# Run all attack scenarios
-python vulnerable_rag.py --attack
-
-# Run the attacks with the defenses enabled
-python vulnerable_rag.py --attack --defend
+python vulnerable_rag.py --interactive --provider anthropic --model <model>
 ```
+
+Answers are sampled at `--temperature 0.1` and capped at `--max-tokens 256`
+by default, as the numbers below were measured. Without a fixed low
+temperature the result moves between runs: on 2026-09-23 the same model gave
+4/12 leaks at its default temperature and 6/12 at 0.1 (twice).
 
 ## Results
 
@@ -117,6 +128,5 @@ run without chromadb or a model.
 ## Requirements
 
 - Python 3.10+
-- ChromaDB (`pip install chromadb`)
-- sentence-transformers (`pip install sentence-transformers`)
-- Ollama with a model loaded
+- `pip install -e ".[rag]"` (chromadb and sentence-transformers)
+- A model to answer with: any provider above, local or hosted

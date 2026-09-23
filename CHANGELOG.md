@@ -47,6 +47,24 @@ and updates by date for readability.
   provider behind the same protection would answer "Forbidden" with no hint
   why.
 
+### Changed -- the RAG lab answers with any LLM; sampling temperature is explicit
+
+- `labs/rag-security/vulnerable_rag.py` generated answers with Ollama's
+  `/api/chat` and a built-in `MODEL = "llama3.2:3b"`. It now uses the target
+  layer (`--provider/--model/--base-url/--api-key-env`), with no default
+  model. `--setup` needs no model. `--model` without `--provider` still means
+  Ollama for one release, with a warning. `MODEL`, `OLLAMA_URL` and the
+  lab's `_http_only` are gone.
+- The old call sent `temperature: 0.1` and `num_predict: 256`. The adapters
+  now take an optional `temperature`, which is omitted unless set: some
+  OpenAI models accept only the default. The lab defaults to `--temperature
+  0.1 --max-tokens 256`, as before. This matters for the lab's numbers. With
+  the same model, the first run through the new layer (no temperature sent)
+  gave 4/12 leaks. Two runs at 0.1 gave 6/12, the published value. The lab
+  README now says so.
+- The lab README's quick start and requirements name `--provider` /
+  `--model` and the `[rag]` extra instead of "Ollama with a model loaded".
+
 ### Changed -- the firewall forwards to any LLM (breaking, with a deprecation path)
 
 - The proxy's upstream was Ollama's `/api/chat`, and `ollama_model` defaulted

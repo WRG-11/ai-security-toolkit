@@ -140,6 +140,7 @@ class OpenAICompatible:
     api_key: str | None = field(default=None, repr=False)
     timeout: float = 60.0
     max_tokens: int | None = None  # omitted unless set: some OpenAI models reject it
+    temperature: float | None = None  # omitted unless set: some OpenAI models accept only 1
 
     def __post_init__(self):
         _require_model(self.model)
@@ -151,6 +152,8 @@ class OpenAICompatible:
         body: dict = {"model": self.model, "messages": msgs, "stream": False}
         if self.max_tokens:
             body["max_tokens"] = self.max_tokens
+        if self.temperature is not None:
+            body["temperature"] = self.temperature
         data, ms = _post_json(f"{self.base_url}/chat/completions", headers, body, self.timeout, self.api_key)
         try:
             choice = data["choices"][0]
@@ -172,6 +175,7 @@ class Anthropic:
     base_url: str = "https://api.anthropic.com"
     max_tokens: int = 1024
     timeout: float = 60.0
+    temperature: float | None = None
 
     def __post_init__(self):
         _require_model(self.model)
@@ -181,6 +185,8 @@ class Anthropic:
         body: dict = {"model": self.model, "max_tokens": self.max_tokens, "messages": list(messages)}
         if system:
             body["system"] = system
+        if self.temperature is not None:
+            body["temperature"] = self.temperature
         headers = {"x-api-key": self.api_key or "", "anthropic-version": "2023-06-01"}
         data, ms = _post_json(f"{self.base_url}/v1/messages", headers, body, self.timeout, self.api_key)
         if not isinstance(data, dict):
@@ -205,6 +211,7 @@ class Gemini:
     base_url: str = "https://generativelanguage.googleapis.com"
     timeout: float = 60.0
     max_tokens: int | None = None
+    temperature: float | None = None
 
     def __post_init__(self):
         _require_model(self.model)
@@ -216,8 +223,13 @@ class Gemini:
         body: dict = {"contents": contents}
         if system:
             body["systemInstruction"] = {"parts": [{"text": system}]}
+        generation: dict = {}
         if self.max_tokens:
-            body["generationConfig"] = {"maxOutputTokens": self.max_tokens}
+            generation["maxOutputTokens"] = self.max_tokens
+        if self.temperature is not None:
+            generation["temperature"] = self.temperature
+        if generation:
+            body["generationConfig"] = generation
         name = self.model[len("models/"):] if self.model.startswith("models/") else self.model
         url = f"{self.base_url}/v1beta/models/{urllib.parse.quote(name, safe='-._')}:generateContent"
         data, ms = _post_json(url, {"x-goog-api-key": self.api_key or ""}, body, self.timeout, self.api_key)
@@ -324,7 +336,8 @@ PROVIDERS = tuple(_PROVIDERS)
 def build_target(provider: str, model: str, *, base_url: str | None = None,
                  api_key_env: str | None = None, env: Mapping[str, str] | None = None,
                  timeout: float = 60.0, body_template: str | None = None,
-                 response_path: str | None = None, max_tokens: int | None = None) -> Target:
+                 response_path: str | None = None, max_tokens: int | None = None,
+                 temperature: float | None = None) -> Target:
     """The one place a target is configured. Keys come from the environment only."""
     if provider not in _PROVIDERS:
         raise ValueError(f"unknown provider {provider!r}; choose one of: {', '.join(PROVIDERS)}")
@@ -344,9 +357,11 @@ def build_target(provider: str, model: str, *, base_url: str | None = None,
     _require_model(model)
     if provider == "anthropic":
         return Anthropic(model=model, api_key=api_key, base_url=url or "", timeout=timeout,
-                         **({"max_tokens": max_tokens} if max_tokens else {}))
+                         temperature=temperature, **({"max_tokens": max_tokens} if max_tokens else {}))
     if provider == "gemini":
-        return Gemini(model=model, api_key=api_key, base_url=url or "", timeout=timeout, max_tokens=max_tokens)
+        return Gemini(model=model, api_key=api_key, base_url=url or "", timeout=timeout, max_tokens=max_tokens,
+                      temperature=temperature)
     if not url:
         raise ValueError(f"provider {provider!r} needs a base URL (--base-url)")
-    return OpenAICompatible(model=model, base_url=url, api_key=api_key, timeout=timeout, max_tokens=max_tokens)
+    return OpenAICompatible(model=model, base_url=url, api_key=api_key, timeout=timeout, max_tokens=max_tokens,
+                            temperature=temperature)

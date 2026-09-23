@@ -194,7 +194,7 @@ Intentionally vulnerable LLM application for learning OWASP LLM Top 10 attacks a
 
 Vulnerable RAG (Retrieval-Augmented Generation) system demonstrating 5 attack scenarios.
 
-- ChromaDB + sentence-transformers + Ollama
+- ChromaDB + sentence-transformers + any LLM (local or hosted, `--provider` / `--model`)
 - Attacks: direct extraction, indirect injection, context overflow, prompt override, membership inference
 - Defense mode: retrieval filtering + poisoned document detection
 - Result on `qwen2.5-coder:7b` (2026-09-23): 6/12 answers leaked undefended, 0/12 defended; [how it was measured](labs/rag-security/README.md#results)
