@@ -45,7 +45,7 @@ This repo is that toolkit. Core tools (Tools section below) are stdlib-only Pyth
 | Tool | Description | Lines |
 |------|-------------|-------|
 | [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack patterns, **F1 0.91 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | <!-- METRIC:lines_ml -->1251<!-- /METRIC:lines_ml --> |
-| [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> probes, severity mapping | <!-- METRIC:lines_scanner -->958<!-- /METRIC:lines_scanner --> |
+| [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> probes, severity mapping | <!-- METRIC:lines_scanner -->983<!-- /METRIC:lines_scanner --> |
 | [LLM Firewall](tools/llm_firewall.py) | 10-guard security middleware (22 registered, 12 opt-in), HTTP proxy mode, plugin architecture | <!-- METRIC:lines_firewall -->1223<!-- /METRIC:lines_firewall --> |
 
 **Key features:**
@@ -270,7 +270,7 @@ MITRE ATLAS                  [######----]  <!-- METRIC:atlas_technique_count -->
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
-Test Suite                   [######----]  <!-- METRIC:test_module_count -->42<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->56<!-- /METRIC:coverage_floor -->% enforced floor
+Test Suite                   [######----]  <!-- METRIC:test_module_count -->43<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->56<!-- /METRIC:coverage_floor -->% enforced floor
 Framework Provenance         [####------]  10 attacks cite a Garak probe, 6 a PyRIT strategy (corpus provenance, not integration)
 ```
 
