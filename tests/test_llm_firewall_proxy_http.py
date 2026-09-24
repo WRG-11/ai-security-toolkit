@@ -304,5 +304,47 @@ class ConfigCarriesTheProxySettings(unittest.TestCase):
                           back.trust_session_header), ("0.0.0.0", 123, ["http://a"], True))
 
 
+class OversizedBodyIsDrainedBeforeThe413(unittest.TestCase):
+    """The 413 is only visible if the rejected body was read first: a socket
+    closed with unread data is reset, not closed, and macOS clients lost the
+    response every time (`ConnectionResetError`). Reading is capped so a huge
+    Content-Length cannot make the proxy read it all."""
+
+    class _Reader:
+        def __init__(self, size: int):
+            self.left = size
+            self.read_total = 0
+
+        def read(self, n: int) -> bytes:
+            n = min(n, self.left)
+            self.left -= n
+            self.read_total += n
+            return b"x" * n
+
+    def _handler(self, available: int):
+        h = object.__new__(m.FirewallProxyHandler)
+        h.rfile = self._Reader(available)
+        h.close_connection = False
+        return h
+
+    def test_a_body_under_the_cap_is_read_to_the_end(self):
+        h = self._handler(4096)
+        h._discard_body(4096)
+        self.assertEqual(h.rfile.read_total, 4096)
+        self.assertTrue(h.close_connection)
+
+    def test_reading_stops_at_the_cap(self):
+        cap = m.FirewallProxyHandler.DISCARD_CAP_BYTES
+        h = self._handler(cap * 3)
+        h._discard_body(cap * 3)
+        self.assertEqual(h.rfile.read_total, cap)
+        self.assertTrue(h.close_connection)
+
+    def test_a_short_body_ends_the_read_without_hanging(self):
+        h = self._handler(100)
+        h._discard_body(4096)
+        self.assertEqual(h.rfile.read_total, 100)
+
+
 if __name__ == "__main__":
     unittest.main()

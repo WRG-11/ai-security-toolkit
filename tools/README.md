@@ -29,7 +29,7 @@ Written from scratch with zero dependencies (Python stdlib only) -- LLM red team
 | **Dependencies** | None (stdlib only) | None (stdlib only); any LLM to scan | None (stdlib only) |
 | **Modes** | CLI, interactive, HTTP server, file | CLI, JSON report | CLI, interactive, HTTP proxy |
 | **Output** | Risk score + threat breakdown | OWASP-mapped report | Block/allow + audit log |
-| **Lines** | <!-- METRIC:lines_ml -->1257<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->1002<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->1223<!-- /METRIC:lines_firewall --> |
+| **Lines** | <!-- METRIC:lines_ml -->1257<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->1002<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->1244<!-- /METRIC:lines_firewall --> |
 
 **All three need the repository checkout.** They import the attack corpus and
 guard implementations from `labs/vulnllm/`, which is deliberately not packaged.
