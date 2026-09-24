@@ -11,6 +11,16 @@ and updates by date for readability.
 
 ## [0.7.0] -- 2026-09-24 -- Any LLM behind one target layer, an English-only corpus, and a scanner measured on real responses
 
+### Fixed -- the firewall's 413 was lost on macOS
+
+- An oversized request was rejected before its body was read. Closing a
+  socket that still holds unread data makes the OS reset the connection
+  instead of closing it, and on macOS the client lost the 413 every time
+  (`ConnectionResetError`; all four macOS CI jobs). The proxy now reads and
+  drops the rejected body before answering, capped at 1 MiB so a huge
+  Content-Length cannot make it read everything, and closes the connection
+  after the response. Three unit tests hold the cap and the read.
+
 ### Fixed -- a probe the English pass missed, and a time stamp that gave away an offset
 
 - One attack probe in `labs/vulnllm/attacks/ch02_attacks.py` ("Completion /

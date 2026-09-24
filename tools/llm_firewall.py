@@ -684,6 +684,26 @@ class FirewallProxyHandler(BaseHTTPRequestHandler):
         else:
             self._respond(404, {"error": "Unknown endpoint. Try /firewall/health or /firewall/stats."})
 
+    #: How much of a rejected, oversized body is read before answering 413.
+    DISCARD_CAP_BYTES = 1 << 20
+
+    def _discard_body(self, length: int) -> None:
+        """Read and drop a rejected body before the 413 is sent.
+
+        Closing a socket that still holds unread request data makes the OS
+        answer with a TCP reset instead of a normal close, and the client can
+        lose the 413 that was already written (macOS does this every time).
+        Reading is capped at DISCARD_CAP_BYTES, so a huge Content-Length cannot
+        make the proxy read it all; past the cap the client may still see a
+        reset. The connection is closed after the response either way."""
+        remaining = min(length, self.DISCARD_CAP_BYTES)
+        while remaining > 0:
+            chunk = self.rfile.read(min(remaining, 65536))
+            if not chunk:
+                break
+            remaining -= len(chunk)
+        self.close_connection = True
+
     def _read_json_object(self) -> dict:
         """Read and validate the request body, raising _BadRequest on bad input.
 
@@ -698,6 +718,7 @@ class FirewallProxyHandler(BaseHTTPRequestHandler):
         if length < 0:
             raise _BadRequest(400, "Invalid Content-Length.")
         if length > _firewall().config.max_body_bytes:
+            self._discard_body(length)
             raise _BadRequest(413, "Request body too large.")
         try:
             body = self.rfile.read(length).decode("utf-8")
