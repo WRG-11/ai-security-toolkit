@@ -126,7 +126,7 @@ This demo runs the toolkit itself -- the same package `pip install` gives you,
 not a copy of it. Three layers:
 
 - **Regex engine** ({RULE_COUNT} rules): known attack signatures
-- **TF-IDF model**: statistical text analysis, trained on 194 injection payloads
+- **TF-IDF model**: statistical text analysis, trained on 193 injection payloads
 - **Char n-gram**: character-level similarity to known attack categories
 
 No external ML dependencies: Python stdlib plus a pre-trained model that ships

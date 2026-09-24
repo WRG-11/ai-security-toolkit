@@ -25,11 +25,11 @@ Written from scratch with zero dependencies (Python stdlib only) -- LLM red team
 | Feature | Injection Detector ML | LLM Scanner | LLM Firewall |
 |---------|----------------------|-------------|--------------|
 | **Purpose** | Detect prompt injection | Scan LLM for vulnerabilities | Block malicious input/output |
-| **Approach** | Hybrid ML (regex+TF-IDF+n-gram) | <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> OWASP probes | 10-guard pipeline |
+| **Approach** | Hybrid ML (regex+TF-IDF+n-gram) | <!-- METRIC:attack_payload_count -->193<!-- /METRIC:attack_payload_count --> OWASP probes | 10-guard pipeline |
 | **Dependencies** | None (stdlib only) | None (stdlib only); any LLM to scan | None (stdlib only) |
 | **Modes** | CLI, interactive, HTTP server, file | CLI, JSON report | CLI, interactive, HTTP proxy |
 | **Output** | Risk score + threat breakdown | OWASP-mapped report | Block/allow + audit log |
-| **Lines** | <!-- METRIC:lines_ml -->1255<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->1002<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->1223<!-- /METRIC:lines_firewall --> |
+| **Lines** | <!-- METRIC:lines_ml -->1257<!-- /METRIC:lines_ml --> | <!-- METRIC:lines_scanner -->1002<!-- /METRIC:lines_scanner --> | <!-- METRIC:lines_firewall -->1223<!-- /METRIC:lines_firewall --> |
 
 **All three need the repository checkout.** They import the attack corpus and
 guard implementations from `labs/vulnllm/`, which is deliberately not packaged.
@@ -44,7 +44,7 @@ dependency map.
 
 Hybrid machine learning detector combining three approaches:
 - **Regex engine** (<!-- METRIC:regex_rule_count -->9<!-- /METRIC:regex_rule_count --> rules): Override, extraction, jailbreak, secret-exfil, encoding, delimiter, tool-abuse patterns
-- **TF-IDF model**: Log-odds scoring against <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> injection + <!-- METRIC:benign_sample_count -->80<!-- /METRIC:benign_sample_count --> benign samples
+- **TF-IDF model**: Log-odds scoring against <!-- METRIC:attack_payload_count -->193<!-- /METRIC:attack_payload_count --> injection + <!-- METRIC:benign_sample_count -->80<!-- /METRIC:benign_sample_count --> benign samples
 - **Char n-gram model**: Cosine similarity embedding for novel attack detection
 
 Weighted ensemble: 30% regex + 40% TF-IDF + 30% embedding
@@ -67,7 +67,7 @@ python prompt_injection_detector_ml.py --serve 5000
 python prompt_injection_detector_ml.py --benchmark
 ```
 
-**Performance:** F1 **0.93** on a 5-fold holdout (averaged over four seeds, re-measured 2026-09-23 on the English corpus) — each fold trains on four
+**Performance:** F1 **0.93** on a 5-fold holdout (averaged over four seeds, re-measured 2026-09-24 on the 193-probe English corpus) — each fold trains on four
 fifths of the data and scores the fifth it has never seen.
 
 This file used to say "100% F1 score on test set". That number was real and it
@@ -91,7 +91,7 @@ constant had been moved to 0.30 (recall 0.840), and discarded an explicit
 ## 2. LLM Scanner
 
 OWASP LLM Top 10 vulnerability scanner — sends
-<!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count -->
+<!-- METRIC:attack_payload_count -->193<!-- /METRIC:attack_payload_count -->
 attack probes and analyzes responses, against any LLM (see *Which LLM* below).
 
 ```bash
@@ -288,7 +288,7 @@ User Input
 [LLM Firewall] ──> Input Guards (6) ──> Block / Allow
     |                                        |
     v                                        v
-[LLM Scanner] ──> 194 Probes ──>    [LLM Backend]
+[LLM Scanner] ──> 193 Probes ──>    [LLM Backend]
     |                                        |
     v                                        v
 [Injection Detector] ──>             Output Guards (4) ──> Response

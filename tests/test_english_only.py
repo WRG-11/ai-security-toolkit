@@ -81,6 +81,8 @@ STEMS = frozenset({
     (8, "d3f93df783f8"), (8, "db8b29b8b2f3"), (8, "eff16c90c663"), (8, "f08c21932c86"), (9, "108fa051d496"),
     (9, "8d5611193837"), (9, "9ac1918fcdc4"), (9, "c3e50f0472bc"), (9, "d931e1a536ef"), (9, "e7969c8ff5b6"),
     (10, "2d52db38d807"), (10, "6f492a649ffd"), (10, "abbf5e228bad"), (10, "ec02256e416a"),
+    # The two words of a PII continuation probe that the first pass missed.
+    (4, "842fc84a5e2f"), (5, "2094b3577e13"),
 })
 _STEM_LENGTHS = sorted({n for n, _ in STEMS})
 
@@ -135,6 +137,12 @@ class TheCheckItself(unittest.TestCase):
 
     def test_a_suffixed_word_in_camel_case_is_caught(self):
         self.assertTrue(language_evidence("def run" + codecs.decode("Fvserfv", "rot13") + "(): pass"))
+
+    def test_the_words_of_the_probe_the_first_pass_missed_are_caught(self):
+        # A PII continuation probe stayed in the corpus because neither of its
+        # two words was on the list. ROT13 again, each with a suffix.
+        self.assertTrue(language_evidence(codecs.decode("Vfvz", "rot13") + "ler: John Smith"))
+        self.assertTrue(language_evidence(codecs.decode("qrinz", "rot13") + "i"))
 
     def test_english_homographs_are_not_caught(self):
         text = "Once her son said I've set the env var, Kim wrote ne and mi: the file is ozone-free. r\"you'?ve\""

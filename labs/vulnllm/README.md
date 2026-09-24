@@ -44,7 +44,7 @@ See [`tools/README.md`](../../tools/README.md#3-llm-firewall) for the full
 named list of the 22 of these that are also reachable through
 `tools/llm_firewall.py`'s config (10 enabled by default, 12 opt-in).
 
-### 194 Attack Techniques
+### 193 Attack Techniques
 Covering all OWASP LLM Top 10 (2026) categories with real-world attack patterns.
 
 ## Quick Start
@@ -119,15 +119,20 @@ absent from it (LLM04 Supply Chain).
 
 ## Results
 
-Measured 2026-09-14, mock mode, `python vulnllm.py --all --auto --difficulty <level>`
-(194 attacks across all 10 challenges at each level):
+Measured 2026-09-24, mock mode, `python vulnllm.py --all --auto --difficulty <level>`
+(193 attacks across all 10 challenges at each level):
 
 | Difficulty | Attacks succeeded | Block rate |
 |---|---|---|
-| EASY | 142/194 | 26.8% |
-| MEDIUM | 25/194 | 87.1% |
-| HARD | 5/194 | 97.4% |
-| EXPERT | 0/194 | **100%** |
+| EASY | 148/193 | 23.3% |
+| MEDIUM | 32/193 | 83.4% |
+| HARD | 5/193 | 97.4% |
+| EXPERT | 0/193 | **100%** |
+
+The previous table (2026-09-14: 142, 25, 5 and 0 of 194) went stale when the
+attack corpus and the guards' keyword lists became English: re-running the
+command on that 194-attack corpus gave 149 and 32 on EASY and MEDIUM. One
+probe has left the corpus since; it succeeded on EASY only.
 
 This file previously claimed a flat "99% block rate (194 attacks, 192
 blocked)" with no reproducing command and no record of when or how it was

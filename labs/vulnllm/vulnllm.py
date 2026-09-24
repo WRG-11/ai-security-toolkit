@@ -49,7 +49,7 @@ BANNER = f"""
    ╚═══╝   ╚═════╝ ╚══════╝╚═╝  ╚═══╝╚══════╝╚══════╝╚═╝     ╚═╝
 {C_RESET}
 {C_BOLD}  OWASP LLM Top 10 -- Attack & Defense Lab{C_RESET}
-{C_DIM}  v0.3 | Mock or any LLM | 10 challenges | 194 attacks{C_RESET}
+{C_DIM}  v0.3 | Mock or any LLM | 10 challenges | 193 attacks{C_RESET}
 """
 
 

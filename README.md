@@ -44,8 +44,8 @@ This repo is that toolkit. Core tools (Tools section below) are stdlib-only Pyth
 
 | Tool | Description | Lines |
 |------|-------------|-------|
-| [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack patterns, **F1 0.93 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | <!-- METRIC:lines_ml -->1255<!-- /METRIC:lines_ml --> |
-| [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> probes, severity mapping | <!-- METRIC:lines_scanner -->1002<!-- /METRIC:lines_scanner --> |
+| [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), <!-- METRIC:attack_payload_count -->193<!-- /METRIC:attack_payload_count --> attack patterns, **F1 0.93 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | <!-- METRIC:lines_ml -->1257<!-- /METRIC:lines_ml --> |
+| [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, <!-- METRIC:attack_payload_count -->193<!-- /METRIC:attack_payload_count --> probes, severity mapping | <!-- METRIC:lines_scanner -->1002<!-- /METRIC:lines_scanner --> |
 | [LLM Firewall](tools/llm_firewall.py) | 10-guard security middleware (22 registered, 12 opt-in), HTTP proxy mode, plugin architecture | <!-- METRIC:lines_firewall -->1223<!-- /METRIC:lines_firewall --> |
 
 **Key features:**
@@ -156,7 +156,7 @@ which method to call instead.
 
 Measuring it properly also surfaced a calibration bug worth naming. At the old
 default threshold of 0.50, holdout F1 was **0.110** — recall 0.058, meaning
-about 183 of 194 attacks got through. The cause is in the layer weights: on a
+about 182 of 193 attacks got through. The cause is in the layer weights: on a
 payload the model has not seen, the regex layer usually contributes 0.0 (its
 patterns know a narrow set of stock phrasings; on one holdout fold it scored 0.0
 for 36 of 39 unseen payloads), so even a strong TF-IDF signal of 0.80 tops out
@@ -164,20 +164,20 @@ at 0.39 weighted and never clears 0.50. In-sample scoring
 cannot reveal this, because there every threshold scores 1.00.
 
 The default is now **0.30**, chosen from a sweep across four seeds (1337, 42, 7,
-2026; re-measured 2026-09-23 on the English attack corpus):
+2026; re-measured 2026-09-24 on the 193-probe English attack corpus):
 
 | Threshold | F1 | Recall | Precision | False positives (of 80 benign) |
 |---|---|---|---|---|
 | 0.50 (old) | 0.110 | 0.058 | 1.000 | 0.0 |
-| 0.32 | 0.872 | 0.778 | 0.990 | 1.5 |
-| **0.30** | **0.928** | **0.876** | **0.987** | **2.25** |
-| 0.28 | 0.952 | 0.930 | 0.974 | 4.75 |
-| 0.25 | 0.963 | 0.981 | 0.945 | 11.0 |
-| 0.20 | 0.924 | 0.996 | 0.861 | 31.25 |
+| 0.32 | 0.872 | 0.780 | 0.990 | 1.5 |
+| **0.30** | **0.932** | **0.883** | **0.986** | **2.5** |
+| 0.28 | 0.954 | 0.930 | 0.978 | 4.0 |
+| 0.25 | 0.959 | 0.979 | 0.940 | 12.0 |
+| 0.20 | 0.923 | 0.996 | 0.860 | 31.25 |
 
 F1 peaks nearer 0.25, but in an input filter a false positive is a blocked
 legitimate request, so 0.30 keeps precision at 0.99 while taking recall from
-0.058 to 0.876. Pass `threshold=0.25` for a more aggressive posture — the
+0.058 to 0.883. Pass `threshold=0.25` for a more aggressive posture — the
 trade is in the table rather than left to guesswork.
 
 ## Labs
@@ -188,7 +188,7 @@ Intentionally vulnerable LLM application for learning OWASP LLM Top 10 attacks a
 
 - <!-- METRIC:challenge_count -->10<!-- /METRIC:challenge_count --> challenges across 4 difficulty levels (EASY → EXPERT)
 - <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> defense modules (input filter, PII scanner, rate limiter, LLM-as-judge...)
-- <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack techniques
+- <!-- METRIC:attack_payload_count -->193<!-- /METRIC:attack_payload_count --> attack techniques
 - Mock mode (no external API needed), or any real model via `--provider` / `--model`
 
 [Go to lab →](labs/vulnllm/)
@@ -253,12 +253,12 @@ actually run against each platform.
 
 ## Where ai-security-toolkit loses today (honest delta)
 
-- **Detection depth vs PyRIT/Garak** — those frameworks have years of contributor PRs catching long-tail attack patterns; this toolkit's 194 patterns are curated but smaller scope
+- **Detection depth vs PyRIT/Garak** — those frameworks have years of contributor PRs catching long-tail attack patterns; this toolkit's <!-- METRIC:attack_payload_count -->193<!-- /METRIC:attack_payload_count --> patterns are curated but smaller scope
 - **No cloud-native multi-tenant orchestration** — PyRIT integrates with Azure for fleet-scale probing; this toolkit is single-host
 - **Solo-maintained** — primary author is one person; community contributions welcome but bus factor is real
 - **No SARIF / SIEM integration yet** — scan output is JSON / text; SARIF schema for code-scanning upload would be a future addition
 - **The firewall proxy is not a drop-in OpenAI server** — it inspects and forwards only the last user message and ignores `model` and `stream`; see [what the proxy does not do](tools/README.md#what-the-http-proxy-does-not-do)
-- **The firewall's default input pipeline is a layer, not a complete defense** — measured on the lab's attack corpus it blocks 35 of 194 attacks, while blocking 0 of 119 ordinary messages ([`tests/test_firewall_benchmark.py`](tests/test_firewall_benchmark.py) holds both numbers as floors)
+- **The firewall's default input pipeline is a layer, not a complete defense** — measured on the lab's attack corpus it blocks 34 of 193 attacks, while blocking 0 of 119 ordinary messages ([`tests/test_firewall_benchmark.py`](tests/test_firewall_benchmark.py) holds both numbers as floors)
 
 If you need enterprise-scale fleet probing, reach for PyRIT. If you need an extensive academic-style scanner, reach for Garak. If you need conversational guardrails as a service, reach for NeMo. Reach for ai-security-toolkit when you want a small, hackable, MIT-licensed kit you can read end-to-end in an afternoon.
 

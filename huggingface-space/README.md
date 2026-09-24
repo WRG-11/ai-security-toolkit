@@ -16,7 +16,7 @@ Hybrid ML detector combining Regex (<!-- METRIC:hf_rule_count -->9<!-- /METRIC:h
 
 **Features:**
 - Zero external ML dependencies (Python stdlib only)
-- Pre-trained on 194 real attack payloads
+- Pre-trained on 193 real attack payloads
 - Three-layer detection: pattern matching + statistical analysis + character similarity
 - OWASP LLM Top 10 mapped
 

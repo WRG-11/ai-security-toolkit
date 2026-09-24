@@ -4,7 +4,7 @@ Prompt Injection Detector v0.2 -- ML hybrid
 AI/LLM Security Toolkit - Phase 3
 
 Regex (v0.1) + TF-IDF + char n-gram cosine hybrid detector.
-Trained on 194 attack payloads, zero external dependencies.
+Trained on the lab's attack payloads (labs/vulnllm/attacks), zero external dependencies.
 
 Usage:
     python prompt_injection_detector_ml.py "test input"
@@ -333,19 +333,19 @@ class CharNgramModel:
 # cannot show this: there, every threshold gives F1=1.0.
 #
 # 5-fold holdout, averaged over seeds 1337, 42, 7 and 2026 (re-measured
-# 2026-09-23 after the attack corpus and the benign samples became English):
+# 2026-09-24 on the English attack corpus of 193 probes and English benign samples):
 #
 #   threshold  F1     recall  precision  FP (out of 80 benign)
 #   0.50       0.110  0.058   1.000      0.0
-#   0.32       0.872  0.778   0.990      1.5
-#   0.30       0.928  0.876   0.987      2.25
-#   0.28       0.952  0.930   0.974      4.75
-#   0.25       0.963  0.981   0.945     11.0
-#   0.20       0.924  0.996   0.861     31.25
+#   0.32       0.872  0.780   0.990      1.5
+#   0.30       0.932  0.883   0.986      2.5
+#   0.28       0.954  0.930   0.978      4.0
+#   0.25       0.959  0.979   0.940     12.0
+#   0.20       0.923  0.996   0.860     31.25
 #
 # F1 peaks around 0.25, but in an input filter the cost of a false alarm is a
-# blocked legitimate request. 0.30 was chosen: recall improves 0.058 -> 0.876 while
-# precision stays at 0.99 (~2 FP in 80 samples). Anyone wanting a more aggressive
+# blocked legitimate request. 0.30 was chosen: recall improves 0.058 -> 0.883 while
+# precision stays at 0.99 (~2.5 FP in 80 samples). Anyone wanting a more aggressive
 # stance can pass `threshold=0.25`; the measurements are above.
 DEFAULT_THRESHOLD: float = 0.30
 
@@ -704,7 +704,9 @@ class HybridDetector:
         """Save the model as JSON."""
         data = {
             "version": self.VERSION,
-            "trained_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            # UTC, and marked as such: a local stamp next to UTC commits gives
+            # away the trainer's offset from UTC.
+            "trained_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "threshold": self.threshold,
             "weights": self.weights,
             "tfidf": self.tfidf_model.to_dict(),

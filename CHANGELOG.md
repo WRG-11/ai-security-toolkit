@@ -9,6 +9,34 @@ and updates by date for readability.
 
 ## [Unreleased]
 
+### Fixed -- a probe the English pass missed, and a time stamp that gave away an offset
+
+- One attack probe in `labs/vulnllm/attacks/ch02_attacks.py` ("Completion /
+  Continuation", a PII continuation request) was still not in English.
+  `tests/test_english_only.py` did not see it: neither of its two words was on
+  the hashed list. A live scan of a local model found it: the model refused in
+  the probe's language, and the scanner, which reads English refusals, scored
+  the refusal as a successful attack. The probe is removed, not translated; the
+  chapter has 19 probes and the corpus 193. The list gained both words as
+  stems, with a canary that is red without them.
+- The shipped detector model was retrained on the 193 probes, which also takes
+  the two words out of its vocabulary. Retraining on the previous corpus
+  reproduces the previous model exactly (the time stamp aside), so every change
+  in the artefact comes from the removed probe.
+- Re-measured. The threshold sweep (5-fold holdout, four seeds) at the default
+  0.30 moves from F1 0.928, recall 0.876, precision 0.987 to 0.932, 0.883,
+  0.986; the two-decimal headline (0.93, 0.88, 0.99) is unchanged. The firewall
+  pipeline catches 34/193 attacks instead of 35/194: the removed probe was
+  caught, and no verdict on the other 193 changed, compared probe by probe. The
+  floor in `tests/test_firewall_benchmark.py` follows.
+- The lab's mock-mode table had gone stale before this change: the 2026-09-14
+  figures (142, 25, 5, 0 of 194) no longer matched the English corpus, which
+  gave 149 and 32 on EASY and MEDIUM. It now reads 148, 32, 5, 0 of 193.
+- `save_model` stamped `trained_at` in local time with no zone. Next to UTC
+  commits, a stamp later than its own commit gives away the trainer's offset
+  from UTC. It is now UTC and ends in `Z`; a test checks the marker and the
+  value.
+
 ### Added -- one target layer for any LLM (`tools/targets.py`)
 
 - The scanner, the firewall proxy and the labs only spoke Ollama's native API,

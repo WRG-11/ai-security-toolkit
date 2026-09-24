@@ -44,7 +44,9 @@ def test_corpus_wide_infrastructure_only_count():
     ch06 (Excessive Agency, tool-calling) is a separate, larger decision,
     not folded into this exclusion pass. Chapter-by-chapter split, so a
     future probe added to the wrong chapter shows up precisely:
-      ch02: 1/20 · ch03: 13/15 · ch04: 10/15 · ch08: 8/15 · ch09: 1/12 · ch10: 6/12
+      ch02: 1/19 · ch03: 13/15 · ch04: 10/15 · ch08: 8/15 · ch09: 1/12 · ch10: 6/12
+    (ch02 was 1/20 until 2026-09-24, when a chat-testable PII continuation
+    probe left the corpus.)
     """
     from attacks.ch02_attacks import CH02_ATTACKS
     from attacks.ch03_attacks import CH03_ATTACKS
@@ -54,7 +56,7 @@ def test_corpus_wide_infrastructure_only_count():
     from attacks.ch10_attacks import CH10_ATTACKS
 
     expected = {
-        "ch02": (CH02_ATTACKS, 1, 20),
+        "ch02": (CH02_ATTACKS, 1, 19),
         "ch03": (CH03_ATTACKS, 13, 15),
         "ch04": (CH04_ATTACKS, 10, 15),
         "ch08": (CH08_ATTACKS, 8, 15),
