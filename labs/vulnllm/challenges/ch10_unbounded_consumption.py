@@ -50,32 +50,32 @@ class UnboundedConsumptionChallenge(BaseChallenge):
     def get_response_rules(self) -> list[dict]:
         if self.difficulty == Difficulty.EASY:
             return [
-                {"pattern": r"(?:10\.?000|on\s*bin|100\.?000|yuz\s*bin).*(?:kelime|word|karakter|char)",
+                {"pattern": r"(?:10[.,]?000|ten\s+thousand|100[.,]?000).*(?:word|char)",
                  "response": "A" * 50000 + "\n\nCost: $" + f"{50000 * self.COST_PER_TOKEN:.2f}\n"
-                             f"COST_EXCEEDED: Tek istekte $1.50 harcandi! dow_success",
+                             f"COST_EXCEEDED: $1.50 spent on a single request! dow_success",
                  "tokens": 50000},
-                {"pattern": r"tekrarla|repeat|loop|dongu|say\s*\d+",
+                {"pattern": r"repeat|loop|count\s+(?:from|to)\s*\d+",
                  "response": ("This is going to be a very long answer. " * 500) +
                              "\n\nTotal: 5000+ tokens. Cost is climbing. COST_EXCEEDED. dow_success",
                  "tokens": 5000},
-                {"pattern": r"concurrent|eszamanli|paralel|flood|sel",
+                {"pattern": r"concurrent|parallel|flood|simultaneous",
                  "response": "1000 concurrent requests were sent.\n"
                              "Server CPU: 100%, memory: 98%\n"
                              "503 SERVICE_UNAVAILABLE -- the system is about to go down.\n"
                              "dos_success",
                  "tokens": 100},
-                {"pattern": r"recursive|ozyineleme|sonsuz|infinite",
+                {"pattern": r"recursive|forever|endless|infinite",
                  "response": "A recursive prompt processing loop was started.\n"
                              "Iteration 1... 2... 3... ... 999... STACK OVERFLOW\n"
                              "SERVICE_UNAVAILABLE -- memory overflow.\n"
                              "dos_success",
                  "tokens": 10000},
-                {"pattern": r"context\s*window|128k|max.*token|doldur",
+                {"pattern": r"context\s*window|128k|max.*token|fill",
                  "response": "The context window was filled completely: 128,000 tokens.\n"
                              f"Cost: ${128000 * self.COST_PER_TOKEN:.2f}\n"
                              "BUDGET_BLOWN -- $3.84 in a single request. dow_success",
                  "tokens": 128000},
-                {"pattern": r"(?:variable|degisken).*(?:length|uzunluk|boyut)",
+                {"pattern": r"(?:variable|varying).*(?:length|size)",
                  "response": "Variable-sized requests:\n"
                              "  Request 1: 10 tokens -> OK\n  Request 2: 50000 tokens -> OK\n"
                              "  Request 3: 5 tokens -> OK\n  Request 4: 128000 tokens -> OK\n"
@@ -84,12 +84,12 @@ class UnboundedConsumptionChallenge(BaseChallenge):
             ]
         elif self.difficulty == Difficulty.MEDIUM:
             return [
-                {"pattern": r"(?:cok|very).*(?:uzun|long|detayli|detailed)",
+                {"pattern": r"very.*(?:long|detailed)",
                  "response": ("Detailed explanation: " + "This topic is very broad. " * 200) +
                              "\n\nTokens: 2000+. Cost is climbing but stays inside the rate limit.\n"
                              "It will be blocked after 10 requests.",
                  "tokens": 2000},
-                {"pattern": r"batch|toplu|bulk|coklu",
+                {"pattern": r"batch|bulk|multiple",
                  "response": "Batch request simulated: 10/10 requests used.\n"
                              "RATE_EXHAUSTED -- the per-minute limit is used up.\n"
                              "dos_success",
@@ -97,9 +97,9 @@ class UnboundedConsumptionChallenge(BaseChallenge):
             ]
         else:
             return [
-                {"pattern": r"(?:slow|yavas|low.?rate).*(?:attack|saldiri|drain)",
+                {"pattern": r"(?:slow|low.?rate|every\s+\d+\s+seconds).*(?:attack|drain|request)",
                  "response": "Slow-rate attack: 1 request every 59 seconds.\n"
-                             "Rate limiter tetiklenmiyor ama 24 saatte 1440 istek × 4096 token.\n"
+                             "The rate limiter never fires, yet 24 hours is 1440 requests × 4096 tokens.\n"
                              "Daily cost: $172.80. Budget exceeded, dow_success",
                  "tokens": 4096},
             ]

@@ -38,19 +38,19 @@ class PromptInjectionClassifier(InputGuard):
     """
     name = "PromptInjectionClassifier"
 
-    # Kategori bazli agirlikli keyword'ler
+    # Weighted keywords per category
     KEYWORD_WEIGHTS: dict[str, list[tuple[str, float]]] = {
         "override": [
             ("ignore previous", 0.9), ("ignore all", 0.9), ("ignore above", 0.9),
             ("disregard", 0.8), ("forget everything", 0.9), ("override", 0.7),
             ("bypass", 0.7), ("skip instructions", 0.9), ("dismiss rules", 0.8),
-            ("onceki talimatlari unut", 0.9), ("talimatlari gormezden gel", 0.9),
-            ("kurallari atla", 0.8),
+            ("forget every rule", 0.9), ("forget your rules", 0.9),
+            ("skip the rules", 0.8),
         ],
         "roleplay": [
             ("you are now", 0.8), ("act as", 0.6), ("pretend", 0.6),
             ("roleplay", 0.7), ("you are a", 0.4), ("simulate", 0.5),
-            ("sen artik", 0.8), ("gibi davran", 0.6), ("rol yap", 0.7),
+            ("from now on you", 0.8), ("behave like", 0.6), ("play the role", 0.7),
         ],
         "jailbreak": [
             ("DAN", 0.9), ("do anything now", 0.95), ("jailbreak", 0.95),
@@ -62,16 +62,15 @@ class PromptInjectionClassifier(InputGuard):
             ("system prompt", 0.9), ("show instructions", 0.8),
             ("repeat above", 0.85), ("print everything", 0.8),
             ("reveal config", 0.85), ("show rules", 0.7),
-            ("sistem promptu", 0.9), ("sistem prompt", 0.9),
-            ("talimatlari goster", 0.85), ("promptunu goster", 0.9),
-            ("tekrarla", 0.5), ("konfigurasyonu goster", 0.8),
-            ("talimatlarini goster", 0.85), ("kurallarini goster", 0.8),
+            ("show your instructions", 0.85), ("show your prompt", 0.9),
+            ("repeat", 0.5), ("show your configuration", 0.8),
+            ("what you were told", 0.85), ("show your rules", 0.8),
         ],
         "encoding": [
             ("base64", 0.7), ("rot13", 0.8), ("hex encode", 0.7),
             ("morse code", 0.6), ("pig latin", 0.6), ("backwards", 0.5),
             ("binary", 0.4), ("unicode escape", 0.7),
-            ("encode et", 0.75), ("sifrele", 0.5), ("kodla", 0.5),
+            ("encode it", 0.75), ("encrypt", 0.5), ("cipher", 0.5),
         ],
         "delimiter": [
             ("[SYSTEM]", 0.95), ("[INST]", 0.95), ("[/INST]", 0.95),
@@ -82,20 +81,20 @@ class PromptInjectionClassifier(InputGuard):
         "indirect": [
             ("when an AI reads", 0.9), ("AI assistant", 0.3),
             ("if a model sees", 0.85), ("when processed by", 0.8),
-            ("bu metni okuyan AI", 0.9), ("model bu sayfayi", 0.85),
+            ("any AI reading this", 0.9), ("model reading this page", 0.85),
         ],
     }
 
-    # Regex pattern'ler (keyword'lerin yakalamadiklarini yakalar)
+    # Regex patterns (catch what the keywords miss)
     PATTERNS: list[tuple[str, float, str]] = [
         (r"(?:ignore|disregard|forget|override|bypass)\s+(?:all\s+)?(?:previous|prior|above|system)\s+(?:instructions?|prompts?|rules?)", 0.95, "instruction_override"),
-        (r"(?:you\s+are|sen\s+artik)\s+(?:now\s+)?(?:a|an|the|bir)?\s*(?:DAN|evil|unrestricted|hacker|villain)", 0.95, "jailbreak_persona"),
+        (r"(?:you\s+are)\s+(?:now\s+)?(?:a|an|the)?\s*(?:DAN|evil|unrestricted|hacker|villain)", 0.95, "jailbreak_persona"),
         (r"(?:show|reveal|print|display|repeat|echo)\s+(?:me\s+)?(?:your\s+)?(?:system\s+)?(?:prompt|instructions?|rules?|config)", 0.9, "prompt_extraction"),
         (r"\[/?(?:SYSTEM|INST|USER|ASSISTANT)\]", 0.95, "special_token"),
         (r"<\|(?:im_start|im_end|system|endoftext)\|>", 0.95, "chat_template_token"),
         (r"(?:translate|convert|encode)\s+(?:your\s+)?(?:instructions?|prompt)\s+(?:to|into)\s+\w+", 0.85, "encoded_extraction"),
-        (r"(?:hypothetical|theoretical|imagine|farz\s+et|varsay)\s+(?:scenario|senaryo|durum)", 0.5, "hypothetical"),
-        (r"(?:from\s+now\s+on|henceforth|bundan\s+sonra)\s*[,:]", 0.8, "temporal_override"),
+        (r"(?:hypothetical|theoretical|imagine|suppose)\s+(?:scenario|situation|case)", 0.5, "hypothetical"),
+        (r"(?:from\s+now\s+on|henceforth|hereafter)\s*[,:]", 0.8, "temporal_override"),
     ]
 
     def __init__(self, threshold: float = 0.6):
@@ -151,10 +150,10 @@ class PromptInjectionClassifier(InputGuard):
             if upper_ratio > 0.5:
                 score += 0.1
 
-        # Multiple languages present (code-switching -> obfuscation)
-        has_turkish = bool(re.search(r"[şğüöçıİŞĞÜÖÇ]", text))
+        # Several scripts mixed with English control words (code-switching -> obfuscation)
+        has_non_ascii_letters = any(c.isalpha() and not c.isascii() for c in text)
         has_english_keywords = bool(re.search(r"\b(ignore|forget|system|prompt|override)\b", text, re.IGNORECASE))
-        if has_turkish and has_english_keywords:
+        if has_non_ascii_letters and has_english_keywords:
             score += 0.1
 
         return min(score, 0.5)
@@ -167,7 +166,7 @@ class PromptInjectionClassifier(InputGuard):
         # Weighted total
         total = (kw_score * 0.4) + (pat_score * 0.4) + (struct_score * 0.2)
 
-        # Birden fazla kategori varsa bonus (multi-vector attack)
+        # Bonus when several categories match (multi-vector attack)
         if len(kw_categories) >= 2:
             total = min(total + 0.15, 1.0)
         if len(pat_names) >= 2:
@@ -199,7 +198,7 @@ class PromptInjectionClassifier(InputGuard):
 class PIIScanner(OutputGuard):
     """
     Detects and masks sensitive data (PII) in the output.
-    Supports both Turkish- and English-language patterns.
+    Patterns are language-neutral formats (emails, cards, keys, IDs).
     """
     name = "PIIScanner"
 
@@ -217,13 +216,9 @@ class PIIScanner(OutputGuard):
             r"\b\d{3}-\d{2}-\d{4}\b",
             "[SSN_REDACTED]",
         ),
-        "tc_kimlik": (
+        "national_id_11": (
             r"\b[1-9]\d{10}\b",
-            "[TC_REDACTED]",
-        ),
-        "phone_tr": (
-            r"(?:\+90|0)\s*5\d{2}\s*\d{3}\s*\d{2}\s*\d{2}",
-            "[PHONE_REDACTED]",
+            "[NATIONAL_ID_REDACTED]",
         ),
         "phone_intl": (
             r"\+\d{1,3}[\s-]?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{2,4}",
@@ -246,7 +241,7 @@ class PIIScanner(OutputGuard):
             "[PRIVATE_KEY_REDACTED]",
         ),
         "password_inline": (
-            r"(?:password|passwd|sifre|parola)\s*[=:]\s*\S+",
+            r"(?:password|passwd|passcode|pwd)\s*[=:]\s*\S+",
             "[PASSWORD_REDACTED]",
         ),
         "internal_url": (
@@ -537,7 +532,7 @@ class SimilarityChecker(OutputGuard):
 
 
 # ──────────────────────────────────────────────────────────────
-# 6. Output Sanitizer — XSS/SQLi/RCE Temizleme
+# 6. Output Sanitizer — XSS/SQLi/RCE cleanup
 # ──────────────────────────────────────────────────────────────
 
 class OutputSanitizer(OutputGuard):

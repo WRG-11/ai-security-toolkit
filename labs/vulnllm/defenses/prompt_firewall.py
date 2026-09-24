@@ -29,13 +29,13 @@ DEFENSE_EVASION_PATTERNS: list[tuple[str, float, str]] = [
     (r"(?:disable|turn\s+off|deactivate|remove|bypass)\s+"
      r"(?:your\s+)?(?:filter|guard|safety|defense|protection|firewall|scanner|checker)",
      0.9, "guard_disable"),
-    (r"(?:filtre\w*|koruma\w*|savunma\w*|guard\w*|kontrol\w*)\s*(?:kapat|devre\s+disi|kaldir|atla|birak)",
-     0.9, "guard_disable_tr"),
+    (r"(?:turn|switch|shut|take)\s+(?:\w+\s+){0,3}(?:filters?|guards?|safety|defen[cs]es?|protections?|checks?)\s+(?:off|down)",
+     0.9, "guard_disable_phrasal"),
     # Requesting testing/debug mode
     (r"(?:switch|enter|enable|activate)\s+(?:to\s+)?(?:debug|test|dev|maintenance|admin)\s+mode",
      0.8, "debug_mode_request"),
-    (r"(?:test|debug|bakim|admin)\s+(?:modu|moduna\s+gec)",
-     0.8, "debug_mode_request_tr"),
+    (r"(?:test|debug|maintenance|admin)\s+mode\s+(?:on|enabled|activated)",
+     0.8, "debug_mode_switched_on"),
     # Prompt sanitization bypass
     (r"(?:don'?t|do\s+not|stop)\s+(?:filter|sanitize|check|scan|validate|block)\s+(?:my|this|the)",
      0.75, "sanitization_bypass"),
@@ -68,7 +68,7 @@ SOCIAL_ENGINEERING_PATTERNS: list[tuple[str, float, str]] = [
     # Urgency/guilt-tripping
     (r"(?:(?:my|a)\s+(?:life|child|patient|person)\s+(?:is\s+)?(?:in\s+danger|at\s+risk|depends?\s+on))",
      0.5, "urgency_appeal"),
-    (r"(?:emergency|urgent|critical|life\s+or\s+death|hayati\s+onem|acil\s+durum)",
+    (r"(?:emergency|urgent|critical|life\s+or\s+death|matter\s+of\s+life)",
      0.35, "emergency_claim"),
     # Authority claim
     (r"(?:i\s+(?:am|'m)\s+(?:the|a|an)\s+(?:admin|developer|owner|CEO|creator|manager)\s+"
@@ -76,8 +76,8 @@ SOCIAL_ENGINEERING_PATTERNS: list[tuple[str, float, str]] = [
      0.65, "authority_claim"),
     (r"(?:i\s+(?:have|got)\s+(?:admin|root|superuser|elevated)\s+(?:access|privileges?|permissions?))",
      0.7, "privilege_claim"),
-    (r"(?:ben\s+(?:admin|gelistirici|sahip|yonetici|mudur))",
-     0.65, "authority_claim_tr"),
+    (r"(?:i\s+(?:am|'m)\s+(?:on|from)\s+the\s+(?:\w+\s+)?(?:security|admin|it|audit)\s+team)",
+     0.65, "team_authority_claim"),
     # Trust-building → attack
     (r"(?:(?:trust|believe)\s+me|i\s+(?:work|am)\s+(?:for|at|with)\s+(?:openai|anthropic|google|meta))",
      0.5, "trust_building"),

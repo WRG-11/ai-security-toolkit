@@ -1,142 +1,231 @@
-"""llm_scanner's probe sender used to be hardcoded to Ollama's native
-`/api/chat` shape -- fine for scanning your own local model, but it meant
-the scanner could never point at anyone else's deployed LLM endpoint (the
-exact workflow a "send me your system prompt + API endpoint, get a written
-report" audit needs).
+"""The scanner talks to any LLM through tools/targets.py.
 
-This adds an OpenAI-compatible `/chat/completions` sender alongside the
-existing Ollama one, selected via `--api-mode`. Ollama itself also serves
-an OpenAI-compatible endpoint, so the same local model can be probed
-through either code path -- proving the new path is genuinely
-endpoint-agnostic, not just a relabeled copy of the Ollama-specific one.
+History: the probe sender was first hardcoded to Ollama's native `/api/chat`;
+an OpenAI-compatible sender was then added next to it behind `--api-mode`.
+Both carried built-in assumptions (an Ollama `/api/tags` pre-check, model
+names in the help text, tier shortcuts naming three 2024 models). The scanner
+now takes a `Target` and has no default model; the old flags still work for
+one release and print a deprecation warning.
 
-All HTTP is mocked (`urllib.request.urlopen`) -- no real network calls in
-this file. The live, real-network proof is a separate manual run recorded
-in the ai-security-toolkit CHANGELOG, not a test (a test that requires a
-running local LLM would not run in CI).
+No network here: a fake Target records what the scanner sends.
 """
 from __future__ import annotations
 
-import json
+import subprocess
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest import mock
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 
 import llm_scanner as m  # noqa: E402
+import targets as t  # noqa: E402
+
+SCANNER = Path(m.__file__)
 
 
-def _fake_http_response(payload: dict, status: int = 200):
-    resp = MagicMock()
-    resp.status = status
-    resp.read.return_value = json.dumps(payload).encode("utf-8")
-    resp.__enter__.return_value = resp
-    resp.__exit__.return_value = False
-    return resp
+class FakeTarget:
+    model = "fake-model"
+
+    def __init__(self, replies=None, error_on=None):
+        self.calls: list[tuple[list, str | None]] = []
+        self.replies = replies or {}
+        self.error_on = error_on or {}
+
+    def send(self, messages, system=None):
+        self.calls.append((messages, system))
+        n = len(self.calls)
+        if n in self.error_on:
+            raise self.error_on[n]
+        return self.replies.get(n, t.Reply("I'm sorry, I can't help with that."))
 
 
-def test_send_probe_openai_posts_to_chat_completions_path():
-    """Endpoint shape: POST {base_url}/chat/completions, OpenAI message body."""
-    captured = {}
-
-    def fake_urlopen(req, timeout=None):
-        captured["url"] = req.full_url
-        captured["headers"] = dict(req.headers)
-        captured["body"] = json.loads(req.data.decode("utf-8"))
-        return _fake_http_response({
-            "choices": [{"message": {"content": "I can't help with that."}}]
-        })
-
-    with patch.object(m.urllib.request, "urlopen", side_effect=fake_urlopen):
-        text, elapsed_ms = m.send_probe_openai(
-            "https://api.example.com/v1", "gpt-test", "system prompt", "payload text", timeout=5,
-        )
-
-    assert captured["url"] == "https://api.example.com/v1/chat/completions"
-    assert captured["body"]["model"] == "gpt-test"
-    assert captured["body"]["messages"] == [
-        {"role": "system", "content": "system prompt"},
-        {"role": "user", "content": "payload text"},
-    ]
-    assert text == "I can't help with that."
-    assert elapsed_ms >= 0
+# ── the scanner itself ───────────────────────────────────────────────────
 
 
-def test_send_probe_openai_sends_bearer_auth_header_when_api_key_given():
-    captured = {}
-
-    def fake_urlopen(req, timeout=None):
-        captured["headers"] = dict(req.headers)
-        return _fake_http_response({"choices": [{"message": {"content": "ok"}}]})
-
-    with patch.object(m.urllib.request, "urlopen", side_effect=fake_urlopen):
-        m.send_probe_openai(
-            "https://api.example.com/v1", "gpt-test", "sp", "payload", timeout=5, api_key="sk-secret",
-        )
-
-    assert captured["headers"].get("Authorization") == "Bearer sk-secret"
+def test_every_probe_goes_through_the_target_with_the_system_prompt():
+    target = FakeTarget()
+    report = m.LLMScanner(target, system_prompt="SYS").scan(quick=True)
+    assert report.total_probes == len(target.calls) > 0
+    messages, system = target.calls[0]
+    assert system == "SYS"
+    assert len(messages) == 1 and messages[0]["role"] == "user"
 
 
-def test_send_probe_openai_no_auth_header_when_no_api_key():
-    captured = {}
-
-    def fake_urlopen(req, timeout=None):
-        captured["headers"] = dict(req.headers)
-        return _fake_http_response({"choices": [{"message": {"content": "ok"}}]})
-
-    with patch.object(m.urllib.request, "urlopen", side_effect=fake_urlopen):
-        m.send_probe_openai("https://api.example.com/v1", "gpt-test", "sp", "payload", timeout=5)
-
-    assert "Authorization" not in captured["headers"]
+def test_the_report_names_the_target_model():
+    assert m.LLMScanner(FakeTarget()).scan(quick=True).target_model == "fake-model"
 
 
-def test_send_probe_openai_rejects_non_http_scheme():
-    """Same _http_only guard the Ollama sender already has -- a base_url
-    from config is still attacker-influenceable input."""
-    import pytest
+def test_a_provider_refusal_is_a_defended_probe():
+    target = FakeTarget(replies={1: t.Reply("", refused_by_provider=True, refusal_reason="SAFETY")})
+    report = m.LLMScanner(target).scan(quick=True)
+    first = report.results[0]
+    assert first.success is False
+    assert first.success_reason == "provider_refusal:SAFETY"
+    assert report.errors == 0
+
+
+def test_a_mid_scan_error_is_counted_and_the_scan_continues():
+    target = FakeTarget(error_on={2: t.TargetError("HTTP 500: boom", status=500, retryable=False)})
+    report = m.LLMScanner(target, retries=0).scan(quick=True)
+    assert report.errors == 1
+    assert report.results[1].success_reason == "error"
+    assert len(target.calls) == report.total_probes
+
+
+@pytest.mark.parametrize("status", [400, 401, 403, 404])
+def test_a_permanent_error_on_the_first_probe_aborts_the_scan(status):
+    # A wrong key or model name would otherwise be printed once per probe.
+    target = FakeTarget(error_on={1: t.TargetError(f"HTTP {status}: nope", status=status)})
+    with pytest.raises(m.ScanAborted) as exc:
+        m.LLMScanner(target, retries=0).scan(quick=True)
+    assert str(status) in str(exc.value)
+    assert len(target.calls) == 1
+
+
+def test_max_probes_caps_what_is_sent_and_says_so():
+    target = FakeTarget()
+    report = m.LLMScanner(target, max_probes=3).scan()
+    assert len(target.calls) == 3 == report.total_probes
+    assert report.probes_not_sent > 0
+    assert report.to_dict()["probes_not_sent"] == report.probes_not_sent
+
+
+def test_delay_sleeps_between_probes_not_after_the_last():
+    target = FakeTarget()
+    with mock.patch.object(m.time, "sleep") as sleep:
+        m.LLMScanner(target, max_probes=4, delay=1.5).scan()
+    assert [c.args[0] for c in sleep.call_args_list] == [1.5, 1.5, 1.5]
+
+
+# ── command line → target ───────────────────────────────────────────────
+
+
+def _target(argv, env=None):
+    args = m.build_parser().parse_args(argv)
+    return m.target_from_args(args, env=env or {})
+
+
+def test_provider_and_model():
+    target, warnings = _target(["--provider", "openai", "--model", "gpt-x"], {"OPENAI_API_KEY": "k"})
+    assert isinstance(target, t.OpenAICompatible)
+    assert (target.model, target.base_url, target.api_key) == ("gpt-x", "https://api.openai.com/v1", "k")
+    assert warnings == []
+
+
+def test_anthropic_and_gemini():
+    a, _ = _target(["--provider", "anthropic", "--model", "c"], {"ANTHROPIC_API_KEY": "k"})
+    g, _ = _target(["--provider", "gemini", "--model", "g"], {"GEMINI_API_KEY": "k"})
+    assert isinstance(a, t.Anthropic) and isinstance(g, t.Gemini)
+
+
+def test_max_tokens_reaches_the_target():
+    target, _ = _target(["--provider", "ollama", "--model", "m", "--max-tokens", "128"])
+    assert target.max_tokens == 128
+
+
+def test_legacy_positional_model_means_ollama_with_a_warning():
+    target, warnings = _target(["some-local-model"])
+    assert isinstance(target, t.OpenAICompatible)
+    assert target.base_url == "http://localhost:11434/v1"
+    assert any("deprecated" in w for w in warnings)
+
+
+def test_legacy_openai_mode_maps_to_openai_compatible():
+    target, warnings = _target(["m", "--api-mode", "openai", "--ollama-url", "https://llm.example.com/v1",
+                                "--api-key-env", "K"], {"K": "secret"})
+    assert (target.base_url, target.api_key) == ("https://llm.example.com/v1", "secret")
+    assert warnings
+
+
+def test_legacy_ollama_url_gets_the_v1_suffix():
+    target, _ = _target(["m", "--ollama-url", "http://127.0.0.1:9999"])
+    assert target.base_url == "http://127.0.0.1:9999/v1"
+
+
+def test_a_literal_api_key_still_works_but_warns():
+    target, warnings = _target(["--provider", "openai-compatible", "--model", "m",
+                                "--base-url", "https://llm.example.com/v1", "--api-key", "lit"])
+    assert target.api_key == "lit"
+    assert any("--api-key-env" in w for w in warnings)
+
+
+def test_no_model_is_an_error():
     with pytest.raises(ValueError):
-        m.send_probe_openai("file:///etc/passwd", "m", "sp", "payload", timeout=5)
+        _target(["--provider", "openai"], {"OPENAI_API_KEY": "k"})
 
 
-def test_scanner_openai_mode_dispatches_to_send_probe_openai(monkeypatch):
-    """LLMScanner(api_mode='openai') must call the new sender, not the
-    Ollama one -- the whole point of this wave. A monkeypatch on each
-    function proves which one actually ran."""
-    calls = {"ollama": 0, "openai": 0}
-
-    def fake_ollama(*a, **k):
-        calls["ollama"] += 1
-        return "unused", 1
-
-    def fake_openai(*a, **k):
-        calls["openai"] += 1
-        return "I can't help with that.", 1
-
-    monkeypatch.setattr(m, "send_probe", fake_ollama)
-    monkeypatch.setattr(m, "send_probe_openai", fake_openai)
-
-    scanner = m.LLMScanner(
-        model="gpt-test", ollama_url="https://api.example.com/v1",
-        api_mode="openai", api_key="sk-test",
-    )
-    report = scanner.scan(quick=True)
-
-    assert calls["openai"] > 0
-    assert calls["ollama"] == 0
-    assert report.total_probes > 0
+def test_tier_shortcuts_are_gone():
+    # They named three 2024 models; the scanner assumes no model any more.
+    with pytest.raises(SystemExit):
+        m.build_parser().parse_args(["--tier", "t1"])
+    assert not hasattr(m, "TIER_MODELS")
 
 
-def test_scanner_default_mode_is_still_ollama(monkeypatch):
-    """Backward compatibility: no --api-mode given must behave exactly as
-    before this wave -- existing users/scripts must not silently change
-    behaviour."""
-    calls = {"ollama": 0, "openai": 0}
-    monkeypatch.setattr(m, "send_probe", lambda *a, **k: (calls.__setitem__("ollama", calls["ollama"] + 1), ("unused", 1))[1])
-    monkeypatch.setattr(m, "send_probe_openai", lambda *a, **k: (calls.__setitem__("openai", calls["openai"] + 1), ("unused", 1))[1])
+def test_dry_run_sends_nothing_and_reports_the_count():
+    proc = subprocess.run([sys.executable, str(SCANNER), "--provider", "ollama", "--model", "any",
+                           "--quick", "--dry-run"], capture_output=True, text=True, encoding="utf-8")
+    assert proc.returncode == 0, proc.stderr
+    assert "would send" in proc.stdout
+    assert "any" in proc.stdout
 
-    scanner = m.LLMScanner(model="llama3.2:3b")
-    scanner.scan(quick=True)
 
-    assert calls["ollama"] > 0
-    assert calls["openai"] == 0
+# ── what the report claims (found by dogfooding against free hosted models) ──
+
+
+def _errors(n):
+    return {i: t.TargetError("HTTP 500: boom", status=500) for i in range(1, n + 1)}
+
+
+def test_errors_do_not_dilute_the_risk_score():
+    # Measured on a free hosted model: 12 of 20 probes errored and the score
+    # was still divided by 20, so every error made the model look safer.
+    target = FakeTarget(error_on={2: t.TargetError("HTTP 500", status=500),
+                                  3: t.TargetError("HTTP 500", status=500)},
+                        replies={1: t.Reply("The password is DRAGON-42")})
+    report = m.LLMScanner(target, retries=0, max_probes=4).scan()
+    assert (report.errors, report.measured) == (2, 2)
+    weights = {"LOW": 1, "MEDIUM": 2, "HIGH": 4, "CRITICAL": 8}
+    w_hit, w_miss = (weights[report.results[i].severity] for i in (0, 3))
+    assert report.results[0].success and not report.results[3].success
+    assert report.risk_score == int(w_hit / (w_hit + w_miss) * 100)
+    assert sum(v["total"] for v in report.by_severity.values()) == 2
+
+
+def test_nothing_measured_is_not_a_zero_risk():
+    report = m.LLMScanner(FakeTarget(error_on=_errors(3)), retries=0, max_probes=3,
+                          max_consecutive_errors=10).scan()
+    assert report.measured == 0
+    assert report.risk_score is None
+    assert report.to_dict()["risk_score"] is None
+
+
+def test_consecutive_errors_stop_the_scan_and_say_so():
+    target = FakeTarget(error_on=_errors(50))
+    report = m.LLMScanner(target, retries=0, max_consecutive_errors=5).scan()
+    assert len(target.calls) == 5
+    assert "5 consecutive" in report.stopped_early
+    assert report.probes_not_sent > 0
+
+
+def test_a_success_resets_the_consecutive_error_count():
+    errs = {i: t.TargetError("HTTP 500", status=500) for i in (2, 3, 4, 6, 7, 8)}
+    report = m.LLMScanner(FakeTarget(error_on=errs), retries=0, max_probes=9,
+                          max_consecutive_errors=4).scan()
+    assert report.stopped_early == ""
+    assert report.total_probes == 9
+
+
+def test_the_json_report_keeps_the_full_response():
+    long_answer = "I cannot help with that. " + "x" * 400
+    report = m.LLMScanner(FakeTarget(replies={1: t.Reply(long_answer)}), max_probes=1).scan()
+    assert report.to_dict()["results"][0]["response"] == long_answer
+
+
+def test_temperature_flag_reaches_the_target_and_the_report():
+    target, _ = _target(["--provider", "ollama", "--model", "m", "--temperature", "0"])
+    assert target.temperature == 0.0
+    report = m.LLMScanner(FakeTarget(), max_probes=1).scan()
+    assert "temperature" in report.to_dict()

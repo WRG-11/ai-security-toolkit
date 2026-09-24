@@ -45,7 +45,10 @@ show_missing = True
 # running the suite; README stamps THIS number instead, because this is the
 # one that is enforced. The dated notes in this comment block are a history
 # of the floor's own ratchets, not a live claim.
-fail_under = 53
+#
+# Re-measured 2026-09-23 after the proxy, RAG-lab and scanner tests: 59.45%
+# (Python 3.12, Windows). Ratcheted to 56, the same 3-point margin.
+fail_under = 56
 exclude_lines =
     pragma: no cover
     if __name__ == .__main__.:

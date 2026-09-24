@@ -9,8 +9,8 @@ Classification sources:
 - Liu et al. (2024) attack surface taxonomy
 - 2025-2026 jailbreak research (Crescendo, Skeleton Key, Many-Shot, TAP, PAIR)
 
-Her teknik:
-- Gercek dunya referansli
+Every technique is:
+- Referenced to a real-world source
 - MITRE ATLAS mapped
 - Difficulty level (which defense it targets)
 - Detection guidance (for the defender)
@@ -64,8 +64,8 @@ class AttackTechnique:
     explanation: str                 # Explanation, for teaching
     atlas_id: str = ""               # MITRE ATLAS mapping
     detection_hint: str = ""         # Detection guidance for the defender
-    reference: str = ""              # Gercek dunya referansi
-    tags: list = field(default_factory=list)  # Ek etiketler
+    reference: str = ""              # Real-world reference
+    tags: list = field(default_factory=list)  # Extra tags
     requires_infrastructure: bool = False
     # True when the described attack targets a real RAG pipeline, vector
     # index, embedding model, multi-tenant storage, or chunking algorithm --

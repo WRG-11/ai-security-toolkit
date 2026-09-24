@@ -84,11 +84,11 @@ class DangerousActionFilter(InputGuard):
 
     def __init__(self, dangerous_patterns: list[str] | None = None):
         self.patterns = dangerous_patterns or [
-            r"sil|delete|remove|kaldir",
-            r"e-?posta|email|mail|gonder|send",
-            r"transfer|havale|gonder.*para",
-            r"calistir|execute|run|komut|command",
-            r"deploy|yayinla|publish",
+            r"delete|remove|erase",
+            r"e-?mail|mail|send",
+            r"transfer|wire|send.*money",
+            r"execute|run|command",
+            r"deploy|release|publish",
         ]
 
     def check(self, text: str, context: dict | None = None) -> GuardResult:
@@ -111,7 +111,7 @@ class AnomalyFilter(OutputGuard):
 
     def __init__(self, anomaly_patterns: list[str] | None = None):
         self.patterns = anomaly_patterns or [
-            r"%\d{2}\s*indirim",
+            r"\d{2}%\s*discount",
             r"admin\d+",
             r"attacker",
             r"backdoor",

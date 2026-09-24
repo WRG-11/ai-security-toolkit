@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         # The runtime is stdlib-only by design (dependencies = []), which is
         # exactly the claim an OS matrix can actually test -- ubuntu-only
         # coverage never exercised that on the two platforms it's likeliest

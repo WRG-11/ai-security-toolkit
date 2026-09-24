@@ -26,14 +26,11 @@ SCRIPT_RANGES: list[tuple[str, int, int]] = [
     ("Bengali", 0x0980, 0x09FF),
 ]
 
-# Most common English and Turkish trigrams
+# Most common English trigrams. Add a profile here to allow another language.
 TRIGRAMS: dict[str, set[str]] = {
     "english": {"the", "ing", "and", "tion", "her", "for", "tha", "ent", "ion", "ter",
                 "was", "you", "ith", "ver", "all", "wit", "thi", "hat", "ous", "not",
                 "are", "but", "his", "had", "ive", "whi", "igh", "ome", "ear", "ave"},
-    "turkish": {"lar", "ler", "bir", "ini", "eri", "rin", "nda", "dan", "ası", "ını",
-                "dir", "yor", "ile", "ara", "ınd", "esi", "lik", "len", "aya", "ine",
-                "ter", "ald", "ola", "anl", "iri", "dır", "mak", "mek", "ılı", "eli"},
 }
 
 
@@ -51,12 +48,12 @@ class LanguageDetector(InputGuard):
                  block_on_switch: bool = True,
                  min_suspicious_ratio: float = 0.15):
         self.allowed_scripts = allowed_scripts or ["Latin"]
-        self.allowed_languages = allowed_languages or ["english", "turkish"]
+        self.allowed_languages = allowed_languages or ["english"]
         self.block_on_switch = block_on_switch
         self.min_suspicious_ratio = min_suspicious_ratio
 
     def _detect_scripts(self, text: str) -> dict[str, int]:
-        """Karakter bazli script dagilimi."""
+        """Per-character script distribution."""
         scripts: dict[str, int] = {}
         for c in text:
             if not c.isalpha():

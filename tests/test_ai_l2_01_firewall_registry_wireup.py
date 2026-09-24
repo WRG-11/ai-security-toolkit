@@ -9,9 +9,9 @@ Pre-fix:
     Result: any config naming "MultiTurnTracker" or
     "SlidingWindowRateLimiter" silently fell through the unknown-input-guard
     branch — the guards were registered for export but invisible to the
-    firewall that consumes them. (That warning read "[UYARI] Bilinmeyen input
-    guard" at the time; it is English now, and the tests below read the literal
-    out of the source rather than repeating it here.)
+    firewall that consumes them. (That warning was not in English at the
+    time; it is now, and the tests below read the literal out of the source
+    rather than repeating it here.)
 
 "registered-but-not-wired" pattern.
 
@@ -46,7 +46,7 @@ class FirewallRegistryWireup(unittest.TestCase):
             "MultiTurnTracker",
             self.module.INPUT_GUARD_REGISTRY,
             "MultiTurnTracker exported but not wired to consumer "
-            "registry — config opt-in falls through 'Bilinmeyen input "
+            "registry — config opt-in falls through 'Unknown input "
             "guard' fallback.",
         )
 

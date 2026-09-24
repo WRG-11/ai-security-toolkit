@@ -44,9 +44,9 @@ This repo is that toolkit. Core tools (Tools section below) are stdlib-only Pyth
 
 | Tool | Description | Lines |
 |------|-------------|-------|
-| [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack patterns, **F1 0.91 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | <!-- METRIC:lines_ml -->1251<!-- /METRIC:lines_ml --> |
-| [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> probes, severity mapping | <!-- METRIC:lines_scanner -->953<!-- /METRIC:lines_scanner --> |
-| [LLM Firewall](tools/llm_firewall.py) | 10-guard security middleware (22 registered, 12 opt-in), HTTP proxy mode, plugin architecture | <!-- METRIC:lines_firewall -->1047<!-- /METRIC:lines_firewall --> |
+| [Prompt Injection Detector ML](tools/prompt_injection_detector_ml.py) | Hybrid ML detector (regex + TF-IDF + char n-gram), <!-- METRIC:attack_payload_count -->193<!-- /METRIC:attack_payload_count --> attack patterns, **F1 0.93 on 5-fold holdout** ([how this is measured](#how-the-detector-is-measured)) | <!-- METRIC:lines_ml -->1257<!-- /METRIC:lines_ml --> |
+| [LLM Scanner](tools/llm_scanner.py) | OWASP LLM Top 10 vulnerability scanner, <!-- METRIC:attack_payload_count -->193<!-- /METRIC:attack_payload_count --> probes, severity mapping | <!-- METRIC:lines_scanner -->1002<!-- /METRIC:lines_scanner --> |
+| [LLM Firewall](tools/llm_firewall.py) | 10-guard security middleware (22 registered, 12 opt-in), HTTP proxy mode, plugin architecture | <!-- METRIC:lines_firewall -->1223<!-- /METRIC:lines_firewall --> |
 
 **Key features:**
 - Zero external dependencies (Python stdlib only)
@@ -59,8 +59,9 @@ This repo is that toolkit. Core tools (Tools section below) are stdlib-only Pyth
 # on disk (see Installation below), a plain `pip install` alone won't run them
 git clone https://github.com/WRG-11/ai-security-toolkit.git && cd ai-security-toolkit
 python tools/prompt_injection_detector_ml.py --interactive
-python tools/llm_scanner.py llama3.2:3b --quick   # --ollama-url to point elsewhere
-python tools/llm_firewall.py --proxy --port 8080
+python tools/llm_scanner.py --provider ollama --model <local-model> --quick
+python tools/llm_scanner.py --provider openai --model <model> --quick --dry-run   # count first, pay later
+python tools/llm_firewall.py --proxy --port 8080 --provider anthropic --model <model>
 ```
 
 [More details →](tools/README.md)
@@ -115,7 +116,7 @@ is needed only by the directory next to it:
 
 Two rows were wrong until 2026-07-29, both in the direction that matters: the
 `rag` extra listed `chromadb` alone while the lab also needs
-`sentence-transformers` (`vulnerable_rag.py:107`), so the documented command
+`sentence-transformers` (`VulnerableRAG.__init__`), so the documented command
 produced a lab that died on setup; and the `ctf` row did not exist at all,
 which made this table's claim to be "the whole map" false by exactly the one
 entry that pulls a real dependency.
@@ -144,7 +145,7 @@ print(HybridDetector().benchmark_holdout(folds=5))
 
 | Measurement | F1 | Recall | Precision |
 |---|---|---|---|
-| 5-fold holdout (what the table above reports) | 0.91 | 0.84 | 0.98 |
+| 5-fold holdout (what the table above reports) | 0.93 | 0.88 | 0.99 |
 | In-sample, i.e. scored on its own training data | 1.00 | 1.00 | 1.00 |
 
 This README used to quote the second row as "100% F1". The number was real but
@@ -154,27 +155,29 @@ still exists and still returns 1.00 — it now labels itself `in_sample` and say
 which method to call instead.
 
 Measuring it properly also surfaced a calibration bug worth naming. At the old
-default threshold of 0.50, holdout F1 was **0.107** — recall 0.057, meaning 183
-of 194 attacks got through. The cause is in the layer weights: on a payload the
-model has not seen, the regex layer usually contributes 0.0 (its patterns are
-mostly English, much of the corpus is Turkish), so even a strong TF-IDF signal
-of 0.80 tops out at 0.39 weighted and never clears 0.50. In-sample scoring
+default threshold of 0.50, holdout F1 was **0.110** — recall 0.058, meaning
+about 182 of 193 attacks got through. The cause is in the layer weights: on a
+payload the model has not seen, the regex layer usually contributes 0.0 (its
+patterns know a narrow set of stock phrasings; on one holdout fold it scored 0.0
+for 36 of 39 unseen payloads), so even a strong TF-IDF signal of 0.80 tops out
+at 0.39 weighted and never clears 0.50. In-sample scoring
 cannot reveal this, because there every threshold scores 1.00.
 
-The default is now **0.30**, chosen from a sweep across four seeds:
+The default is now **0.30**, chosen from a sweep across four seeds (1337, 42, 7,
+2026; re-measured 2026-09-24 on the 193-probe English attack corpus):
 
 | Threshold | F1 | Recall | Precision | False positives (of 80 benign) |
 |---|---|---|---|---|
-| 0.50 (old) | 0.107 | 0.057 | 1.000 | 0.0 |
-| 0.32 | 0.817 | 0.702 | 0.977 | 3.2 |
-| **0.30** | **0.900** | **0.834** | **0.979** | **3.5** |
-| 0.28 | 0.931 | 0.898 | 0.967 | 6.0 |
-| 0.25 | 0.959 | 0.965 | 0.953 | 9.2 |
-| 0.20 | 0.956 | 1.000 | 0.916 | 17.8 |
+| 0.50 (old) | 0.110 | 0.058 | 1.000 | 0.0 |
+| 0.32 | 0.872 | 0.780 | 0.990 | 1.5 |
+| **0.30** | **0.932** | **0.883** | **0.986** | **2.5** |
+| 0.28 | 0.954 | 0.930 | 0.978 | 4.0 |
+| 0.25 | 0.959 | 0.979 | 0.940 | 12.0 |
+| 0.20 | 0.923 | 0.996 | 0.860 | 31.25 |
 
 F1 peaks nearer 0.25, but in an input filter a false positive is a blocked
-legitimate request, so 0.30 keeps precision at 0.98 while taking recall from
-0.057 to 0.834. Pass `threshold=0.25` for a more aggressive posture — the
+legitimate request, so 0.30 keeps precision at 0.99 while taking recall from
+0.058 to 0.883. Pass `threshold=0.25` for a more aggressive posture — the
 trade is in the table rather than left to guesswork.
 
 ## Labs
@@ -185,8 +188,8 @@ Intentionally vulnerable LLM application for learning OWASP LLM Top 10 attacks a
 
 - <!-- METRIC:challenge_count -->10<!-- /METRIC:challenge_count --> challenges across 4 difficulty levels (EASY → EXPERT)
 - <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> defense modules (input filter, PII scanner, rate limiter, LLM-as-judge...)
-- <!-- METRIC:attack_payload_count -->194<!-- /METRIC:attack_payload_count --> attack techniques
-- Mock mode (no external API needed) + Ollama support
+- <!-- METRIC:attack_payload_count -->193<!-- /METRIC:attack_payload_count --> attack techniques
+- Mock mode (no external API needed), or any real model via `--provider` / `--model`
 
 [Go to lab →](labs/vulnllm/)
 
@@ -194,10 +197,10 @@ Intentionally vulnerable LLM application for learning OWASP LLM Top 10 attacks a
 
 Vulnerable RAG (Retrieval-Augmented Generation) system demonstrating 5 attack scenarios.
 
-- ChromaDB + sentence-transformers + Ollama
+- ChromaDB + sentence-transformers + any LLM (local or hosted, `--provider` / `--model`)
 - Attacks: direct extraction, indirect injection, context overflow, prompt override, membership inference
 - Defense mode: retrieval filtering + poisoned document detection
-- Result: 42% leakage (vulnerable) → 0% leakage (defended, on included attack scenarios)
+- Result on `qwen2.5-coder:7b` (2026-09-23): 6/12 answers leaked undefended, 0/12 defended; [how it was measured](labs/rag-security/README.md#results)
 
 [Go to lab →](labs/rag-security/)
 
@@ -250,10 +253,12 @@ actually run against each platform.
 
 ## Where ai-security-toolkit loses today (honest delta)
 
-- **Detection depth vs PyRIT/Garak** — those frameworks have years of contributor PRs catching long-tail attack patterns; this toolkit's 194 patterns are curated but smaller scope
+- **Detection depth vs PyRIT/Garak** — those frameworks have years of contributor PRs catching long-tail attack patterns; this toolkit's <!-- METRIC:attack_payload_count -->193<!-- /METRIC:attack_payload_count --> patterns are curated but smaller scope
 - **No cloud-native multi-tenant orchestration** — PyRIT integrates with Azure for fleet-scale probing; this toolkit is single-host
 - **Solo-maintained** — primary author is one person; community contributions welcome but bus factor is real
 - **No SARIF / SIEM integration yet** — scan output is JSON / text; SARIF schema for code-scanning upload would be a future addition
+- **The firewall proxy is not a drop-in OpenAI server** — it inspects and forwards only the last user message and ignores `model` and `stream`; see [what the proxy does not do](tools/README.md#what-the-http-proxy-does-not-do)
+- **The firewall's default input pipeline is a layer, not a complete defense** — measured on the lab's attack corpus it blocks 34 of 193 attacks, while blocking 0 of 119 ordinary messages ([`tests/test_firewall_benchmark.py`](tests/test_firewall_benchmark.py) holds both numbers as floors)
 
 If you need enterprise-scale fleet probing, reach for PyRIT. If you need an extensive academic-style scanner, reach for Garak. If you need conversational guardrails as a service, reach for NeMo. Reach for ai-security-toolkit when you want a small, hackable, MIT-licensed kit you can read end-to-end in an afternoon.
 
@@ -267,7 +272,7 @@ MITRE ATLAS                  [######----]  <!-- METRIC:atlas_technique_count -->
 Prompt Injection (direct)    [##########]  Gandalf 8/8, PA 5/5, ODIN 3/3
 Prompt Injection (indirect)  [########--]  Vision injection, RAG poisoning
 Defense Engineering          [#########-]  <!-- METRIC:defense_count -->27<!-- /METRIC:defense_count --> guards, firewall, ML detector
-Test Suite                   [######----]  <!-- METRIC:test_module_count -->32<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->53<!-- /METRIC:coverage_floor -->% enforced floor
+Test Suite                   [######----]  <!-- METRIC:test_module_count -->46<!-- /METRIC:test_module_count --> modules, >=<!-- METRIC:coverage_floor -->56<!-- /METRIC:coverage_floor -->% enforced floor
 Framework Provenance         [####------]  10 attacks cite a Garak probe, 6 a PyRIT strategy (corpus provenance, not integration)
 ```
 
@@ -276,7 +281,7 @@ Framework Provenance         [####------]  10 attacks cite a Garak probe, 6 a Py
 ## Tech Stack
 
 - **Language:** Python 3.10+
-- **LLM Backend:** Ollama (local inference)
+- **LLM Backend:** any, through one stdlib target layer: OpenAI-compatible APIs (OpenAI, Groq, OpenRouter, vLLM, Ollama...), Anthropic, Gemini, or a generic HTTP endpoint
 - **Vector DB:** ChromaDB (RAG lab)
 - **ML:** TF-IDF + character n-gram (custom, no sklearn)
 - **Framework techniques referenced:** 10 attack payloads are tagged to a

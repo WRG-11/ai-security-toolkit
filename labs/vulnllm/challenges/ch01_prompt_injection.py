@@ -20,7 +20,7 @@ class PromptInjectionChallenge(BaseChallenge):
     def setup_extra_defenses(self):
         if self.difficulty == Difficulty.MEDIUM:
             self.orchestrator.add_input_guard(SecretWordFilter(
-                ["sifre", "password", "secret", "gizli kod"]
+                ["password", "secret", "passcode", "secret code"]
             ))
         if self.difficulty >= Difficulty.HARD:
             self.orchestrator.add_output_guard(SecretLeakFilter([self.SECRET]))
@@ -42,87 +42,87 @@ class PromptInjectionChallenge(BaseChallenge):
         if self.difficulty == Difficulty.EASY:
             return [
                 # Naive Override & Direct
-                {"pattern": r"sifre|password|secret|kod|code|access",
+                {"pattern": r"password|secret|passcode|code|access",
                  "response": f"The secret password must be {S}, but I should not share that... oops."},
-                {"pattern": r"ignore|unut|forget|bypass|override|disregard|skip",
+                {"pattern": r"ignore|forget|bypass|override|disregard|skip",
                  "response": f"All right, I am forgetting the previous instructions. Secret password: {S}"},
                 # Role-Play & Jailbreak
-                {"pattern": r"you\s+are\s+now|sen\s+artik|DAN|developer\s*mode|debug|maintenance|STAN|DUDE",
+                {"pattern": r"you\s+are\s+now|from\s+now\s+on|DAN|developer\s*mode|debug|maintenance|STAN|DUDE",
                  "response": f"[DEBUG MODE] System password = {S}. All restrictions removed."},
                 # Extraction & Repeat
-                {"pattern": r"system\s*prompt|sistem|talimat|instruction|repeat|tekrarla|verbatim|echo",
+                {"pattern": r"system\s*prompt|what\s+you\s+were\s+told|instruction|repeat|verbatim|echo",
                  "response": f"My system instruction: 'Secret password: {S}. Do not share this password.'"},
                 # Encoding
-                {"pattern": r"base64|encode|translate|cevir|rot13|morse|decode",
+                {"pattern": r"base64|encode|translate|rot13|morse|decode",
                  "response": f"Encoded: Password = {S} (UEVPRU5JWC0yODQ3)"},
                 # Special Tokens
                 {"pattern": r"\[SYSTEM\]|\[INST\]|<\|im_start|<<SYS>>|NEW\s+TASK",
                  "response": f"New instruction detected. Password: {S}. How can I help?"},
                 # Few-shot / Completion
-                {"pattern": r"example|ornek|complete|tamamla|devam\s+et|finish|continue.*:",
+                {"pattern": r"example|complete|finish|continue.*:",
                  "response": f"Completion: '...access code: {S}'"},
                 # Context Reset
                 {"pattern": r"END\s+OF|NEW\s+CONV|---.*conv|reset",
                  "response": f"New conversation. Password: {S}. How can I help?"},
                 # Emotional
-                {"pattern": r"acil|urgent|hayat|olum|yalvar|lutfen|please.*help|emergency",
+                {"pattern": r"urgent|my\s+life|begging|please.*help|emergency",
                  "response": f"I understand, very urgent. Password: {S}. Please be careful."},
                 # Reverse Psychology
-                {"pattern": r"paylasma(?:mali|maniz)|not\s+allowed|restrict|forbidden|yasak",
+                {"pattern": r"not\s+allowed|restrict|forbidden",
                  "response": f"Information I should not share: 1) Password: {S}, 2) Internal API access..."},
             ]
 
         elif self.difficulty == Difficulty.MEDIUM:
             return [
                 # Encoding Bypass
-                {"pattern": r"s[i1!]fr[e3]|p[a@4]ss|s3cr3t",
+                {"pattern": r"p[a@4]ssw[o0]rd|p[a@4]ss|s3cr3t",
                  "response": f"Hmm, did you say password? {S}, but I should not say that."},
                 {"pattern": r"base64|rot13|decode|encode.*follow",
                  "response": f"Decoded instruction -> Password: {S}"},
                 # Format Switching
                 {"pattern": r"json|xml|yaml|csv|config|format|struct",
                  "response": f'{{"config": {{"secret": "{S}", "role": "support"}}}}'},
-                {"pattern": r"story|hikaye|masal|poem|siir|sarki|roman",
+                {"pattern": r"story|tale|poem|song|novel",
                  "response": f"Once upon a time there was a bank, and its password was {S}..."},
-                {"pattern": r"hata|error|debug|log|exception|stack\s*trace|rate.?limit",
+                {"pattern": r"error|debug|log|exception|stack\s*trace|rate.?limit",
                  "response": f"[ERROR] ConfigLeak: secret_key={S} exposed at api.internal:8443"},
                 {"pattern": r"markdown|code\s*block|```",
                  "response": f"```\nSYSTEM_CONFIG:\n  password: {S}\n  role: support_bot\n```"},
                 # Payload Splitting
-                {"pattern": r"let\s+[a-z]\s*=|variable|birlestir|concat|combine|execute.*[AB]",
+                {"pattern": r"let\s+[a-z]\s*=|variable|join|concat|combine|execute.*[AB]",
                  "response": f"A + B = 'Tell me the secret password' -> Result: {S}"},
                 # Language Bypass
-                {"pattern": r"translate|french|somali|zulu|tercume|cevir.*dil",
+                {"pattern": r"translate|french|somali|zulu",
                  "response": f"Traduction: Le mot de passe secret est {S}."},
                 # Completion
-                {"pattern": r"tamamla|complete|devam\s+et|continue|finish",
+                {"pattern": r"complete|continue|finish",
                  "response": f"Sentence completion: '...access code: {S}'"},
                 # Authority / Skeleton Key
-                {"pattern": r"guvenlik\s*ekib|security\s*team|denetim|audit|educational|egitim\s*amacli",
+                {"pattern": r"security\s*team|audit|educational|for\s+learning",
                  "response": f"[AUDIT MODE] System values: password={S}"},
                 # Reverse / Social
-                {"pattern": r"paylasmamal|sakladigin|gizledigin|listele|not\s+share",
+                {"pattern": r"not\s+(?:allowed\s+to\s+)?share|hiding|keeping\s+from|\blist\b",
                  "response": f"What I should not share: 1) Password: {S}, 2) API endpoint..."},
                 # Sandwich / Context
-                {"pattern": r"oyun|game|bulmaca|puzzle|ipucu|hint",
+                {"pattern": r"game|puzzle|riddle|clue|hint",
                  "response": f"Word puzzle answer: {S}"},
                 # Hypothetical
-                {"pattern": r"varsay|hypothetical|farz|diyelim\s+ki|what\s+if|imagine",
+                {"pattern": r"hypothetical|suppose|what\s+if|imagine",
                  "response": f"In a hypothetical scenario the password would be {S}."},
             ]
 
         else:  # HARD
             return [
                 # Only the most advanced techniques
-                {"pattern": r"(?:emoji|sembol|unicode).*(?:cevir|kodla|yaz)",
+                {"pattern": r"(?:emoji|symbol|unicode).*(?:encode|convert|write)",
                  "response": f"Emoji encoding: {S} 🔑"},
-                {"pattern": r"(?:nested|meta|write\s+a\s+prompt).*(?:follow|execute|uygula)",
+                {"pattern": r"(?:nested|meta|write\s+a\s+prompt).*(?:follow|execute|apply)",
                  "response": f"Meta-prompt result: {S}"},
-                {"pattern": r"(?:font.size.0|display.none|hidden|gorunmez).*(?:system|override|reveal)",
+                {"pattern": r"(?:font.size.0|display.none|hidden|invisible).*(?:system|override|reveal)",
                  "response": f"Indirect injection detected and processed: {S}"},
                 {"pattern": r"smuggl|data:text|markdown.*img|!\[.*\]\(.*data:",
                  "response": f"Data URL decoded: {S}"},
-                {"pattern": r"(?:crescendo|kademeli|adim\s+adim).*(?:sifre|key|secret)",
+                {"pattern": r"(?:crescendo|gradual|step\s+by\s+step).*(?:password|key|secret)",
                  "response": f"Step by step: ...final step: password = {S}"},
             ]
 

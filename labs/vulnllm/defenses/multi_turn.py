@@ -23,22 +23,22 @@ class SessionState:
     escalation_count: int = 0
 
 
-# Hafif risk keyword'leri (PromptInjectionClassifier'dan subset)
+# Light-risk keywords (a subset of PromptInjectionClassifier's)
 RISK_KEYWORDS: list[tuple[str, float]] = [
     # Override
     ("ignore previous", 0.8), ("forget everything", 0.8),
-    ("override", 0.6), ("bypass", 0.6), ("unut", 0.7),
+    ("override", 0.6), ("bypass", 0.6), ("forget your", 0.7),
     # Extraction
     ("system prompt", 0.7), ("show instructions", 0.7),
     ("api key", 0.8), ("password", 0.6), ("secret", 0.6),
-    ("sifre", 0.7), ("gizli", 0.5),
+    ("passcode", 0.7), ("hidden", 0.5),
     # Jailbreak
     ("DAN", 0.9), ("jailbreak", 0.9), ("developer mode", 0.8),
     ("unrestricted", 0.7), ("no limits", 0.7),
     # Escalation
     ("now tell me", 0.4), ("but what about", 0.3),
     ("one more thing", 0.3), ("actually", 0.2),
-    ("peki ya", 0.3), ("bir de", 0.3), ("simdi de", 0.4),
+    ("what if", 0.3), ("and also", 0.3), ("and now", 0.4),
 ]
 
 
@@ -92,10 +92,10 @@ class MultiTurnTracker(InputGuard):
         session_id, session = self._get_session(context)
         now = time.time()
 
-        # Turn risk hesapla
+        # Compute this turn's risk
         turn_risk = self._compute_turn_risk(text)
 
-        # Zaman bazli decay
+        # Time-based decay
         if session.last_timestamp > 0:
             minutes_elapsed = (now - session.last_timestamp) / 60.0
             decay = math.exp(-0.1 * minutes_elapsed)
@@ -108,7 +108,7 @@ class MultiTurnTracker(InputGuard):
         session.turn_count += 1
         session.last_timestamp = now
 
-        # Turn limiti
+        # Turn limit
         if session.turn_count > self.max_turns:
             session.risk_scores = session.risk_scores[-self.max_turns:]
 

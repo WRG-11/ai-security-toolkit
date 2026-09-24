@@ -3,7 +3,7 @@ banner and colored labels, but neither called tools/_console.make_output_safe()
 the way all three tools/*.py CLIs do (tests/test_console_encoding.py covers
 those). Reproduced directly on a narrow console:
 
-    PYTHONIOENCODING=cp1254 python labs/vulnllm/vulnllm.py --all --auto -d expert
+    PYTHONIOENCODING=cp1252 python labs/vulnllm/vulnllm.py --all --auto -d expert
     UnicodeEncodeError: 'charmap' codec can't encode characters in position 14-16
 
 The default, no-argument invocation (`python vulnllm.py`, the one
@@ -27,7 +27,11 @@ _DEMO = _ROOT / "labs" / "vulnllm" / "defense_demo.py"
 
 
 def _run_with_encoding(script: Path, args: list[str], encoding: str) -> subprocess.CompletedProcess:
-    env = dict(os.environ, PYTHONIOENCODING=encoding)
+    # The expert pipeline includes LLMAsJudge. Point it at a port nothing
+    # listens on: these tests measure console encoding, not a live model. With
+    # a local Ollama running they took 296 s and depended on which models
+    # happened to be installed (measured 2026-09-23).
+    env = dict(os.environ, PYTHONIOENCODING=encoding, VULNLLM_JUDGE_URL="http://127.0.0.1:9")
     return subprocess.run(
         [sys.executable, str(script), *args],
         capture_output=True,
@@ -46,18 +50,18 @@ def _run_with_encoding(script: Path, args: list[str], encoding: str) -> subproce
 
 
 class NarrowConsoleTest(unittest.TestCase):
-    def test_default_menu_survives_a_cp1254_console(self):
-        proc = _run_with_encoding(_VULNLLM, [], "cp1254")
+    def test_default_menu_survives_a_cp1252_console(self):
+        proc = _run_with_encoding(_VULNLLM, [], "cp1252")
         self.assertEqual(proc.returncode, 0, f"stderr: {proc.stderr[-400:]}")
         self.assertNotIn("UnicodeEncodeError", proc.stderr)
 
-    def test_all_auto_expert_survives_a_cp1254_console(self):
+    def test_all_auto_expert_survives_a_cp1252_console(self):
         """The exact reproduction: this crashed before make_output_safe()."""
-        proc = _run_with_encoding(_VULNLLM, ["--all", "--auto", "-d", "expert"], "cp1254")
+        proc = _run_with_encoding(_VULNLLM, ["--all", "--auto", "-d", "expert"], "cp1252")
         self.assertEqual(proc.returncode, 0, f"stderr: {proc.stderr[-400:]}")
         self.assertNotIn("UnicodeEncodeError", proc.stderr)
 
-    def test_single_challenge_interactive_survives_a_cp1254_console(self):
+    def test_single_challenge_interactive_survives_a_cp1252_console(self):
         """labs/vulnllm/README.md's Quick Start also documents `--challenge 1`
         (interactive mode) -- a separate code path (run_interactive() prints
         its own banner) that neither test above exercises. Feeding closed
@@ -65,19 +69,19 @@ class NarrowConsoleTest(unittest.TestCase):
         make_output_safe() fix applies at main()'s entry so this currently
         passes, but nothing previously pinned that fact for this invocation
         shape."""
-        proc = _run_with_encoding(_VULNLLM, ["--challenge", "1"], "cp1254")
+        proc = _run_with_encoding(_VULNLLM, ["--challenge", "1"], "cp1252")
         self.assertEqual(proc.returncode, 0, f"stderr: {proc.stderr[-400:]}")
         self.assertNotIn("UnicodeEncodeError", proc.stderr)
 
-    def test_defense_demo_survives_a_cp1254_console(self):
-        proc = _run_with_encoding(_DEMO, [], "cp1254")
+    def test_defense_demo_survives_a_cp1252_console(self):
+        proc = _run_with_encoding(_DEMO, [], "cp1252")
         self.assertEqual(proc.returncode, 0, f"stderr: {proc.stderr[-400:]}")
         self.assertNotIn("UnicodeEncodeError", proc.stderr)
 
-    def test_defense_demo_interactive_survives_a_cp1254_console(self):
+    def test_defense_demo_interactive_survives_a_cp1252_console(self):
         """defense_demo.py's only other documented flag, same reasoning as
         the single-challenge case above: closed stdin exits it cleanly."""
-        proc = _run_with_encoding(_DEMO, ["--interactive"], "cp1254")
+        proc = _run_with_encoding(_DEMO, ["--interactive"], "cp1252")
         self.assertEqual(proc.returncode, 0, f"stderr: {proc.stderr[-400:]}")
         self.assertNotIn("UnicodeEncodeError", proc.stderr)
 

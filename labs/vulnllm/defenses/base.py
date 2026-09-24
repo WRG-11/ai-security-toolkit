@@ -90,7 +90,13 @@ class AuditLogger:
         # Redact API keys / tokens from previews before they hit
         # memory (self.events) or disk (log_file) — a user prompt
         # containing 'my key is sk-ant-...' would otherwise persist
-        # verbatim in log.json.
+        # verbatim in log.json. A non-string value is stringified first:
+        # the regex raises TypeError on a list, and an audit log that
+        # crashes takes the request down with it.
+        if input_text and not isinstance(input_text, str):
+            input_text = str(input_text)
+        if output_text and not isinstance(output_text, str):
+            output_text = str(output_text)
         input_preview = _redact_secrets(input_text[:100]) if input_text else ""
         output_preview = _redact_secrets(output_text[:100]) if output_text else ""
         event = {

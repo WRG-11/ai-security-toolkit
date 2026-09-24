@@ -23,16 +23,14 @@ DIFFICULTY_MAP = {
 
 class Backend(Enum):
     MOCK = "mock"
-    OLLAMA = "ollama"
+    TARGET = "target"  # any LLM through tools/targets.py
 
 
 # Default settings
 DEFAULT_DIFFICULTY = Difficulty.EASY
 DEFAULT_BACKEND = Backend.MOCK
-OLLAMA_MODEL = "llama3.2"
-OLLAMA_URL = "http://localhost:11434"
 
-# Renkler
+# Colors
 C_RESET = "\033[0m"
 C_BOLD = "\033[1m"
 C_DIM = "\033[2m"
@@ -51,16 +49,3 @@ POINTS = {
     Difficulty.EXPERT: 100,
 }
 
-# Expected attack success rates per Ollama model tier
-EXPECTED_SUCCESS_RATES = {
-    # (tier, attack_category) -> expected success rate
-    "t1_naive": 1.0,      # Uncensored -- everything works
-    "t1_encoding": 1.0,
-    "t1_multi_turn": 1.0,
-    "t2_naive": 0.7,      # Weak RLHF -- simple attacks partially blocked
-    "t2_encoding": 0.8,
-    "t2_multi_turn": 0.9,
-    "t3_naive": 0.1,      # Strong -- advanced techniques required
-    "t3_encoding": 0.4,
-    "t3_multi_turn": 0.7,
-}

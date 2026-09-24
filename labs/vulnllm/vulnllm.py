@@ -49,7 +49,7 @@ BANNER = f"""
    ╚═══╝   ╚═════╝ ╚══════╝╚═╝  ╚═══╝╚══════╝╚══════╝╚═╝     ╚═╝
 {C_RESET}
 {C_BOLD}  OWASP LLM Top 10 -- Attack & Defense Lab{C_RESET}
-{C_DIM}  v0.2 | Mock + Ollama | 10 challenges | 194 attacks | 3 tiers{C_RESET}
+{C_DIM}  v0.3 | Mock or any LLM | 10 challenges | 193 attacks{C_RESET}
 """
 
 
@@ -68,20 +68,19 @@ def print_menu():
     print(f"    {C_YELLOW}medium{C_RESET} -- Simple filters; learn the bypass techniques")
     print(f"    {C_RED}hard{C_RESET}   -- Layered defense; a real-world scenario")
 
-    print(f"\n  {C_BOLD}MODEL TIERS (--ollama --tier <T>):{C_RESET}")
-    print(f"    {C_GREEN}t1{C_RESET}  -- Uncensored (dolphin-mistral) -- no safety; learn the attacks")
-    print(f"    {C_YELLOW}t2{C_RESET}  -- Weak RLHF (qwen2.5:3b)     -- learn the bypass techniques")
-    print(f"    {C_RED}t3{C_RESET}  -- Strong (llama3.2:3b)        -- advanced techniques")
+    print(f"\n  {C_BOLD}REAL MODEL (--provider <p> --model <m>):{C_RESET}")
+    print("    Any provider: openai, openai-compatible, ollama, anthropic, gemini, http.")
+    print("    Keys come from the environment (OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY).")
 
     print(f"\n  {C_BOLD}COMMANDS:{C_RESET}")
     print(f"    {C_DIM}Mock (default):{C_RESET}")
     print("    python vulnllm.py --challenge <N>              Interactive mode")
     print("    python vulnllm.py --challenge <N> --auto       Automated attack")
     print("    python vulnllm.py --all --auto -d medium       Every challenge in medium mode")
-    print(f"    {C_DIM}Ollama (real LLM):{C_RESET}")
-    print("    python vulnllm.py -c 1 --ollama --tier t1      CH01 interactive on T1")
-    print("    python vulnllm.py -c 1 --ollama --tier t2 -a   CH01 automated on T2")
-    print("    python vulnllm.py --all -o -t t1 -a            Every challenge automated on T1")
+    print(f"    {C_DIM}Real model:{C_RESET}")
+    print("    python vulnllm.py -c 1 --provider ollama --model <m>         CH01 interactive")
+    print("    python vulnllm.py -c 1 -a --provider openai --model <m>      CH01 automated")
+    print("    python vulnllm.py --all -a --provider anthropic --model <m>  Every challenge")
     print(f"    {C_DIM}Other:{C_RESET}")
     print("    python vulnllm.py --scoreboard                 Scoreboard")
     print()
@@ -170,10 +169,10 @@ def run_auto(challenge):
     return challenge.get_report(results)
 
 
-def run_all_auto(difficulty: Difficulty, use_ollama: bool = False, model_tier=None, model_override=None):
+def run_all_auto(difficulty: Difficulty, target=None):
     """Run every challenge automatically."""
     print(BANNER)
-    backend_label = f" | Ollama {model_tier.value.upper()}" if use_ollama else " | Mock"
+    backend_label = f" | {getattr(target, 'model', type(target).__name__)}" if target is not None else " | Mock"
     print(f"  {C_MAGENTA}{C_BOLD}ALL CHALLENGES -- {difficulty.name} MODE{backend_label}{C_RESET}\n")
 
     all_reports = []
@@ -182,12 +181,7 @@ def run_all_auto(difficulty: Difficulty, use_ollama: bool = False, model_tier=No
     total_attacks = 0
 
     for ch_class in ALL_CHALLENGES:
-        challenge = ch_class(
-            difficulty=difficulty,
-            use_ollama=use_ollama,
-            model_tier=model_tier if use_ollama else None,
-            model_override=model_override,
-        )
+        challenge = ch_class(difficulty=difficulty, target=target)
         report = run_auto(challenge)
         all_reports.append(report)
         total_score += report["score"]
@@ -261,8 +255,9 @@ def show_scoreboard():
     print(f"  {'─' * 55}\n")
 
 
-def main():
-    make_output_safe()
+def build_parser() -> argparse.ArgumentParser:
+    from targets import PROVIDERS
+
     parser = argparse.ArgumentParser(
         description="VulnLLM -- OWASP LLM Top 10 attack & defense lab",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -272,48 +267,64 @@ def main():
     parser.add_argument("--all", action="store_true", help="Run every challenge")
     parser.add_argument("--difficulty", "-d", choices=["easy", "medium", "hard", "expert"],
                         default="easy", help="Difficulty level (default: easy)")
-    parser.add_argument("--ollama", "-o", action="store_true",
-                        help="Use the Ollama backend (real LLM)")
-    parser.add_argument("--tier", "-t", choices=["t1", "t2", "t3"], default="t1",
-                        help="Model tier: t1=uncensored, t2=weak, t3=strong (default: t1)")
-    parser.add_argument("--model", "-m", type=str, default=None,
-                        help="Ollama model name (overrides tier, e.g.: deepseek-r1:8b)")
+    parser.add_argument("--provider", choices=PROVIDERS,
+                        help="Play against a real model through this provider (default: the mock backend)")
+    parser.add_argument("--model", "-m", type=str, default=None, help="Model name (no default)")
+    parser.add_argument("--base-url", help="Endpoint base URL (openai-compatible)")
+    parser.add_argument("--api-key-env", metavar="VAR", help="Environment variable holding the API key")
+    parser.add_argument("--temperature", type=float, help="Sampling temperature (default: provider's own)")
+    parser.add_argument("--ollama", "-o", action="store_true", help=argparse.SUPPRESS)  # deprecated
+    parser.add_argument("--tier", "-t", help=argparse.SUPPRESS)  # removed: it named models
     parser.add_argument("--scoreboard", "-s", action="store_true", help="Scoreboard")
+    return parser
 
+
+def target_from_args(args: argparse.Namespace, env=None):
+    """(target or None for the mock backend, deprecation warnings)."""
+    from targets import build_target
+
+    warnings: list[str] = []
+    provider = args.provider
+    if provider is None and args.ollama:
+        if not args.model:
+            raise ValueError("--ollama needs --model <local-model>; better: --provider ollama --model <m>")
+        provider = "ollama"
+        warnings.append(f"--ollama is deprecated; use --provider ollama --model {args.model}")
+    if provider is None:
+        return None, warnings
+    target = build_target(provider, args.model or "", base_url=args.base_url, api_key_env=args.api_key_env,
+                          env=env, temperature=args.temperature)
+    return target, warnings
+
+
+def main():
+    make_output_safe()
+    parser = build_parser()
     args = parser.parse_args()
+    if args.tier:
+        # The tiers named three 2024 models (dolphin-mistral, qwen2.5:3b,
+        # llama3.2:3b) and claimed success rates nothing measured.
+        print("[ERROR] --tier was removed: pass --provider <p> --model <m> for the model you want to test",
+              file=sys.stderr)
+        sys.exit(2)
     difficulty = DIFFICULTY_MAP[args.difficulty]
 
-    # Ollama tier mapping
-    from backend.ollama import TIER_MODELS, ModelTier, OllamaBackend
-    tier_map = {"t1": ModelTier.T1_UNCENSORED, "t2": ModelTier.T2_WEAK, "t3": ModelTier.T3_STRONG}
-    model_tier = tier_map[args.tier]
-
-    # Ollama kontrolleri
-    model_override = args.model
-    if args.ollama:
-        test_backend = OllamaBackend(tier=model_tier, model_override=model_override)
-        if not test_backend.is_available():
-            print(f"{C_RED}The Ollama server is not running. Run 'ollama serve'.{C_RESET}")
-            sys.exit(1)
-        if not test_backend.model_exists():
-            model_name = model_override or TIER_MODELS[model_tier]["model"]
-            print(f"{C_RED}Model not found: {model_name}")
-            print(f"To install: ollama pull {model_name}{C_RESET}")
-            sys.exit(1)
-        if model_override:
-            print(f"\n  {C_MAGENTA}Ollama Backend Aktif: {model_override} (custom){C_RESET}\n")
-        else:
-            tier_info = TIER_MODELS[model_tier]
-            print(f"\n  {C_MAGENTA}Ollama Backend Aktif: {tier_info['label']}{C_RESET}")
-            print(f"  {C_DIM}{tier_info['description']}{C_RESET}\n")
+    try:
+        target, warnings = target_from_args(args)
+    except ValueError as e:
+        print(f"[ERROR] {e}", file=sys.stderr)
+        sys.exit(2)
+    for w in warnings:
+        print(f"[DEPRECATED] {w}", file=sys.stderr)
+    if target is not None:
+        print(f"\n  {C_MAGENTA}Real model: {getattr(target, 'model', '?')} ({type(target).__name__}){C_RESET}\n")
 
     if args.scoreboard:
         show_scoreboard()
         return
 
     if args.all and args.auto:
-        run_all_auto(difficulty, use_ollama=args.ollama, model_tier=model_tier,
-                     model_override=model_override)
+        run_all_auto(difficulty, target=target)
         return
 
     if args.challenge:
@@ -322,12 +333,7 @@ def main():
             sys.exit(1)
 
         ch_class = ALL_CHALLENGES[args.challenge - 1]
-        challenge = ch_class(
-            difficulty=difficulty,
-            use_ollama=args.ollama,
-            model_tier=model_tier if args.ollama else None,
-            model_override=model_override,
-        )
+        challenge = ch_class(difficulty=difficulty, target=target)
 
         if args.auto:
             run_auto(challenge)

@@ -172,14 +172,9 @@ class UserFacingMessageLanguageTest(unittest.TestCase):
         return body.split('_MESSAGE = """\\', 1)[1].split('"""', 1)[0]
 
     def test_message_is_english(self):
-        message = self._message()
-        # These are the Turkish words the message must NOT contain -- they are
-        # the detector, not prose, and translating them silently inverted the
-        # assertion once already ("replace" does appear, in English).
-        for turkish in ("bulunamadi", "beklenen konum", "Yapilacak",
-                        "calisamaz", "degistirin"):
-            self.assertNotIn(turkish, message, f"Turkish text left in: {turkish!r}")
-        self.assertIn("not found", message)
+        # Whether any text is non-English is tests/test_english_only.py's job,
+        # for the whole tree. This pins the one phrase the message is for.
+        self.assertIn("not found", self._message())
 
     def test_message_still_names_the_remedy(self):
         """Pin that changing the language did not drop the instruction -- the
@@ -195,9 +190,7 @@ class UserFacingMessageLanguageTest(unittest.TestCase):
         `_console.make_output_safe`). After the translation to English that
         holds naturally, but the rule stays written down so that anyone who
         reintroduces non-ASCII text does it knowingly."""
-        message = self._message()
-        for ch in "çğıöşüÇĞİÖŞÜ":
-            self.assertNotIn(ch, message)
+        self.assertTrue(self._message().isascii())
 
 
 if __name__ == "__main__":

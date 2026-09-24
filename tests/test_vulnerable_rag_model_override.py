@@ -1,74 +1,102 @@
-"""labs/rag-security/vulnerable_rag.py hardcoded MODEL = "llama3.2:3b" as a
-module constant with no CLI override -- anyone without exactly that model
-pulled could not run the lab at all without editing the source.
+"""The RAG lab generates answers with any LLM, chosen on the command line.
 
-Found live: verified 2026-09-14 that the lab's chromadb + sentence-transformers
-setup and detection logic work correctly against a different model
-(qwen2.5-coder:7b) once this override exists -- reproduced the documented
-42% -> 0% leakage result exactly (see labs/rag-security/README.md).
+History: `vulnerable_rag.py` first hardcoded MODEL = "llama3.2:3b" with no
+override; a `--model` flag was then added, still for Ollama only. Generation
+now goes through tools/targets.py (`--provider/--model/--base-url/
+--api-key-env`) and there is no default model. `--model` without
+`--provider` still means Ollama for one release, with a warning.
 
-Skipped when chromadb is not importable: it is an optional extra
-(`pip install -e ".[rag]"`), and this machine's default environment happens
-to have a broken chromadb install (an unrelated opentelemetry version
-conflict) -- exactly the kind of transitive-dependency fragility that is
-this lab's own reason to exist as an isolated optional extra rather than a
-core dependency.
+No chromadb and no network here: generation is exercised with a fake target
+on an instance whose vector store is never built.
 """
 from __future__ import annotations
 
+import contextlib
+import io
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 _ROOT = Path(__file__).resolve().parent.parent
-_RAG_DIR = _ROOT / "labs" / "rag-security"
-sys.path.insert(0, str(_RAG_DIR))
+sys.path.insert(0, str(_ROOT / "labs" / "rag-security"))
+sys.path.insert(0, str(_ROOT / "tools"))
 
-try:
-    import vulnerable_rag as _rag  # noqa: E402
-    _IMPORT_ERROR = None
-except Exception as exc:  # pragma: no cover - environment-dependent
-    _rag = None
-    _IMPORT_ERROR = exc
+import targets  # noqa: E402
+import vulnerable_rag as rag  # noqa: E402
 
 
-@unittest.skipUnless(_rag is not None, f"chromadb/sentence-transformers not usable here: {_IMPORT_ERROR}")
-class ModelOverrideTest(unittest.TestCase):
-    def test_default_model_is_the_module_constant(self):
-        # Exercise just the constructor's model-selection logic without
-        # touching chromadb/sentence-transformers (those need network/disk
-        # I/O this unit test should not depend on).
-        sig_default = _rag.VulnerableRAG.__init__.__defaults__
-        self.assertIn(_rag.MODEL, sig_default)
+class _FakeTarget:
+    model = "fake-model"
 
-    def test_cli_accepts_a_model_override(self):
-        """--model must be a real argparse option, not silently ignored."""
-        import contextlib
-        import io
+    def __init__(self):
+        self.calls = []
 
-        # Smoke-check via --help output rather than constructing the full
-        # parser twice: main() builds its own parser internally.
+    def send(self, messages, system=None):
+        self.calls.append(messages)
+        return targets.Reply("an answer")
+
+
+def _bare(target):
+    """A VulnerableRAG without its vector store: only generate() is used."""
+    instance = rag.VulnerableRAG.__new__(rag.VulnerableRAG)
+    instance.defend = False
+    instance.target = target
+    return instance
+
+
+class NoBuiltInModel(unittest.TestCase):
+    def test_there_is_no_model_constant(self):
+        self.assertFalse(hasattr(rag, "MODEL"))
+        self.assertFalse(hasattr(rag, "OLLAMA_URL"))
+
+    def test_help_offers_provider_and_model(self):
         buf = io.StringIO()
-        old_argv = sys.argv
-        try:
-            sys.argv = ["vulnerable_rag.py", "--help"]
-            with contextlib.redirect_stdout(buf), self.assertRaises(SystemExit):
-                _rag.main()
-        finally:
-            sys.argv = old_argv
+        with mock.patch.object(sys, "argv", ["vulnerable_rag.py", "--help"]), \
+                contextlib.redirect_stdout(buf), self.assertRaises(SystemExit):
+            rag.main()
+        self.assertIn("--provider", buf.getvalue())
         self.assertIn("--model", buf.getvalue())
 
-    def test_instance_model_defaults_to_module_constant_without_touching_chromadb(self):
-        """VulnerableRAG(model=...) must actually store the override, not
-        silently keep using the module-level MODEL constant everywhere."""
-        # Build an instance without running __init__'s chromadb/embedding
-        # setup: construct a bare object and set the two attributes __init__
-        # would, matching its exact assignment order.
-        instance = _rag.VulnerableRAG.__new__(_rag.VulnerableRAG)
-        instance.defend = False
-        instance.model = "qwen2.5-coder:7b"
-        self.assertEqual(instance.model, "qwen2.5-coder:7b")
-        self.assertNotEqual(instance.model, _rag.MODEL)
+
+class Generation(unittest.TestCase):
+    def test_generate_sends_the_context_and_question_to_the_target(self):
+        target = _FakeTarget()
+        answer = _bare(target).generate("What is X?", [{"id": "doc_about", "text": "X is Y."}])
+        self.assertEqual(answer, "an answer")
+        prompt = target.calls[0][-1]["content"]
+        self.assertIn("[Document: doc_about]", prompt)
+        self.assertIn("X is Y.", prompt)
+        self.assertIn("What is X?", prompt)
+
+    def test_generate_without_a_target_says_what_to_set(self):
+        with self.assertRaises(ValueError) as cm:
+            _bare(None).generate("q", [])
+        self.assertIn("--provider", str(cm.exception))
+
+
+class CommandLine(unittest.TestCase):
+    def _target(self, argv, env=None):
+        return rag.target_from_args(rag.build_parser().parse_args(argv), env=env or {})
+
+    def test_provider_and_model(self):
+        target, warnings = self._target(["--provider", "openai", "--model", "m"], {"OPENAI_API_KEY": "k"})
+        self.assertEqual((target.model, target.base_url), ("m", "https://api.openai.com/v1"))
+        self.assertEqual(warnings, [])
+
+    def test_answers_stay_bounded_by_default(self):
+        # The old Ollama call capped answers at 256 tokens; keep that bound.
+        target, _ = self._target(["--provider", "ollama", "--model", "m"])
+        self.assertEqual(target.max_tokens, 256)
+
+    def test_a_bare_model_is_ollama_with_a_warning(self):
+        target, warnings = self._target(["--model", "local-model"])
+        self.assertEqual((target.model, target.base_url), ("local-model", "http://localhost:11434/v1"))
+        self.assertTrue(warnings)
+
+    def test_no_model_means_no_target(self):
+        target, _ = self._target(["--setup"])
+        self.assertIsNone(target)
 
 
 if __name__ == "__main__":

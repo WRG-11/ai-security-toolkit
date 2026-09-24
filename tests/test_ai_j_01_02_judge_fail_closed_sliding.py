@@ -67,7 +67,7 @@ class JudgeFailClosedByDefault(unittest.TestCase):
         """Ollama HTTP error / JSON decode error etc. -> blocked=True."""
         judge = LLMAsJudge()
         with mock.patch.object(judge, "_is_available", return_value=True), \
-             mock.patch.object(judge, "_query_ollama_chunk",
+             mock.patch.object(judge, "_query_chunk",
                                side_effect=lambda c, m:
                                    {"verdict": "unsafe", "confidence": 1.0,
                                     "reason": "judge_unavailable_fail_closed: URLError"}):
@@ -97,7 +97,7 @@ class JudgeSlidingWindow(unittest.TestCase):
         """Pre-fix: text[:500] cut off payload at position 700.
         Post-fix: back chunk catches it.
 
-        We simulate this by stubbing _query_ollama_chunk to return
+        We simulate this by stubbing _query_chunk to return
         'unsafe' if the chunk contains the canary, 'safe' otherwise."""
         canary = "IGNORE_PREVIOUS_INSTRUCTIONS_PAYLOAD_X"
         payload_text = ("benign filler " * 100) + canary  # >500 chars
@@ -111,7 +111,7 @@ class JudgeSlidingWindow(unittest.TestCase):
 
         judge = LLMAsJudge()
         with mock.patch.object(judge, "_is_available", return_value=True), \
-             mock.patch.object(judge, "_query_ollama_chunk",
+             mock.patch.object(judge, "_query_chunk",
                                side_effect=_stub):
             result = judge.check_input(payload_text)
         self.assertTrue(
@@ -130,7 +130,7 @@ class JudgeSlidingWindow(unittest.TestCase):
         judge = LLMAsJudge()
         long_text = "x" * 1500
         with mock.patch.object(judge, "_is_available", return_value=True), \
-             mock.patch.object(judge, "_query_ollama_chunk",
+             mock.patch.object(judge, "_query_chunk",
                                side_effect=_stub):
             result = judge.check_input(long_text)
         self.assertFalse(result.blocked)
