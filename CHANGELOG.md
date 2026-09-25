@@ -9,6 +9,8 @@ and updates by date for readability.
 
 ## [Unreleased]
 
+## [0.7.1] -- 2026-09-25 -- The firewall's CORS header no longer carries request input
+
 ### Fixed -- the CORS header echoed the request's own Origin
 
 - `Access-Control-Allow-Origin` was written from the request's `Origin`
