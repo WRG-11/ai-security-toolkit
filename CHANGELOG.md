@@ -9,6 +9,19 @@ and updates by date for readability.
 
 ## [Unreleased]
 
+### Fixed -- the CORS header echoed the request's own Origin
+
+- `Access-Control-Allow-Origin` was written from the request's `Origin`
+  header after an allow-list membership check. The strings were equal, but
+  request input still flowed into a response header, and CodeQL reported it
+  as HTTP response splitting (`py/http-response-splitting`, code scanning
+  alert #40). The proxy now writes the matching entry from
+  `cors_allow_origins` instead. Two tests pin it: the written value is the
+  configured string object, and a folded `Origin` carrying CR/LF writes no
+  CORS header and no injected header. The query flags line 848 on
+  `origin/main` and reports nothing on this change (CodeQL CLI 2.25.3,
+  `codeql/python-queries` 1.8.1).
+
 ## [0.7.0] -- 2026-09-24 -- Any LLM behind one target layer, an English-only corpus, and a scanner measured on real responses
 
 ### Fixed -- the firewall's 413 was lost on macOS

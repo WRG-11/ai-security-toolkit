@@ -251,6 +251,54 @@ class CorsAllowList(_Base):
             "/v1/chat/completions", _chat("hello"), {"Origin": "http://evil.example"})
         self.assertNotIn("Access-Control-Allow-Origin", headers)
 
+    def test_the_header_value_is_the_configured_entry_not_the_request_bytes(self):
+        # The membership check means the two strings are equal, but the value
+        # written must still come from the config: request input never reaches
+        # a response header (CodeQL py/http-response-splitting).
+        written = []
+        real = m.FirewallProxyHandler.send_header
+
+        def spy(handler, name, value):
+            if name == "Access-Control-Allow-Origin":
+                written.append(value)
+            return real(handler, name, value)
+
+        m.FirewallProxyHandler.send_header = spy
+        try:
+            self.proxy.post(
+                "/v1/chat/completions", _chat("hello"), {"Origin": "http://localhost:3000"})
+        finally:
+            m.FirewallProxyHandler.send_header = real
+        self.assertEqual(len(written), 1)
+        self.assertIs(written[0], self.proxy.firewall.config.cors_allow_origins[0])
+
+    def test_a_folded_origin_carrying_crlf_writes_no_header(self):
+        # An obs-fold continuation line makes the parsed Origin value contain
+        # CR/LF. It is not an allow-listed string, so nothing is echoed and the
+        # continuation never surfaces as its own response header.
+        body = _chat("hello")
+        request = (
+            b"POST /v1/chat/completions HTTP/1.1\r\n"
+            b"Host: 127.0.0.1\r\n"
+            b"Content-Type: application/json\r\n"
+            b"Origin: http://localhost:3000\r\n"
+            b" X-Injected: 1\r\n"
+            b"Content-Length: " + str(len(body)).encode() + b"\r\n"
+            b"Connection: close\r\n\r\n" + body
+        )
+        with socket.create_connection(("127.0.0.1", self.proxy.port), timeout=10) as s:
+            s.sendall(request)
+            chunks = []
+            while True:
+                data = s.recv(65536)
+                if not data:
+                    break
+                chunks.append(data)
+        head = b"".join(chunks).split(b"\r\n\r\n", 1)[0].lower()
+        self.assertTrue(head.startswith(b"http/1."), head[:40])
+        self.assertNotIn(b"access-control-allow-origin", head)
+        self.assertNotIn(b"x-injected", head)
+
 
 class _ContextCapture(_Base):
     def setUp(self):

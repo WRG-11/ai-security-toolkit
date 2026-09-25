@@ -670,6 +670,22 @@ def _message_text(content: Any) -> str:
     raise _BadRequest(400, "'content' must be a string or a list of text parts.")
 
 
+def _allowed_cors_origin(origin: Optional[str], allowed: list[str]) -> Optional[str]:
+    """The configured entry equal to the request's `Origin`, or None.
+
+    The caller writes the returned value into `Access-Control-Allow-Origin`.
+    It is the string from the config, never the request's own value: equal
+    content, but request input does not flow into a response header, so a
+    value carrying CR/LF has no path to the wire.
+    """
+    if not origin:
+        return None
+    for candidate in allowed:
+        if candidate == origin:
+            return candidate
+    return None
+
+
 class FirewallProxyHandler(BaseHTTPRequestHandler):
     """HTTP proxy handler that sits in front of Ollama."""
 
@@ -843,9 +859,10 @@ class FirewallProxyHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         # CORS only for an allow-listed origin. This used to be `*` on every
         # response, which let any web page open in a browser drive the proxy.
-        origin = self.headers.get("Origin")
-        if origin and origin in _firewall().config.cors_allow_origins:
-            self.send_header("Access-Control-Allow-Origin", origin)
+        allowed = _allowed_cors_origin(
+            self.headers.get("Origin"), _firewall().config.cors_allow_origins)
+        if allowed is not None:
+            self.send_header("Access-Control-Allow-Origin", allowed)
             self.send_header("Vary", "Origin")
         self.end_headers()
         self.wfile.write(json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8"))
