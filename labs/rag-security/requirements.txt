@@ -9,4 +9,4 @@
 # pyproject.toml's [rag] extra; that file explains why sentence-transformers
 # is required here even though chromadb installs without it.
 chromadb>=1.5.9
-sentence-transformers>=6.0.1
+sentence-transformers>=6.1.0
