@@ -40,7 +40,7 @@ classifiers = [
 # Deliberately empty. The core tools import nothing outside the standard
 # library, and that is a property worth being able to state in machine-readable
 # form rather than only in prose. The extras below are what the non-core parts
-# need; see the dependency map in README.
+# need; see the dependency map in docs/installation.md.
 dependencies = []
 
 [project.optional-dependencies]
