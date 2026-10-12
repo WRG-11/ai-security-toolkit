@@ -9,6 +9,23 @@ and updates by date for readability.
 
 ## [Unreleased]
 
+### Changed -- the README is shorter and opens with what the toolkit is
+
+- The README goes from 318 lines to 160. It opens with one sentence, the
+  browser demo, the command that starts the detector and the measured F1.
+- The dependency map and the reasons behind the editable install moved to
+  `docs/installation.md`. The threshold sweep and the calibration bug moved
+  to `docs/detector-measurement.md`. The framework comparison moved to
+  `docs/comparison.md`. The moved text keeps every number and claim; the
+  wording is lightly edited.
+- Removed from the README: the "Why this exists" and "Who is this for"
+  sections, the progress-bar coverage block, the "Tech Stack" list and four
+  badges (stdlib, OWASP, CTF score, live demo). The measured facts they
+  carried are in the "Coverage" list and the tables.
+- `tests/test_readme_links.py` is new. It fails when a relative link in the
+  README or `docs/` points at a missing file, or when a link into the README
+  names a heading that is not there.
+
 ## [0.7.1] -- 2026-09-25 -- The firewall's CORS header no longer carries request input
 
 ### Fixed -- the CORS header echoed the request's own Origin
