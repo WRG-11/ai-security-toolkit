@@ -24,7 +24,9 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parent.parent
 _README = _ROOT / "README.md"
 _REPO_URL = "https://github.com/WRG-11/ai-security-toolkit#"
-_LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
+# Every "](target)": a badge is a link around an image, so matching the bracketed
+# text as well would skip the outer target and check only the image URL.
+_LINK = re.compile(r"\]\(([^)\s]+)\)")
 _FENCE = re.compile(r"^```.*?^```", re.S | re.M)
 _SCHEME = re.compile(r"[a-z][a-z0-9+.-]*:")
 
